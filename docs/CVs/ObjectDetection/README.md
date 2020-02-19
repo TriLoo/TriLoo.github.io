@@ -1,5 +1,5 @@
 ---
-navbar: true
+title: Object Detection
 ---
 
 # Object Detection Folder

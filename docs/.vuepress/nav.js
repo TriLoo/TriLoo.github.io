@@ -1,17 +1,24 @@
 module.exports = [
+    // each dict correspond to a folder
     {
-        text: 'CV', link: '/CVs/',
+        text: '计算机视觉', link: '/CVs/',
         items: [
+            // each item correspond to a sidebar dict
             {text: 'Object Detection', link: '/CVs/ObjectDetection/'},
             {text: 'GAN', link: '/CVs/GAN/'},
             {text: 'SLAM', link: 'CVs/SLAM/'},
         ]
     },
     {
-        text: 'Notes', link: '/Notes/',
+        text: '笔记', link: '/Notes/',
         items: [
-            {text: 'Papers', link: '/Notes/Papers/'},
-            {text: 'Source Code', link: '/Notes/SourceCode/'},
+            {text: '论文笔记', link: '/Notes/Papers/'},
+            {text: '源码阅读', link: '/Notes/SourceCode/',
+             items: [
+                {text: 'MXNet', link: '/Notes/SourceCode/MXNet/'},
+                {text: '经典GAN模型', link: '/Notes/SourceCode/GAN/'},
+             ]
+            },
             {text: 'Others', link: '/Notes/Others/'},
         ]
     },

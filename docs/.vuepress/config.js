@@ -16,17 +16,23 @@ module.exports = {
         sidebar: require('./sidebar.js'),
         sidebarDepth: 2,
         displayAllHeaders: true,
+        activeHeaderLinks: true,
         lastUpdated: 'Last Updated',
         serviceWorker: {
             updatePopup: true,
         },
         /// read-only all webpages
-        // repo: 'TriLoo/xblogs',
+        repo: 'TriLoo/TriLoo.github.io.git',
         // repoLabel: 'Contribute Code',
         // docsRepo: 'TriLoo/xblogs',
-        // docsDir: 'docs',
-        // docsBranch: 'master',
+        docsDir: 'docs',
+        docsBranch: 'src',
         // editLinks: false,
         // editLinkText: 'Edit this page',
     },
+    plugins: [
+        ['vuepress-plugin-mathjax', {
+         target: 'svg',
+        }]
+    ]
 }

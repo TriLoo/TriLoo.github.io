@@ -3,8 +3,14 @@ module.exports = [
         title: 'MXNet源码分析',
         collapsable: true,
         children: [
-            '/SourceCode/MXNet/番外篇_MKLDNN',
-            '/SourceCode/MXNet/番外篇_Protobuf',
+            '/SourceCode/MXNet/extra_mkldnn_basic',
+            '/SourceCode/MXNet/extra_protobuf_basic',
+        ]
+    },
+    {
+        title: '经典GAN模型',
+        collapsable: true,
+        children: [
         ]
     },
     {

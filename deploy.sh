@@ -10,7 +10,8 @@ git init
 git add -A
 git commit -m 'deploy'
 
-git push -f git@github.com:TriLoo/TriLoo.github.io.git master
+git remote add origin git@github.com:TriLoo/TriLoo.github.io.git
+git push -f origin master
 
 cd -
 

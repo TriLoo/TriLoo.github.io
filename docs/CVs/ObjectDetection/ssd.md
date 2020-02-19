@@ -1,5 +1,5 @@
 ---
-navbar: false
+title: SSD
 ---
 
 # SSD

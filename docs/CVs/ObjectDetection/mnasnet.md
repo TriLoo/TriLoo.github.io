@@ -1,5 +1,5 @@
 ---
-navbar: false
+title: MNasNet Model
 ---
 
 # MnasNet Model
