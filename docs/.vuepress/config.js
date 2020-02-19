@@ -14,7 +14,7 @@ module.exports = {
         logo: '/img/eva.png',
         nav: require('./nav.js'),
         sidebar: require('./sidebar.js'),
-        sidebarDepth: 2,
+        sidebarDepth: 0,
         displayAllHeaders: true,
         activeHeaderLinks: true,
         lastUpdated: 'Last Updated',

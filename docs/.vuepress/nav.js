@@ -24,8 +24,5 @@ module.exports = [
     },
     {
         text: 'Others', link: '/Others/',
-    },
-    {
-        text: 'GitHub', link: 'https://github.com/TriLoo',
     }
 ]

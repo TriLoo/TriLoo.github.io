@@ -3,8 +3,8 @@ module.exports = [
         title: 'MXNet源码分析',
         collapsable: true,
         children: [
-            '/SourceCode/MXNet/extra_mkldnn_basic',
-            '/SourceCode/MXNet/extra_protobuf_basic',
+            '/Notes/SourceCode/MXNet/extra_mkldnn_basic',
+            '/Notes/SourceCode/MXNet/extra_protobuf_basic',
         ]
     },
     {
