@@ -34,5 +34,12 @@ module.exports = {
         ['vuepress-plugin-mathjax', {
          target: 'svg',
         }]
-    ]
+    ],
+    configureWebpack: {
+        resolve: {
+            alias: {
+                '@alias': '/static_imgs'
+            }
+        }
+    }
 }

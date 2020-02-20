@@ -74,12 +74,9 @@ smh
 
     * `dnnl_primitive_desc_t`
     * 在C++ API中，每个`primitive`可能对应多个`primitive descriptors`
-
     * 抽象层次位于`operation descriptors`与`primitives`之间，可以用于：inspect details of a specific primitive implementation like expected memory formats via queries to implement memory format propagation without having to fully instantiate a primitive
-
     * 各个抽象层次之间的关系以及对应的类的关系如下图：
-
-      ![image-20191216210723107](/Users/smher/Library/Application Support/typora-user-images/image-20191216210723107.png)
+    <div align="center"><img src="/note_imgs/sourcecode_imgs/mxnet_imgs/mkldnn_abs_level_0.png" width="1526" height="145" alt="mkldnn abstract levels"></div>
 
 ### Creating Memory Objects and Primitives
 
@@ -375,8 +372,7 @@ smh
 * 而像`Elementwise, LRN, BN`以及其它一些计算，在前向传播时，需要使用与前一层相同的`memory format`,这样可以避免不必要的`reorders`，这通常比较耗时。但在后向传播时，这些`primitives`需要与前向过程中使用的`memory format`一致，所以在初始化这些`primitives`用于后向计算时，需要使用`dnnl::memory::format_tag::any`！
 
 * 下表给出了根据`operation description`初始化过程该不该使用`dnnl::memory::format_tag::any`的情况
-
-  ![image-20191217132412361](/Users/smher/Library/Application Support/typora-user-images/image-20191217132412361.png)
+  <div align="center"><img src="/note_imgs/sourcecode_imgs/mxnet_imgs/mkldnn_mem_fmt_0.png" width="1525" height="229" alt="mkldnn memory propagation"></div>
 
 *  
 
@@ -687,11 +683,11 @@ smh
 
 ### 支持的Data Types
 
-![image-20191216213656395](/Users/smher/Library/Application Support/typora-user-images/image-20191216213656395.png)
+<div align="center"><img src="/note_imgs/sourcecode_imgs/mxnet_imgs/mkldnn_data_types_0.png" width="1528" height="180" alt="mkldnn data types"></div>
 
 ### Inference & training
 
-![image-20191216213738621](/Users/smher/Library/Application Support/typora-user-images/image-20191216213738621.png)
+<div align="center"><img src="/note_imgs/sourcecode_imgs/mxnet_imgs/mkldnn_infer_training_0.png" width="1524" height="110" alt="mkldnn inference & training"></div>
 
 * 注意，使用低精度计算时，可能需要修改模型的实现
 * 不同的`primitive`可能对精度有不同的要求，需要参考具体支持的数据类型
@@ -700,7 +696,7 @@ smh
 
  不同的硬件也支持不同的精度，`DNN`的实现也不同，可参考下图：
 
-![image-20191216214047013](/Users/smher/Library/Application Support/typora-user-images/image-20191216214047013.png)
+<div align="center"><img src="/note_imgs/sourcecode_imgs/mxnet_imgs/mkldnn_hardware_limit_0.png" width="1524" height="179" alt="mkldnn hardware limitations"></div>
 
 * 如果硬件不支持`bf16`，一般需要`AVX512 Byte and Word Instructions (AVX512BW)`的硬件、指令支持，否则使用`bf16`比使用`fp32`会慢3-4倍！
 
@@ -809,7 +805,7 @@ smh
 
   * 以`batch = 2, channel = 16, spatial = 5 * 4`
 
-    ![image-20191217195832544](/Users/smher/Library/Application Support/typora-user-images/image-20191217195832544.png)
+    <div align="center"><img src="/note_imgs/sourcecode_imgs/mxnet_imgs/mkldnn_data_fmt_0.png" width="918" height="566" alt="mkldnn data formats"></div>
 
     * 那么在`(n, c, h, w)`位置的数值是
 
@@ -848,7 +844,7 @@ smh
 
     * 不同layout之间的数据示意图如下
 
-      ![image-20191217200657137](/Users/smher/Library/Application Support/typora-user-images/image-20191217200657137.png)
+      <div align="center"><img src="/note_imgs/sourcecode_imgs/mxnet_imgs/mkldnn_layout_relation_0.png" width="1027" height="572" alt="mkldnn layout relationship"></div>
 
     *  
 
@@ -858,7 +854,7 @@ smh
 
 也就是存在相邻两个像素索引不相邻，或者存在`strides`的情况，
 
-![image-20191217200936742](/Users/smher/Library/Application Support/typora-user-images/image-20191217200936742.png)
+<div align="center"><img src="/note_imgs/sourcecode_imgs/mxnet_imgs/mkldnn_layout_relation_0.png" width="1027" height="572" alt="mkldnn layout relationship"></div>
 
 此时，有
 
@@ -906,7 +902,7 @@ offset(n, c, h, w) = n * stride_n
                             + (c % 8)
   ```
 
-  ![image-20191217201626327](/Users/smher/Library/Application Support/typora-user-images/image-20191217201626327.png)
+  <div align="center"><img src="/note_imgs/sourcecode_imgs/mxnet_imgs/mkldnn_blocked_layout_0.png" width="984" height="578" alt="mkldnn blocked layout"></div>
 
   * 也即是说，相邻的8个`channel`称为innerest维度了，在存储空间中相同block内的相邻channel的像素称为相邻的了，其次是spatial维度，在然后是`channel block`，最后是`batch`维度
   * We use lower- and uppercase letters in the formats to distinguish between the blocks (e.g. 8c) and the remaining co-dimension (**C** = channels / 8).
@@ -946,7 +942,7 @@ offset(n, c, h, w) = n * stride_n
 
   * zero-padding处理示意图如下所示
 
-    ![image-20191217202504654](/Users/smher/Library/Application Support/typora-user-images/image-20191217202504654.png)
+    <div align="center"><img src="/note_imgs/sourcecode_imgs/mxnet_imgs/mkldnn_zero_padding_0.png" width="916" height="575" alt="mkldnn blocked layout"></div>
 
   *  
 

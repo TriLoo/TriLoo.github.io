@@ -5,6 +5,8 @@ module.exports = [
         children: [
             '/Notes/SourceCode/MXNet/extra_mkldnn_basic',
             '/Notes/SourceCode/MXNet/extra_protobuf_basic',
+            '/Notes/SourceCode/MXNet/ConvolutionOp',
+            '/Notes/SourceCode/MXNet/ConvolutionOp_2',
         ]
     },
     {
