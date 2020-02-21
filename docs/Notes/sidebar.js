@@ -7,6 +7,9 @@ module.exports = [
             '/Notes/SourceCode/MXNet/extra_protobuf_basic',
             '/Notes/SourceCode/MXNet/ConvolutionOp',
             '/Notes/SourceCode/MXNet/ConvolutionOp_2',
+            '/Notes/SourceCode/MXNet/ConvolutionOp_3',
+            '/Notes/SourceCode/MXNet/ConvolutionOp_4',
+            '/Notes/SourceCode/MXNet/ConvolutionOp_5',
         ]
     },
     {
