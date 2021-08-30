@@ -5,7 +5,7 @@
     <loc>https://triloon.space/categories/</loc>
     <lastmod>2021-08-29T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://triloon.space/2021/08/my-first-post/</loc>
+    <loc>https://triloon.space/posts/my-first-post/</loc>
     <lastmod>2021-08-29T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://triloon.space/posts/</loc>
@@ -28,5 +28,9 @@
   </url><url>
     <loc>https://triloon.space/categories/yellow/</loc>
     <lastmod>2021-08-29T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://triloon.space/about/about/</loc>
+  </url><url>
+    <loc>https://triloon.space/about/</loc>
   </url>
 </urlset>

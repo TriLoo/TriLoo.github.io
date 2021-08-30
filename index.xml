@@ -6,15 +6,23 @@
     <description>Recent content on Triloon</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <copyright>Except where otherwise noted, content on this site is licensed under a [Creative Commons Attribution 4.0 International license](https://creativecommons.org/licenses/by-sa/4.0/).</copyright>
     <lastBuildDate>Mon, 30 Aug 2021 20:03:11 +0800</lastBuildDate><atom:link href="https://triloon.space/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>My First Post</title>
-      <link>https://triloon.space/2021/08/my-first-post/</link>
+      <link>https://triloon.space/posts/my-first-post/</link>
       <pubDate>Mon, 30 Aug 2021 20:03:11 +0800</pubDate>
       
-      <guid>https://triloon.space/2021/08/my-first-post/</guid>
+      <guid>https://triloon.space/posts/my-first-post/</guid>
       <description>这里是正文.</description>
+    </item>
+    
+    <item>
+      <title>About</title>
+      <link>https://triloon.space/about/about/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://triloon.space/about/about/</guid>
+      <description>my github url is: Triloon</description>
     </item>
     
   </channel>
