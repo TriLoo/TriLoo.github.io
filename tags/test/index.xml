@@ -2,18 +2,18 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>test on Triloon</title>
-    <link>http://example.org/tags/test/</link>
+    <link>https://triloon.space/tags/test/</link>
     <description>Recent content in test on Triloon</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Except where otherwise noted, content on this site is licensed under a [Creative Commons Attribution 4.0 International license](https://creativecommons.org/licenses/by-sa/4.0/).</copyright>
-    <lastBuildDate>Mon, 30 Aug 2021 20:03:11 +0800</lastBuildDate><atom:link href="http://example.org/tags/test/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 30 Aug 2021 20:03:11 +0800</lastBuildDate><atom:link href="https://triloon.space/tags/test/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>My First Post</title>
-      <link>http://example.org/2021/08/my-first-post/</link>
+      <link>https://triloon.space/2021/08/my-first-post/</link>
       <pubDate>Mon, 30 Aug 2021 20:03:11 +0800</pubDate>
       
-      <guid>http://example.org/2021/08/my-first-post/</guid>
+      <guid>https://triloon.space/2021/08/my-first-post/</guid>
       <description>这里是正文.</description>
     </item>
     

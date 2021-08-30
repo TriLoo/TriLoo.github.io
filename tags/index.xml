@@ -2,27 +2,27 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Tags on Triloon</title>
-    <link>http://example.org/tags/</link>
+    <link>https://triloon.space/tags/</link>
     <description>Recent content in Tags on Triloon</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Except where otherwise noted, content on this site is licensed under a [Creative Commons Attribution 4.0 International license](https://creativecommons.org/licenses/by-sa/4.0/).</copyright>
-    <lastBuildDate>Mon, 30 Aug 2021 20:03:11 +0800</lastBuildDate><atom:link href="http://example.org/tags/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 30 Aug 2021 20:03:11 +0800</lastBuildDate><atom:link href="https://triloon.space/tags/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>test</title>
-      <link>http://example.org/tags/test/</link>
+      <link>https://triloon.space/tags/test/</link>
       <pubDate>Mon, 30 Aug 2021 20:03:11 +0800</pubDate>
       
-      <guid>http://example.org/tags/test/</guid>
+      <guid>https://triloon.space/tags/test/</guid>
       <description></description>
     </item>
     
     <item>
       <title>try</title>
-      <link>http://example.org/tags/try/</link>
+      <link>https://triloon.space/tags/try/</link>
       <pubDate>Mon, 30 Aug 2021 20:03:11 +0800</pubDate>
       
-      <guid>http://example.org/tags/try/</guid>
+      <guid>https://triloon.space/tags/try/</guid>
       <description></description>
     </item>
     
