@@ -1,0 +1,122 @@
+baseURL = 'https://triloon.space/'
+languageCode = 'en-us'
+title = 'Triloon'
+theme="tale"
+publishdir="./public"
+
+# math = false
+autoHeadingID=true
+
+# markdown = "kramdown"
+include = [ "pages"  ]
+
+[markup]
+    [markup.highlight]
+        anchorLineNos = false
+        codeFences = true
+        guessSyntax = false
+        hl_Lines = ''
+        lineAnchors = ''
+        lineNoStart = 1
+        lineNos = false
+        lineNumbersInTable = true
+        noClasses = true
+        ## style can change according to the galleries: https://gohugo.io/getting-started/configuration-markup#highlight
+        # style = 'monokai'
+        style = 'github'
+        tabWidth = 4
+    [markup.tableOfContents]
+        endLevel = 3
+        ordered = false
+        startLevel = 2
+    [markup.goldmark]
+        [markup.goldmark.extensions]
+            definitionList = true
+            footnote = true
+            linkify = true
+            strikethrough = true
+            table = true
+            taskList = true
+            typographer = true
+            WithLineNumbers = true
+        [markup.goldmark.parser]
+            autoHeadingID = true
+            autoHeadingIDType = 'github'
+        [markup.goldmark.parser.attribute]
+            block = false
+            title = true
+        [markup.goldmark.renderer]
+            hardWraps = false
+            unsafe = false
+            xhtml = false
+
+sectionPagesMenu = "main"
+[menu]
+    [[menu.main]]
+        identifier = "posts"
+        name = "Posts"
+        title = "Posts"
+        url = "/posts/"
+        weight = 0
+    [[menu.main]]
+        identifier = "about"
+        name = "About"
+        title = "About"
+        url = "/about/about"
+        weight = 0
+
+## plugins
+plugins = [ "jekyll-feed", "jekyll-paginate", "jekyll-seo-tag"  "jemoji" ]
+
+## Disqus & id (Set to your disqus id)
+disqusShortname = "disqus-example"
+disqus = "triloon"
+
+## article num per page
+paginate = 7
+googleAnalytics = "UA-133700000-0"
+
+## Permalinks
+permalink = "/:year-:month-:day/:title"
+
+[author]
+    name = "triloon"
+    url = "https://triloon.space"
+    emal = "songmhor@gmail.com"
+
+
+## summary word nums under home/category/tag page
+summaryLength = 10
+
+## optionally override the site's footer with custom copyright text
+# copyright = "Except where otherwise noted, content on this site is licensed under a [Creative Commons Attribution 4.0 International license](https://creativecommons.org/licenses/by-sa/4.0/)."
+# googleAnalytics = "UA-123-45"
+# disqusShortname = "XYW"
+
+# ## �������ӵ�·����ʽ
+# [permalinks]
+#     posts="/:year/:month/:title/"
+#     page="/:slug/"
+
+# ## ������
+# [[menu.navbar]]
+#     name="Home"
+#     url="http:://localhost:1313"
+# 
+# ## �����������д���
+# [[menu.sidebar]]
+#     name = "SoGou"
+#     url = "https://www.sogou.com"
+# 
+# [[menu.sidebar]]
+#     name = "Github"
+#     url = "https://github.com"
+# 
+# ## theme ����, not suit for tale
+# [params]
+#     # site author 
+#     author = "triloon"
+#     # homepage description
+#     description = "my blog site"
+
+
