@@ -6,7 +6,25 @@
     <description>Recent content in Posts on Triloon</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Mon, 30 Aug 2021 20:03:11 +0800</lastBuildDate><atom:link href="https://triloon.space/posts/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Tue, 31 Aug 2021 14:09:48 +0800</lastBuildDate><atom:link href="https://triloon.space/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>大Batchsize训练用到的优化器</title>
+      <link>https://triloon.space/posts/big-batchsize-train/</link>
+      <pubDate>Tue, 31 Aug 2021 14:09:48 +0800</pubDate>
+      
+      <guid>https://triloon.space/posts/big-batchsize-train/</guid>
+      <description>&lt;p&gt;一些为了适应大的Batch Size训练的优化算法。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Efficient Transformer系列</title>
+      <link>https://triloon.space/posts/efficient-transformer/</link>
+      <pubDate>Tue, 31 Aug 2021 14:02:36 +0800</pubDate>
+      
+      <guid>https://triloon.space/posts/efficient-transformer/</guid>
+      <description>&lt;p&gt;一些以提高 Transformer 计算性能的 Xformer 系列。&lt;/p&gt;</description>
+    </item>
+    
     <item>
       <title>My First Post</title>
       <link>https://triloon.space/posts/my-first-post/</link>
@@ -17,12 +35,12 @@
     </item>
     
     <item>
-      <title></title>
-      <link>https://triloon.space/posts/efficient-transformer/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <title>Hugo Notes</title>
+      <link>https://triloon.space/posts/hugo-notes/</link>
+      <pubDate>Mon, 30 Aug 2021 14:37:40 +0800</pubDate>
       
-      <guid>https://triloon.space/posts/efficient-transformer/</guid>
-      <description></description>
+      <guid>https://triloon.space/posts/hugo-notes/</guid>
+      <description>&lt;p&gt;一些hugo blog搭建过程中的记录。&lt;/p&gt;</description>
     </item>
     
   </channel>

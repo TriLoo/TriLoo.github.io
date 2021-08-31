@@ -5,11 +5,12 @@
     <link>https://triloon.space/about/</link>
     <description>Recent content in Abouts on Triloon</description>
     <generator>Hugo -- gohugo.io</generator>
-    <language>en-us</language><atom:link href="https://triloon.space/about/index.xml" rel="self" type="application/rss+xml" />
+    <language>en-us</language>
+    <lastBuildDate>Mon, 30 Aug 2021 00:00:00 +0000</lastBuildDate><atom:link href="https://triloon.space/about/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>About</title>
       <link>https://triloon.space/about/about/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <pubDate>Mon, 30 Aug 2021 00:00:00 +0000</pubDate>
       
       <guid>https://triloon.space/about/about/</guid>
       <description>my github url is: Triloon</description>
