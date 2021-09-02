@@ -38,6 +38,19 @@ excerpt_separator: <!--more-->
 
   第二个博客里给出了另外一种加载图片的方式，即使用shortcodes（Markdown语言的补充，方便建立网页。），而且也给出了其他多媒体信息的加载方式，比如vimeo, youtube, gist, tweet, instagram等信息。 
 
+  显示图片 Caption 过程，可以参考[Caption images with markdown render hooks in Hugo](https://sebastiandedeyne.com/captioned-images-with-markdown-render-hooks-in-hugo/)，也就是在`myblogs/layouts/_default/_makeup`目录下面创建一个`render-image.html`文件，然后填上如下内容：
+
+  ```html {linenos=table linenostart=0}
+  <figure>
+    <center>
+    <img src="{{ .Destination | safeURL }}" alt="{{ .Text }}">
+    <figcaption>{{ .Text }}</figcaption>
+    </center>
+  </figure>
+  ```
+
+  或者用 `.Title` 代替代码块第三行的 `.Text` 来使用 Title 作为 Caption。然后在Markdone里加载图片没有变化，注意 Title 的位置：`![alt text](path "title")`，title可以是空。
+
 * 添加网页图标
 
   一个常见的博客是：[Favicon](https://www.enthuseandinspire.co.uk/blog/favicon/)，但是目前来看还没有起作用。但是在 `triloon.space` 上起作用了，后续需要补充上 windows 的格式。
