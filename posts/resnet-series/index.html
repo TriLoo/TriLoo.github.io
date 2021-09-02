@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en-us">
+    <head>
+		
+		
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+		<title>Resnet Series &middot; Triloon</title>
+
+		
+		<link rel="stylesheet" href="/css/style.css">
+		<link rel="stylesheet" href="/css/fonts.css">
+		
+		<link rel="icon" href="favicon.ico" />
+		<link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+		<link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+		<link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+
+		
+		<link href="" rel="alternate" type="application/rss+xml" title="Triloon" />
+	</head>
+
+    <body>
+        
+		<nav class="nav">
+			<div class="nav-container">
+				<a href="/">
+					
+						<h2 class="nav-title">Triloon</h2>
+					
+				</a>
+				<ul>
+    
+    
+        <li>
+            <a href="/about/about">
+                
+                <span>About</span>
+                
+            </a>
+        </li>
+    
+        <li>
+            <a href="/posts/">
+                
+                <span>Posts</span>
+                
+            </a>
+        </li>
+    
+</ul>
+			</div>
+		</nav>
+
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+        <link rel="manifest" href="/site.webmanifest">
+
+        
+
+<main>
+	<div class="post">
+		<div class="post-info">
+    <span>Written by</span>
+        Triloon
+        <br>
+        <span>on&nbsp;</span><time datetime="2021-09-02 14:12:59 &#43;0800 CST">September 2, 2021</time>
+</div>
+
+		<h1 class="post-title">Resnet Series</h1>
+<div class="post-line"></div>
+
+		
+
+		<p>Residual Connection以及后续发展。</p>
+<p>主要是为了自己梳理一下，总不能最基础的残差网络也忘了吧。更多的信息可以参考：<a href="https://zhuanlan.zhihu.com/p/353185272">ResNet系列网络演绎过程</a></p>
+<h2 id="基础">基础</h2>
+<p>残差网络(ResNet)是2015年何凯明在<a href="https://www.cv-foundation.org/openaccess/content_cvpr_2016/papers/He_Deep_Residual_Learning_CVPR_2016_paper.pdf">Deep Residual Learning for Image Recognition</a>提出的，旁路连接方便了梯度回传，可以帮助模型更好的训练。基础结构如下图1。</p>
+<p><figure>
+    <center>
+    <img src="/imgs/resnet-series/residual0.png" alt="图1 - 残差块">
+    <figcaption>图1 - 残差块</figcaption>
+    </center>
+</figure></p>
+<p>我们知道，VGG / ResNet / Mobilenet 等论文里已经说明现在网络结构设计可以通过简单的 Block 堆叠来构建，并且Blocks可以分组为若干个 Stage，每个 Stage 包含若干层 Block。为了提高计算性能以及提高感受野等，不同 Stage 之间会下采样降低空间分辨率同时提高 channel 个数（神经元）来保证模型容量。对于每个 Stage 的第一层 Block 需要完成下采样、channel翻倍的任务，为了保证输入数据与这两步处理后的输出数据尺寸相同，需要修改旁路，不再是 Indentity，而需要通过卷积完成映射。论文里在每个Block的第一层卷积里使用<code>stride=2</code>来完成下采样。 有论文表明，使用 avg pooling 进行下采样会更好，避免丢失很多的信息。</p>
+<p>另外，一般配合 BN 时，CNN 的 bias 作用不明显可去掉。对于 bias 的作用可简单参考：<a href="https://www.pico.net/kb/the-role-of-bias-in-neural-networks/">The role of bias in Neural Networks</a>，猜测是在 BN 之前用于修正 <code>W * x</code> 的偏置，<strong>防止方差过大导致训练困难</strong>，即学习一个参数来降低输出值的方差，类似于降噪。</p>
+<p>上述过程的示例代码如下：</p>
+<div class="highlight" linestart="0"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">23
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">24
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">25
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">26
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">27
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">28
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">29
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">30
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">31
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">32
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">33
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">34
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">35
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">36
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">37
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">38
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#000;font-weight:bold">from</span> <span style="color:#555">torch</span> <span style="color:#000;font-weight:bold">import</span> nn
+
+<span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">ResBasicBlock</span>(nn<span style="color:#000;font-weight:bold">.</span>Module):
+    expansion <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">1</span>
+    <span style="color:#000;font-weight:bold">def</span> __init__(<span style="color:#999">self</span>, in_c, out_c, stride, downsample<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">False</span>, reduce_first<span style="color:#000;font-weight:bold">=</span><span style="color:#099">1</span>, ks<span style="color:#000;font-weight:bold">=</span><span style="color:#099">3</span>, padding<span style="color:#000;font-weight:bold">=</span><span style="color:#099">1</span>, <span style="color:#000;font-weight:bold">**</span>kwargs):
+        first_planes <span style="color:#000;font-weight:bold">=</span> out_c <span style="color:#000;font-weight:bold">//</span> reduce_first
+
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>conv1 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Conv2d(in_c, first_planes, ks, stride, padding, bias<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">False</span>)
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>bn1 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>BatchNorm2d(first_planes)
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>act1 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>ReLU()
+
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>conv2 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Conv2d(first_planes, out_c, ks, stride, padding, bias<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">False</span>)
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>bn2 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>BatchNorm2d(out_c)
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>act2 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>ReLU()
+
+        <span style="color:#998;font-style:italic">## for downsample &amp; double channel number</span>
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>downsample <span style="color:#000;font-weight:bold">=</span> <span style="color:#000;font-weight:bold">None</span>
+        <span style="color:#000;font-weight:bold">if</span> downsample:
+            <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>downsample <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Sequential(
+                nn<span style="color:#000;font-weight:bold">.</span>Conv2d(in_c, out_c, ks, stride, padding, bias<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">False</span>),        <span style="color:#998;font-style:italic"># 通常这里的 ks = 1, senet 里 ks = 3</span>
+                nn<span style="color:#000;font-weight:bold">.</span>BatchNorm2d(out_c)
+            )
+    
+    <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">forward</span>(<span style="color:#999">self</span>, x):
+        feat <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>conv1(x)
+        feat <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>bn1(feat)
+        feat <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>act1(feat)
+        feat <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>conv2(feat)
+        feat <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>bn2(feat)
+        <span style="color:#998;font-style:italic">## add se block here</span>
+        <span style="color:#998;font-style:italic"># feat = self.se(feat)</span>
+
+        <span style="color:#000;font-weight:bold">if</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>downsample <span style="color:#000;font-weight:bold">is</span> <span style="color:#000;font-weight:bold">not</span> <span style="color:#000;font-weight:bold">None</span>:
+            x <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>downsample(x)
+        feat <span style="color:#000;font-weight:bold">+=</span> x
+        feat <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>act2(feat)
+
+        <span style="color:#000;font-weight:bold">return</span> feat
+</code></pre></td></tr></table>
+</div>
+</div><p>注意在Stem模块中，不使用残差模块，并且通过 <code>stride=2</code> 以及一个 <code>MaxPooling(stride=2)</code> 来将输入图片下采样4倍。</p>
+<h2 id="bottleneck-结构">Bottleneck 结构</h2>
+<p><a href="#%E5%9F%BA%E7%A1%80">第一小节</a>里提到的结构更多的是用于 resnet-18/34等浅层网络，为了构建深层网络（resnet-50/101-152）等，作者提出了 Bottleneck 模块。Bottleneck 模块包含三层卷机，分别是 <code>conv1x1, conv3x3, conv1x1</code>，并且第一个 <code>conv1x1</code>将输入数据的channel根据一个因子（通常是4）进行缩小，最后一个<code>conv1x1</code>在缩放回原来大小，这样既可以完成残差计算，也降低了中间<code>conv3x3</code>的计算。实验表明，这里即使不降低 channel 个数也不会影响性能，所以Bottleneck 完全为了实际中提高计算效率，至于 Mobilenetv2 里提到的 Inverted Residual Block，不会展开。网络结构示意图如图2右边部分。</p>
+<p>实现的时候需要注意的是，每个 Stage 里Block内的Channel变化过程，最后一个<code>conv1x1</code>的是第一个<code>conv1x1</code><strong>输入</strong>的expansion倍。下图展示的其实是Stage内非第一个Block的结构，相较于输入，第一个<code>conv1x1</code>将channel数降低了4倍；而第一个Block的输入channel数时上一Stage输出的channel数，配合channel double的过程，第一个<code>conv1x1</code>只是将channel下降了2；此外，下采样部分是在 <code>conv3x3, stride=2</code> 部分完成的，如果放在第一个<code>conv1x1</code>里，会导致3/4的信息丢失。</p>
+<p><figure>
+    <center>
+    <img src="/imgs/resnet-series/residual1.png" alt="图-2 Bottleneck 结构">
+    <figcaption>图-2 Bottleneck 结构</figcaption>
+    </center>
+</figure></p>
+<p>具体实现代码如下。</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 0
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">23
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">24
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">25
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">26
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">27
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">28
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">29
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">30
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">31
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">32
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">33
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">34
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">35
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">36
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">37
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">38
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">39
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">40
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">41
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">42
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">43
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">44
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">45
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">46
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#000;font-weight:bold">from</span> <span style="color:#555">torch</span> <span style="color:#000;font-weight:bold">import</span> nn
+<span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">BottleneckBlock</span>(nn<span style="color:#000;font-weight:bold">.</span>Module):
+    <span style="color:#000;font-weight:bold">def</span> __init__(<span style="color:#999">self</span>, in_c<span style="color:#000;font-weight:bold">=</span><span style="color:#099">256</span>, out_c<span style="color:#000;font-weight:bold">=</span><span style="color:#099">64</span>, expansion<span style="color:#000;font-weight:bold">=</span><span style="color:#099">4</span>, stride<span style="color:#000;font-weight:bold">=</span><span style="color:#099">1</span>, downsample<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">False</span>, <span style="color:#000;font-weight:bold">**</span>kwargs):
+        <span style="color:#0086b3">super</span>()<span style="color:#000;font-weight:bold">.</span>__init__(<span style="color:#000;font-weight:bold">**</span>kwargs)
+        out_planes <span style="color:#000;font-weight:bold">=</span> out_c <span style="color:#000;font-weight:bold">*</span> expansion
+
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>conv1 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Conv2d(in_c, out_c, <span style="color:#099">1</span>, <span style="color:#099">1</span>, bias<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">False</span>)
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>bn1 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>BatchNorm2d(out_c)
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>act1 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>ReLU()
+
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>conv2 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Conv2d(out_c, out_c, <span style="color:#099">3</span>, stride, <span style="color:#099">1</span>, bias<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">False</span>)      <span style="color:#998;font-style:italic"># stride = 2 时进行下采样</span>
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>bn2 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>BatchNorm2d(out_c)
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>act1 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>ReLU()
+
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>conv3 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Conv2d(out_c, out_planes, <span style="color:#099">1</span>, <span style="color:#099">1</span>, bias<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">False</span>)         <span style="color:#998;font-style:italic"># 注意输出 channel 的个数</span>
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>bn3 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>BatchNorm2d(out_c)
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>act3 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>ReLU()
+
+        <span style="color:#000;font-weight:bold">if</span> downsample:
+            <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>downsample <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Sequential(
+                nn<span style="color:#000;font-weight:bold">.</span>Conv2d(in_c, out_planes, <span style="color:#099">1</span>, <span style="color:#099">1</span>, bias<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">False</span>),
+                nn<span style="color:#000;font-weight:bold">.</span>BatchNorm2d(out_planes)
+            )
+        <span style="color:#000;font-weight:bold">else</span>:
+            <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>downsample <span style="color:#000;font-weight:bold">=</span> <span style="color:#000;font-weight:bold">False</span>
+    
+    <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">forward</span>(<span style="color:#999">self</span>, x):
+        feat <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>conv1(x)
+        feat <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>bn1(feat)
+        feat <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>act1(feat)
+
+        feat <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>conv2(feat)
+        feat <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>bn2(feat)
+        feat <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>act2(feat)
+        <span style="color:#998;font-style:italic">## use avg pooling to downsample here</span>
+
+        feat <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>conv3(feat)
+        feat <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>bn3(feat)
+        <span style="color:#998;font-style:italic">## add se here</span>
+        <span style="color:#998;font-style:italic"># feat = self.se(feat)</span>
+        <span style="color:#998;font-style:italic">## drop path here, i.e. random drop some samples along batch axis</span>
+        <span style="color:#998;font-style:italic">## downsample projection path here</span>
+        <span style="color:#000;font-weight:bold">if</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>downsample <span style="color:#000;font-weight:bold">is</span> <span style="color:#000;font-weight:bold">not</span> <span style="color:#000;font-weight:bold">None</span>:
+            x <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>downsample(x)
+        feat <span style="color:#000;font-weight:bold">+=</span> x
+        feat <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>act3(feat)
+        <span style="color:#000;font-weight:bold">return</span> feat
+</code></pre></td></tr></table>
+</div>
+</div><p>总结一下SE的位置，SE Block 均是在每一个 Block 最后一层卷积 BN 之后的特征上进行。</p>
+<h2 id="resnet-v2">ResNet v2</h2>
+<p>论文地址：<a href="https://arxiv.org/pdf/1603.05027.pdf">Identity Mappings in Deep Residual Networks</a></p>
+<p>论文里其实是对 BN / ReLU 两个函数的位置进行了挪动。作者测试了下面几种排列组合，发现最后一种实现效果最好。</p>
+<p><figure>
+    <center>
+    <img src="/imgs/resnet-series/residual2.png" alt="图-3 ResNet v2改进">
+    <figcaption>图-3 ResNet v2改进</figcaption>
+    </center>
+</figure></p>
+<p>分析一下，(b)里 BN 在 Identity (左侧)分支里，会改变Identity分支的分布，影响信息传递，在训练开始的时候会阻碍Loss的下降。这一点可以通过论文里的梯度反向传播推导过程看出来。</p>
+<p>(c)里residual(右侧)分支是 ReLU 的输出，导致这个分支对结果只有正向影响，毕竟非负，但我们希望有两个方向的影响，所以非最优。关于(d, e)，实验表明都不如(f)，毕竟 BN 在Residual分支上可以对输入就起到正则化的作用。</p>
+<h2 id="resnext">ResNeXt</h2>
+<p>网络结构如图4。</p>
+<p><figure>
+    <center>
+    <img src="/imgs/resnet-series/residual3.png" alt="图-4 ResNeXt网络结构">
+    <figcaption>图-4 ResNeXt网络结构</figcaption>
+    </center>
+</figure></p>
+<p>(a)为最开始的思想，(c)为等价形式。也就是说，中间的<code>conv3x3</code>替换为分组卷积计算。
+主要改动就是将普通残差结构中的 Residual 分支用 Inception 思想进行修改，用多路并行卷积代替原来的一支卷积，与Inception论文不同的是，这里每个分支采用相同的参数配置，如kernel size等。</p>
+<h2 id="其它">其它</h2>
+<ul>
+<li>
+<p>ResNeSt</p>
+<p>与<a href="https://arxiv.org/abs/1903.06586">SKNet</a>类似。</p>
+</li>
+<li>
+<p>Res2Net</p>
+<p>在单个残差块内引入Inception思想，感受野逐步增大，最后concatenate 起来送入 <code>conv1x1</code> 计算。</p>
+</li>
+<li>
+<p>SKNet</p>
+</li>
+</ul>
+
+		
+	</div>
+
+	<div class="pagination">
+		<a href="/posts/binary-search-tree/" class="left arrow">&#8592;</a>
+
+		<a href="#" class="top">Top</a>
+	</div>
+</main>
+
+
+        		<footer>
+			
+			<span>
+			&copy; <time datetime="2021-09-02 17:08:26.870003 &#43;0800 CST m=&#43;0.228700124">2021</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
+			</span>
+		</footer>
+
+    </body>
+</html>

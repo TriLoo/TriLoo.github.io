@@ -101,6 +101,26 @@
 <p>两个可行的参考是：<a href="https://discourse.gohugo.io/t/solved-how-to-insert-image-in-my-post/1473">how-to-insert-image-in-my-post</a> 以及 <a href="https://gohugo.io/content-management/shortcodes/#figure">hugo-conent-management shortcodes</a></p>
 <p>具体使用：将下载的图片保存到 static 目录，比如按照 post tilte 命名的目录下面（例如，<code>/User/apple/myblogs/static/imgs/binary-search-tree/img00.png</code>，<code>/User/apple/myblogs</code>为项目根目录，即运行<code>hugo server</code>等命令的目录，<code>/User/apple/myblogs/public</code>为编译后的结果），然后在.md正文里指定图片地址（例如，<code>![image caption](/imgs/binary-search-tree/img00.png)</code>，注意下直接从<code>/imgs</code>开始）。</p>
 <p>第二个博客里给出了另外一种加载图片的方式，即使用shortcodes（Markdown语言的补充，方便建立网页。），而且也给出了其他多媒体信息的加载方式，比如vimeo, youtube, gist, tweet, instagram等信息。</p>
+<p>显示图片 Caption 过程，可以参考<a href="https://sebastiandedeyne.com/captioned-images-with-markdown-render-hooks-in-hugo/">Caption images with markdown render hooks in Hugo</a>，也就是在<code>myblogs/layouts/_default/_makeup</code>目录下面创建一个<code>render-image.html</code>文件，然后填上如下内容：</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">0
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-html" data-lang="html">&lt;<span style="color:#000080">figure</span>&gt;
+  &lt;<span style="color:#000080">center</span>&gt;
+  &lt;<span style="color:#000080">img</span> <span style="color:#008080">src</span><span style="color:#000;font-weight:bold">=</span><span style="color:#d14">&#34;{{ .Destination | safeURL }}&#34;</span> <span style="color:#008080">alt</span><span style="color:#000;font-weight:bold">=</span><span style="color:#d14">&#34;{{ .Text }}&#34;</span>&gt;
+  &lt;<span style="color:#000080">figcaption</span>&gt;{{ .Text }}&lt;/<span style="color:#000080">figcaption</span>&gt;
+  &lt;/<span style="color:#000080">center</span>&gt;
+&lt;/<span style="color:#000080">figure</span>&gt;
+</code></pre></td></tr></table>
+</div>
+</div><p>或者用 <code>.Title</code> 代替代码块第三行的 <code>.Text</code> 来使用 Title 作为 Caption。然后在Markdone里加载图片没有变化，注意 Title 的位置：<code>![alt text](path &quot;title&quot;)</code>，title可以是空。</p>
 </li>
 <li>
 <p>添加网页图标</p>
@@ -123,7 +143,7 @@
         		<footer>
 			
 			<span>
-			&copy; <time datetime="2021-09-01 17:34:35.879067 &#43;0800 CST m=&#43;0.191502433">2021</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
+			&copy; <time datetime="2021-09-02 17:08:26.698293 &#43;0800 CST m=&#43;0.056990276">2021</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
 			</span>
 		</footer>
 
