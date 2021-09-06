@@ -63,14 +63,27 @@
 <main>
 	<div class="catalogue">
 		
-			<a href="https://triloon.space/posts/reading-lilu-valueinvestment/" class="catalogue-item">
+			<a href="https://triloon.space/posts/cnn-transformer-volo/" class="catalogue-item">
     <div>
-        <time datetime="2021-09-03 11:05:44 &#43;0800 CST" class="catalogue-time">September 3, 2021</time>
-        <h2 class="catalogue-title">文明、现代化、价值投资与中国 - 读书笔记</h2>
+        <time datetime="2021-09-06 16:26:11 &#43;0800 CST" class="catalogue-time">September 6, 2021</time>
+        <h2 class="catalogue-title">Cnn Transformer 系列之 Volo</h2>
         <div class="catalogue-line"></div>
 
         <p>
-            <p>主要内容涉及到了人类文明发展历程简略，包括三个文明阶段，现代中西方发展道路差异化形成的原因；当前社会发展到现在的两个决定性因素，一些关于投资的演讲；一些关于未来的展望。有一些观点或者提到的观点非常新颖。</p>
+            <p>VOLO论文。</p>
+        </p>
+    </div>
+</a>
+
+		
+			<a href="https://triloon.space/posts/efficient-transformer-reformer/" class="catalogue-item">
+    <div>
+        <time datetime="2021-09-06 10:50:19 &#43;0800 CST" class="catalogue-time">September 6, 2021</time>
+        <h2 class="catalogue-title">Efficient Transformer 系列之 Reformer</h2>
+        <div class="catalogue-line"></div>
+
+        <p>
+            <p>Reformer论文。</p>
         </p>
     </div>
 </a>
@@ -159,6 +172,675 @@
 	<div class="pagination">
 		
 		
+        
+            <p>VOLO论文。</p>
+<h2 id="outlook-attention">Outlook Attention</h2>
+<p>关于论文里主要的 Outlook Attenion 模块的实现有下面几点理解。</p>
+<ul>
+<li>
+<p>Unfold 计算</p>
+<p>实现过程是将输入 Tensor 在划窗内的数据Flatten 成列，Flatten 过程中按照 Row-Major （第一行 -&gt; 第二行 -&gt; 第N行） 的方式完成；窗口滑动过程中得到新的列则拼接在后面。假设 unfold 操作的 kernel size 为 K，输入Tensor的尺寸为 $C \times H \times W$，则 unfold 得到的结果为 $(C \cdot K^2) \times (H \cdot W)$，最后一维表示考虑 padding 后，窗口一共滑动了 $H\cdot W$次。</p>
+</li>
+<li>
+<p>Fold 计算</p>
+<p>此计算是 Unfold 的反过程，并且将恢复过程中对应同一个位置(i, j)的$K^2$结果求和作为该位置上新的结果。</p>
+</li>
+<li>
+<p>与 Convolution 的区别</p>
+<p>卷积计算过程是将以 (i, j) 为中心的窗口内的元素进行加权求和，权重为对应的 kernel 数据；Outlook Attention 计算过程是将 (i, j) 位置的元素在不同的滑窗内计算的结果进行求和，在不同滑创内的结果是指，该窗口内的 $K \times K$ 个元素基于 $K^2 \times K^2$ 个权重得到 $K \times K$个位置上的向量，所以滑窗内每个位置上都有一个对应当前滑窗的结果，Outlook Attention 也就是将(i, j)位置上向量参与的所有的滑窗内的结果求和得到新的向量。</p>
+<p>以$3 \times 3$的滑窗为例，则输入 Tensor 每个位置上的元素一共参与了 9 个滑窗，则结果就是这9个滑窗内的结果求和，而滑窗内的结果是根据该滑窗内的9个元素加权平均（权重经过 Softmax 了）得来的。</p>
+</li>
+<li>
+<p>论文中的伪代码</p>
+<p>其中比较奇怪的一个地方在于，<code>v=v_pj(x).permute(2, 1, 0)</code> 得到的尺寸是$(C, W, H)$，为什么 W / H 这两个维度还需要转置呢？</p>
+<p>目前的想法是作者写错了，因为代码实现里还是 (C, H, W) 的顺序。伪代码里mul(a, v)计算相当于第 (i, j) 位置对应滑窗内的权重是由 (j, i) 位置上向量根据一个 Linear 层得到的，这肯定是不对的，毕竟图片肯定不是沿着对角线对称的，即使对称，Stem Block 计算的结果也不是。如果理解错了请告诉我。</p>
+</li>
+</ul>
+<p>论文中给出的伪代码如下：</p>
+<p><figure>
+    <center>
+    <img src="/imgs/volo/volo0.png" alt="图-1 Outlook Attention示例代码">
+    <figcaption>图-1 Outlook Attention示例代码</figcaption>
+    </center>
+</figure></p>
+<h2 id="引入多头注意力">引入多头注意力</h2>
+<p>在这里，多头注意力简单来说就是得到 N (head num)个不同的权重分布，同时 Value 矩阵的 hidden status 维度分成 N 组，然后每组对应一个权重分布。多头注意力就是在 Value 的每个分组上求解加权平均，然后拼接起来恢复输入时候的尺寸。</p>
+<p>对应 Outlook Attention 的实现，就是将得到权重的全连接层由$W^A \in R^{C \times K^4}$变为$W^A \in R^{C \times N \cdot K^{4}}$，同时将Value结果由$R^{H \times W \times C}$Reshape成$R^{H \times W \times N \times C_{in}}$即可。计算过程中，只需要将 $A$ 分成 $N$份，然后分别用于 $N$ 组 $V$ 最后将结果进行拼接完成计算。</p>
+<h2 id="构建模型">构建模型</h2>
+<p>模型部分主要分为三个部分：Stem, Volo Stages, Transformer Stages。</p>
+<p>Stem 部分默认采用的是3层（Conv + BN + ReLU）结构，将输入数据下采样一倍，然后再经过一个 Patch Projection 层（Conv计算），继续下采样 4 倍，所以一共下采样8倍。这种 Stem 避免了 ViT 中的 $16 \times 16$这种大Kernel size / stride 的卷积计算，相关论文指出，这种大 ks / stride 的方式不利于训练稳定性。</p>
+<p>中间是由 Multi-head Outlook Attention 构成的Stage。</p>
+<p>最后是 Transformer 层构成的 Stages。</p>
+<p>论文中对比了 Outlook Attention 层数与 Transformer 层数之间的比例，结论是 1 : 3 的时候效果比较好。</p>
+<h2 id="模型精度">模型精度</h2>
+<p>论文中采用了 Token Labeling，是 LV-ViT 论文中提出来的。基于 VOLO-D1，在不使用 Token Labeling 计算 Loss，同时引入 Random Augmentation 等增广方式后，自己训练精读是 82.2，使用论文里面的配置，确实可以达到 84.19 的准确率，总体来说效果还是不错的。</p>
+        
+            <p>Reformer论文。</p>
+<h2 id="概览">概览</h2>
+<p>Reformer论文的信息量还是有点大，主要创新点在于下面几个：</p>
+<ul>
+<li>引入了新的 LSH Attention</li>
+</ul>
+<h2 id="ann">ANN</h2>
+<p>ANN (Aproximate Nearest Neighbor, 近似最近邻搜索)。常见的ANN算法可以分为三类：</p>
+<ul>
+<li>LSH(Locality Sensitive Hashing)</li>
+<li>树方法（如HNSW）</li>
+<li>Product Quantization</li>
+</ul>
+<h2 id="lsh-attention">LSH Attention</h2>
+<p>对比普通的 Self-Attention (如下式)，新的LSH Attention改动如下。</p>
+<p>$$Attention(Q, K, V) = Softmax(\frac{QK^T}{\sqrt{d_k}}) \times V$$</p>
+        
+            <p>Residual Connection以及后续发展。</p>
+<p>主要是为了自己梳理一下，总不能最基础的残差网络也忘了吧。更多的信息可以参考：<a href="https://zhuanlan.zhihu.com/p/353185272">ResNet系列网络演绎过程</a></p>
+<h2 id="基础">基础</h2>
+<p>残差网络(ResNet)是2015年何凯明在<a href="https://www.cv-foundation.org/openaccess/content_cvpr_2016/papers/He_Deep_Residual_Learning_CVPR_2016_paper.pdf">Deep Residual Learning for Image Recognition</a>提出的，旁路连接方便了梯度回传，可以帮助模型更好的训练。基础结构如下图1。</p>
+<p><figure>
+    <center>
+    <img src="/imgs/resnet-series/residual0.png" alt="图1 - 残差块">
+    <figcaption>图1 - 残差块</figcaption>
+    </center>
+</figure></p>
+<p>我们知道，VGG / ResNet / Mobilenet 等论文里已经说明现在网络结构设计可以通过简单的 Block 堆叠来构建，并且Blocks可以分组为若干个 Stage，每个 Stage 包含若干层 Block。为了提高计算性能以及提高感受野等，不同 Stage 之间会下采样降低空间分辨率同时提高 channel 个数（神经元）来保证模型容量。对于每个 Stage 的第一层 Block 需要完成下采样、channel翻倍的任务，为了保证输入数据与这两步处理后的输出数据尺寸相同，需要修改旁路，不再是 Indentity，而需要通过卷积完成映射。论文里在每个Block的第一层卷积里使用<code>stride=2</code>来完成下采样。 有论文表明，使用 avg pooling 进行下采样会更好，避免丢失很多的信息。</p>
+<p>另外，一般配合 BN 时，CNN 的 bias 作用不明显可去掉。对于 bias 的作用可简单参考：<a href="https://www.pico.net/kb/the-role-of-bias-in-neural-networks/">The role of bias in Neural Networks</a>，猜测是在 BN 之前用于修正 <code>W * x</code> 的偏置，<strong>防止方差过大导致训练困难</strong>，即学习一个参数来降低输出值的方差，类似于降噪。</p>
+<p>上述过程的示例代码如下：</p>
+<div class="highlight" linestart="0"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">23
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">24
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">25
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">26
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">27
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">28
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">29
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">30
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">31
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">32
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">33
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">34
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">35
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">36
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">37
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">38
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#000;font-weight:bold">from</span> <span style="color:#555">torch</span> <span style="color:#000;font-weight:bold">import</span> nn
+
+<span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">ResBasicBlock</span>(nn<span style="color:#000;font-weight:bold">.</span>Module):
+    expansion <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">1</span>
+    <span style="color:#000;font-weight:bold">def</span> __init__(<span style="color:#999">self</span>, in_c, out_c, stride, downsample<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">False</span>, reduce_first<span style="color:#000;font-weight:bold">=</span><span style="color:#099">1</span>, ks<span style="color:#000;font-weight:bold">=</span><span style="color:#099">3</span>, padding<span style="color:#000;font-weight:bold">=</span><span style="color:#099">1</span>, <span style="color:#000;font-weight:bold">**</span>kwargs):
+        first_planes <span style="color:#000;font-weight:bold">=</span> out_c <span style="color:#000;font-weight:bold">//</span> reduce_first
+
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>conv1 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Conv2d(in_c, first_planes, ks, stride, padding, bias<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">False</span>)
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>bn1 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>BatchNorm2d(first_planes)
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>act1 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>ReLU()
+
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>conv2 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Conv2d(first_planes, out_c, ks, stride, padding, bias<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">False</span>)
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>bn2 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>BatchNorm2d(out_c)
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>act2 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>ReLU()
+
+        <span style="color:#998;font-style:italic">## for downsample &amp; double channel number</span>
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>downsample <span style="color:#000;font-weight:bold">=</span> <span style="color:#000;font-weight:bold">None</span>
+        <span style="color:#000;font-weight:bold">if</span> downsample:
+            <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>downsample <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Sequential(
+                nn<span style="color:#000;font-weight:bold">.</span>Conv2d(in_c, out_c, ks, stride, padding, bias<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">False</span>),        <span style="color:#998;font-style:italic"># 通常这里的 ks = 1, senet 里 ks = 3</span>
+                nn<span style="color:#000;font-weight:bold">.</span>BatchNorm2d(out_c)
+            )
+    
+    <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">forward</span>(<span style="color:#999">self</span>, x):
+        feat <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>conv1(x)
+        feat <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>bn1(feat)
+        feat <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>act1(feat)
+        feat <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>conv2(feat)
+        feat <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>bn2(feat)
+        <span style="color:#998;font-style:italic">## add se block here</span>
+        <span style="color:#998;font-style:italic"># feat = self.se(feat)</span>
+
+        <span style="color:#000;font-weight:bold">if</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>downsample <span style="color:#000;font-weight:bold">is</span> <span style="color:#000;font-weight:bold">not</span> <span style="color:#000;font-weight:bold">None</span>:
+            x <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>downsample(x)
+        feat <span style="color:#000;font-weight:bold">+=</span> x
+        feat <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>act2(feat)
+
+        <span style="color:#000;font-weight:bold">return</span> feat
+</code></pre></td></tr></table>
+</div>
+</div><p>注意在Stem模块中，不使用残差模块，并且通过 <code>stride=2</code> 以及一个 <code>MaxPooling(stride=2)</code> 来将输入图片下采样4倍。</p>
+<h2 id="bottleneck-结构">Bottleneck 结构</h2>
+<p><a href="#%E5%9F%BA%E7%A1%80">第一小节</a>里提到的结构更多的是用于 resnet-18/34等浅层网络，为了构建深层网络（resnet-50/101-152）等，作者提出了 Bottleneck 模块。Bottleneck 模块包含三层卷机，分别是 <code>conv1x1, conv3x3, conv1x1</code>，并且第一个 <code>conv1x1</code>将输入数据的channel根据一个因子（通常是4）进行缩小，最后一个<code>conv1x1</code>在缩放回原来大小，这样既可以完成残差计算，也降低了中间<code>conv3x3</code>的计算。实验表明，这里即使不降低 channel 个数也不会影响性能，所以Bottleneck 完全为了实际中提高计算效率，至于 Mobilenetv2 里提到的 Inverted Residual Block，不会展开。网络结构示意图如图2右边部分。</p>
+<p>实现的时候需要注意的是，每个 Stage 里Block内的Channel变化过程，最后一个<code>conv1x1</code>的是第一个<code>conv1x1</code><strong>输入</strong>的expansion倍。下图展示的其实是Stage内非第一个Block的结构，相较于输入，第一个<code>conv1x1</code>将channel数降低了4倍；而第一个Block的输入channel数时上一Stage输出的channel数，配合channel double的过程，第一个<code>conv1x1</code>只是将channel下降了2；此外，下采样部分是在 <code>conv3x3, stride=2</code> 部分完成的，如果放在第一个<code>conv1x1</code>里，会导致3/4的信息丢失。</p>
+<p><figure>
+    <center>
+    <img src="/imgs/resnet-series/residual1.png" alt="图-2 Bottleneck 结构">
+    <figcaption>图-2 Bottleneck 结构</figcaption>
+    </center>
+</figure></p>
+<p>具体实现代码如下。</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 0
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">23
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">24
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">25
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">26
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">27
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">28
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">29
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">30
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">31
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">32
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">33
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">34
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">35
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">36
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">37
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">38
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">39
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">40
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">41
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">42
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">43
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">44
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">45
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">46
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#000;font-weight:bold">from</span> <span style="color:#555">torch</span> <span style="color:#000;font-weight:bold">import</span> nn
+<span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">BottleneckBlock</span>(nn<span style="color:#000;font-weight:bold">.</span>Module):
+    <span style="color:#000;font-weight:bold">def</span> __init__(<span style="color:#999">self</span>, in_c<span style="color:#000;font-weight:bold">=</span><span style="color:#099">256</span>, out_c<span style="color:#000;font-weight:bold">=</span><span style="color:#099">64</span>, expansion<span style="color:#000;font-weight:bold">=</span><span style="color:#099">4</span>, stride<span style="color:#000;font-weight:bold">=</span><span style="color:#099">1</span>, downsample<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">False</span>, <span style="color:#000;font-weight:bold">**</span>kwargs):
+        <span style="color:#0086b3">super</span>()<span style="color:#000;font-weight:bold">.</span>__init__(<span style="color:#000;font-weight:bold">**</span>kwargs)
+        out_planes <span style="color:#000;font-weight:bold">=</span> out_c <span style="color:#000;font-weight:bold">*</span> expansion
+
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>conv1 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Conv2d(in_c, out_c, <span style="color:#099">1</span>, <span style="color:#099">1</span>, bias<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">False</span>)
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>bn1 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>BatchNorm2d(out_c)
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>act1 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>ReLU()
+
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>conv2 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Conv2d(out_c, out_c, <span style="color:#099">3</span>, stride, <span style="color:#099">1</span>, bias<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">False</span>)      <span style="color:#998;font-style:italic"># stride = 2 时进行下采样</span>
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>bn2 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>BatchNorm2d(out_c)
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>act1 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>ReLU()
+
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>conv3 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Conv2d(out_c, out_planes, <span style="color:#099">1</span>, <span style="color:#099">1</span>, bias<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">False</span>)         <span style="color:#998;font-style:italic"># 注意输出 channel 的个数</span>
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>bn3 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>BatchNorm2d(out_c)
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>act3 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>ReLU()
+
+        <span style="color:#000;font-weight:bold">if</span> downsample:
+            <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>downsample <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Sequential(
+                nn<span style="color:#000;font-weight:bold">.</span>Conv2d(in_c, out_planes, <span style="color:#099">1</span>, <span style="color:#099">1</span>, bias<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">False</span>),
+                nn<span style="color:#000;font-weight:bold">.</span>BatchNorm2d(out_planes)
+            )
+        <span style="color:#000;font-weight:bold">else</span>:
+            <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>downsample <span style="color:#000;font-weight:bold">=</span> <span style="color:#000;font-weight:bold">False</span>
+    
+    <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">forward</span>(<span style="color:#999">self</span>, x):
+        feat <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>conv1(x)
+        feat <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>bn1(feat)
+        feat <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>act1(feat)
+
+        feat <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>conv2(feat)
+        feat <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>bn2(feat)
+        feat <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>act2(feat)
+        <span style="color:#998;font-style:italic">## use avg pooling to downsample here</span>
+
+        feat <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>conv3(feat)
+        feat <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>bn3(feat)
+        <span style="color:#998;font-style:italic">## add se here</span>
+        <span style="color:#998;font-style:italic"># feat = self.se(feat)</span>
+        <span style="color:#998;font-style:italic">## drop path here, i.e. random drop some samples along batch axis</span>
+        <span style="color:#998;font-style:italic">## downsample projection path here</span>
+        <span style="color:#000;font-weight:bold">if</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>downsample <span style="color:#000;font-weight:bold">is</span> <span style="color:#000;font-weight:bold">not</span> <span style="color:#000;font-weight:bold">None</span>:
+            x <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>downsample(x)
+        feat <span style="color:#000;font-weight:bold">+=</span> x
+        feat <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>act3(feat)
+        <span style="color:#000;font-weight:bold">return</span> feat
+</code></pre></td></tr></table>
+</div>
+</div><p>总结一下SE的位置，SE Block 均是在每一个 Block 最后一层卷积 BN 之后的特征上进行。</p>
+<h2 id="resnet-v2">ResNet v2</h2>
+<p>论文地址：<a href="https://arxiv.org/pdf/1603.05027.pdf">Identity Mappings in Deep Residual Networks</a></p>
+<p>论文里其实是对 BN / ReLU 两个函数的位置进行了挪动。作者测试了下面几种排列组合，发现最后一种实现效果最好。</p>
+<p><figure>
+    <center>
+    <img src="/imgs/resnet-series/residual2.png" alt="图-3 ResNet v2改进">
+    <figcaption>图-3 ResNet v2改进</figcaption>
+    </center>
+</figure></p>
+<p>分析一下，(b)里 BN 在 Identity (左侧)分支里，会改变Identity分支的分布，影响信息传递，在训练开始的时候会阻碍Loss的下降。这一点可以通过论文里的梯度反向传播推导过程看出来。</p>
+<p>(c)里residual(右侧)分支是 ReLU 的输出，导致这个分支对结果只有正向影响，毕竟非负，但我们希望有两个方向的影响，所以非最优。关于(d, e)，实验表明都不如(f)，毕竟 BN 在Residual分支上可以对输入就起到正则化的作用。</p>
+<h2 id="resnext">ResNeXt</h2>
+<p>网络结构如图4。</p>
+<p><figure>
+    <center>
+    <img src="/imgs/resnet-series/residual3.png" alt="图-4 ResNeXt网络结构">
+    <figcaption>图-4 ResNeXt网络结构</figcaption>
+    </center>
+</figure></p>
+<p>(a)为最开始的思想，(c)为等价形式。也就是说，中间的<code>conv3x3</code>替换为分组卷积计算。
+主要改动就是将普通残差结构中的 Residual 分支用 Inception 思想进行修改，用多路并行卷积代替原来的一支卷积，与Inception论文不同的是，这里每个分支采用相同的参数配置，如kernel size等。</p>
+<h2 id="其它">其它</h2>
+<ul>
+<li>
+<p>ResNeSt</p>
+<p>与<a href="https://arxiv.org/abs/1903.06586">SKNet</a>类似。</p>
+</li>
+<li>
+<p>Res2Net</p>
+<p>在单个残差块内引入Inception思想，感受野逐步增大，最后concatenate 起来送入 <code>conv1x1</code> 计算。</p>
+</li>
+<li>
+<p>SKNet</p>
+</li>
+</ul>
+        
+            <p>二叉搜索树相关笔记</p>
+<h2 id="定义">定义</h2>
+<p>每个节点有两个子节点：左节点、右节点，即是一个二叉树；同时有顺序关系：左子树小于父节点，右子树大于父节点。</p>
+<p><figure>
+    <center>
+    <img src="/imgs/binary-search-tree/BSTSearch01.png" alt="binary-search-image structure example">
+    <figcaption>binary-search-image structure example</figcaption>
+    </center>
+</figure></p>
+<p>查找复杂度：$\sim 2\ln(N)$，其中 N 是节点个数。查找未命中也是这个复杂度。</p>
+<p>作为一种数据结构，主要功能就是：增删查改。floor() 也可以认为是一种“查”操作。</p>
+<p>目前来看，相关应用可以分为两大类：遍历，排序。遍历就是包括前序、中序、后序进行遍历然后处理；排序一般就是按照中序进行处理。</p>
+<h2 id="floor-函数">floor() 函数</h2>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 0
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">23
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">24
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">Key <span style="color:#900;font-weight:bold">floor</span>(Key key)
+{
+    Node x <span style="color:#000;font-weight:bold">=</span> floor(root, key);
+    <span style="color:#000;font-weight:bold">if</span> (x <span style="color:#000;font-weight:bold">==</span> <span style="color:#000;font-weight:bold">nullptr</span>)
+        <span style="color:#000;font-weight:bold">return</span> <span style="color:#000;font-weight:bold">nullptr</span>;
+    <span style="color:#000;font-weight:bold">else</span>
+        <span style="color:#000;font-weight:bold">return</span> x;
+}
+
+Node <span style="color:#900;font-weight:bold">floor</span>(Node root, Key key)
+{
+    <span style="color:#000;font-weight:bold">if</span> (root <span style="color:#000;font-weight:bold">==</span> <span style="color:#000;font-weight:bold">nullptr</span>)
+        <span style="color:#000;font-weight:bold">return</span> <span style="color:#000;font-weight:bold">nullptr</span>;
+    
+    <span style="color:#000;font-weight:bold">if</span> (root<span style="color:#000;font-weight:bold">-&gt;</span>key <span style="color:#000;font-weight:bold">==</span> key)
+        <span style="color:#000;font-weight:bold">return</span> root;
+    <span style="color:#000;font-weight:bold">if</span> (root<span style="color:#000;font-weight:bold">-&gt;</span>key <span style="color:#000;font-weight:bold">&gt;</span> key)    <span style="color:#998;font-style:italic">// left branch
+</span><span style="color:#998;font-style:italic"></span>        <span style="color:#000;font-weight:bold">return</span> floor(root<span style="color:#000;font-weight:bold">-&gt;</span>left, key);
+    <span style="color:#998;font-style:italic">// right branch: key &gt; root-&gt;key
+</span><span style="color:#998;font-style:italic"></span>    Node t <span style="color:#000;font-weight:bold">=</span> floor(root<span style="color:#000;font-weight:bold">-&gt;</span>right, key);
+    <span style="color:#000;font-weight:bold">if</span> (t <span style="color:#000;font-weight:bold">==</span> <span style="color:#000;font-weight:bold">nullptr</span>)
+        <span style="color:#000;font-weight:bold">return</span> root;
+    <span style="color:#000;font-weight:bold">else</span>
+        <span style="color:#000;font-weight:bold">return</span> t;
+}
+</code></pre></td></tr></table>
+</div>
+</div><p>为什么这里相当于是一个前序排序，其实本质上需要的是 <code>root-&gt;left</code> 分支的递归要在 <code>root-&gt;right</code> 的前面，这样才能保证走右子树的时候，可以最先判断这个子树上最小的数值。</p>
+<p>这个函数关键是分清楚什么时候向左走，什么时候向右走，然后才能明白应该返回什么数值。向左走的时候，说明当前的 <code>root-&gt;key</code> 大于目标值，向右走的时候，说明当前的 <code>root-&gt;key</code> 小于目标值，而小于目标值则说明结果必定存在，因为大不了返回当前的 root 即可。因此，在递归过程向上走的时候，如果当前属于右子路的下一层(代码第19行)并且返回的是 nullptr，那么就返回当前的节点就行了(第20行)，否则返回递归返回的结果即可。总而言之，如果走上右分支，就必定有解；走上左分支，则原样返回即可。</p>
+<p><strong>递归过程可以看成两个步骤：首先是沿着左子树或者右子树向下走，然后就是沿着树向上爬。</strong> 向上爬的时候，需要注意返回结果，对树的状态进行更新，比如链接、具体成员变量等。另一方面，递归过程其实就是一个先进后出的过程，所以对应的非递归实现可以借助Stack来实现。向上走的时候基于向下走的时候的判断来保证正确。</p>
+<h2 id="delete函数">Delete()函数</h2>
+<p>首先是删除最小、最大值节点。</p>
+<p>主要在于递归返回结果，<strong>只需要将返回的链接赋给作为参数的链接</strong>。</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">0
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#998;font-style:italic">// ...
+</span><span style="color:#998;font-style:italic"></span>x.left <span style="color:#000;font-weight:bold">=</span> deleteMin(x.left);     <span style="color:#998;font-style:italic">// delete minimum
+</span><span style="color:#998;font-style:italic">// ...
+</span></code></pre></td></tr></table>
+</div>
+</div><p>其次是删除中间某个节点，与删除最小、最大节点的区别在于，这个节点包含两个字节点，而且还需要保持二叉搜索树之间的顺序。这个问题常用的解法是：<code>Hibbard算法</code>。该算法表示在删除节点 x 之后，用它的后继节点填充它的位置，并且这个后继节点就是右子树中的最小节点。</p>
+<p>对应的4个步骤如下：</p>
+<ol>
+<li>找到需要被删除的节点，用 t 表示</li>
+<li>然后找到被删除节点右（左，随机选择）分支的最小（大）值，表示为 x，即 <code>x = min(t.right)</code></li>
+<li>然后更新 x 节点的左右分支，<code>x.right</code> 更新为 <code>deleteMin(t.right)</code>，保证右子树都大于 <code>x</code></li>
+<li><code>x.left</code> 更新为 <code>t.left</code>，最后返回 x 作为原来 t 的父节点的子节点，即代替 t</li>
+</ol>
+<p>实现示例如下：</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 0
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">23
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">24
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">25
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">26
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">27
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">28
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">29
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">30
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">31
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">32
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">Node <span style="color:#900;font-weight:bold">delete</span>(Key key)
+{
+    <span style="color:#000;font-weight:bold">delete</span>(root, key);
+}
+
+Node <span style="color:#900;font-weight:bold">delete</span>(Node t, key key)
+{
+    <span style="color:#000;font-weight:bold">if</span> (t <span style="color:#000;font-weight:bold">==</span> <span style="color:#000;font-weight:bold">nullptr</span>)       <span style="color:#998;font-style:italic">// not exists
+</span><span style="color:#998;font-style:italic"></span>        <span style="color:#000;font-weight:bold">return</span> <span style="color:#000;font-weight:bold">nullptr</span>;
+    <span style="color:#000;font-weight:bold">if</span> (key <span style="color:#000;font-weight:bold">&lt;</span> t<span style="color:#000;font-weight:bold">-&gt;</span>key)       <span style="color:#998;font-style:italic">// go left
+</span><span style="color:#998;font-style:italic"></span>    {
+        t<span style="color:#000;font-weight:bold">-&gt;</span>left <span style="color:#000;font-weight:bold">=</span> <span style="color:#000;font-weight:bold">delete</span>(t<span style="color:#000;font-weight:bold">-&gt;</span>left, key);
+        <span style="color:#000;font-weight:bold">return</span> t;
+    }
+    elif (key <span style="color:#000;font-weight:bold">&gt;</span> t<span style="color:#000;font-weight:bold">-&gt;</span>key)
+    {
+        t<span style="color:#000;font-weight:bold">-&gt;</span>right <span style="color:#000;font-weight:bold">=</span> <span style="color:#000;font-weight:bold">delete</span>(t<span style="color:#000;font-weight:bold">-&gt;</span>right, key);
+        <span style="color:#000;font-weight:bold">return</span> t;
+    }
+    <span style="color:#000;font-weight:bold">else</span>                    <span style="color:#998;font-style:italic">// equal
+</span><span style="color:#998;font-style:italic"></span>    {
+        <span style="color:#000;font-weight:bold">if</span> (t.right <span style="color:#000;font-weight:bold">==</span> <span style="color:#000;font-weight:bold">nullptr</span>)
+            <span style="color:#000;font-weight:bold">return</span> t.left;
+        <span style="color:#000;font-weight:bold">if</span> (t.left <span style="color:#000;font-weight:bold">==</span> <span style="color:#000;font-weight:bold">nullptr</span>)
+            <span style="color:#000;font-weight:bold">return</span> t.right;
+        Node x <span style="color:#000;font-weight:bold">=</span> min(t.right);
+        x.right <span style="color:#000;font-weight:bold">=</span> deleteMin(t.right);
+        x.left <span style="color:#000;font-weight:bold">=</span> t.left;
+        <span style="color:#000;font-weight:bold">delete</span> t;
+        <span style="color:#000;font-weight:bold">return</span> x;
+    }
+    <span style="color:#998;font-style:italic">// other update
+</span><span style="color:#998;font-style:italic"></span>}
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="其他支持的函数">其他支持的函数</h2>
+<ul>
+<li>
+<p>Select()</p>
+<p>即返回第k小的节点。</p>
+<p>可以通过中序进行遍历，然后每次递归返回的时候，通过引用更新计数，当计数为0的时侯返回该节点即可。</p>
+</li>
+<li>
+<p>Rank()</p>
+<p>即给定一个key，返回该key在树中的位置。</p>
+<p>如果给定 key 小于当前节点，则正确的位置必定在右分支中，则最终的排序就是左分支的节点个数 + 1（当前节点） + 在右子树中的排序，而在右子树中的排序直接递归即可。</p>
+</li>
+<li>
+<p>范围查找</p>
+<p>典型的中序遍历思路，即判断当前节点是否在制定的范围内，如果在范围内，则保存当前节点到一个队列即可。</p>
+</li>
+</ul>
+        
+            <p>一些为了适应大的Batch Size训练的优化算法。</p>
+<p>主要包括：LARS, LAMB 等。</p>
+<h2 id="基础adam">基础：Adam</h2>
+<h2 id="lars算法">LARS算法</h2>
+<h2 id="lamb算法">LAMB算法</h2>
+        
+            <p>一些以提高 Transformer 计算性能为目的的 Xformer 方案整理。</p>
+<p>主要包含以下几篇论文：</p>
+<ul>
+<li><a href="https://arxiv.org/abs/2009.06732">Efficient Transformers: A Survey</a></li>
+<li><a href="https://arxiv.org/abs/2001.04451">Reformer</a></li>
+<li><a href="https://arxiv.org/abs/2006.04768">Linformer</a></li>
+<li><a href="https://arxiv.org/abs/2009.14794">Performers</a></li>
+<li><a href="https://arxiv.org/abs/2004.05150">Longformer</a></li>
+</ul>
+<h2 id="reformer">Reformer</h2>
+<h2 id="linformer">Linformer</h2>
+<h2 id="performers">Performers</h2>
+<h2 id="longformer">Longformer</h2>
+<h2 id="a-survey">A Survey</h2>
+        
+            <p>怕什么真理无穷，进一寸有一寸的欢喜。</p>
+<div>
+    <h2>Table Of Contents</h2>
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#todo">TODO</a>
+      <ul>
+        <li><a href="#posts">Posts</a></li>
+        <li><a href="#reading">Reading</a></li>
+        <li><a href="#实践">实践</a></li>
+      </ul>
+    </li>
+    <li><a href="#基础">基础</a>
+      <ul>
+        <li><a href="#数学">数学</a></li>
+        <li><a href="#编程">编程</a></li>
+        <li><a href="#计算机图形学">计算机图形学</a></li>
+      </ul>
+    </li>
+    <li><a href="#算法">算法</a></li>
+    <li><a href="#工程">工程</a></li>
+    <li><a href="#阅读">阅读</a></li>
+  </ul>
+</nav>
+</div>
+<h2 id="todo">TODO</h2>
+<h3 id="posts">Posts</h3>
+<ul>
+<li>CNN + Transformer系列模型</li>
+<li>多模态训练相关论文</li>
+<li>LightSeq / DeepSpeed</li>
+<li>etc.</li>
+</ul>
+<h3 id="reading">Reading</h3>
+<ul>
+<li>文明、现代化、价值投资与中国</li>
+<li>设计模式</li>
+<li>Labuladong 的算法小抄</li>
+<li>算法</li>
+</ul>
+<h3 id="实践">实践</h3>
+<ul>
+<li>Leetcode</li>
+<li>多模态预训练</li>
+<li>无监督图像表征</li>
+</ul>
+<h2 id="基础">基础</h2>
+<h3 id="数学">数学</h3>
+<h3 id="编程">编程</h3>
+<ul>
+<li>C++/C</li>
+<li>CUDA</li>
+<li>TensorRT</li>
+<li>Python</li>
+<li>Golang</li>
+<li>数据结构与算法</li>
+<li>计算机网络</li>
+<li>编译原理</li>
+<li>分布式计算</li>
+</ul>
+<h3 id="计算机图形学">计算机图形学</h3>
+<p>为什么要学习计算机图形学？因为需要增加产出能力，也是工程实现能力。</p>
+<h2 id="算法">算法</h2>
+<ul>
+<li>
+<p>机器学习</p>
+</li>
+<li>
+<p>分类</p>
+</li>
+<li>
+<p>识别</p>
+</li>
+<li>
+<p>人脸</p>
+</li>
+<li>
+<p>GAN</p>
+</li>
+<li>
+<p>视频理解</p>
+</li>
+<li>
+<p>多模态</p>
+</li>
+</ul>
+<h2 id="工程">工程</h2>
+<ul>
+<li>MXNet</li>
+<li>Pytorch</li>
+<li>DeepSpeed</li>
+<li>Lightseq</li>
+<li>Onnxruntime</li>
+<li>Tvm</li>
+</ul>
+<h2 id="阅读">阅读</h2>
+<ul>
+<li>博弈论</li>
+<li>经济学与金融</li>
+<li>投资</li>
+<li>理性</li>
+<li>毛选</li>
+<li>公司治理</li>
+</ul>
+        
+            <p>一些hugo blog搭建过程中的记录。</p>
+<ul>
+<li>
+<p>添加 table of contents</p>
+<p>参考博客：<a href="https://codingreflections.com/hugo-table-of-contents/">How to Add Table Of Contents to a Hugo Blog</a>。目前用到的是第一种方式。
+包含两个步骤：</p>
+<ul>
+<li>create shortcode</li>
+<li>call the shortcode inside markdown</li>
+</ul>
+</li>
+<li>
+<p>添加代码块并展示行号</p>
+<p>参考博客：<a href="https://gohugo.io/content-management/syntax-highlighting/">Syntax Highlighting</a>，以及官方文档：<a href="https://gohugo.io/getting-started/configuration-markup#highlight">Configure Markup - highlight</a></p>
+<p>文中还给出了不同配置参数的解释、可用的 style 展示等。</p>
+</li>
+<li>
+<p>添加Latex公式支持</p>
+<p>无用的博客，因为已经过时了，hugo不在支持 mmark 这种 content format 了。<a href="https://dawnarc.com/2019/09/hugokatex-intergration/">KaTex Intergration - 玄冬Wong</a>。而且目前 mathjax 比 katex 支持的更全。</p>
+<p>另一篇博客是: <a href="https://rulenuts.netlify.app/post/config-hugo-with-mathjax-or-katex/">Config Hugo with Mathjax or Katex</a></p>
+<p>最终有用的博客是：<a href="https://www.gohugo.org/doc/tutorials/mathjax/">MathJax Support</a> 以及 <a href="http://xuchengpeng.com/hexo-blog/2018/07/10/setting-mathjax-with-hugo/">Setting MathJax with Hugo</a> 以及 <a href="https://note.qidong.name/2018/03/hugo-mathjax/">在Hugo中使用MathJax</a> 以及<a href="https://blog.csdn.net/weixin_42109159/article/details/105099962">hugo使用katex</a></p>
+</li>
+<li>
+<p>插入图片</p>
+<p>两个可行的参考是：<a href="https://discourse.gohugo.io/t/solved-how-to-insert-image-in-my-post/1473">how-to-insert-image-in-my-post</a> 以及 <a href="https://gohugo.io/content-management/shortcodes/#figure">hugo-conent-management shortcodes</a></p>
+<p>具体使用：将下载的图片保存到 static 目录，比如按照 post tilte 命名的目录下面（例如，<code>/User/apple/myblogs/static/imgs/binary-search-tree/img00.png</code>，<code>/User/apple/myblogs</code>为项目根目录，即运行<code>hugo server</code>等命令的目录，<code>/User/apple/myblogs/public</code>为编译后的结果），然后在.md正文里指定图片地址（例如，<code>![image caption](/imgs/binary-search-tree/img00.png)</code>，注意下直接从<code>/imgs</code>开始）。</p>
+<p>第二个博客里给出了另外一种加载图片的方式，即使用shortcodes（Markdown语言的补充，方便建立网页。），而且也给出了其他多媒体信息的加载方式，比如vimeo, youtube, gist, tweet, instagram等信息。</p>
+<p>显示图片 Caption 过程，可以参考<a href="https://sebastiandedeyne.com/captioned-images-with-markdown-render-hooks-in-hugo/">Caption images with markdown render hooks in Hugo</a>，也就是在<code>myblogs/layouts/_default/_makeup</code>目录下面创建一个<code>render-image.html</code>文件，然后填上如下内容：</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">0
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-html" data-lang="html">&lt;<span style="color:#000080">figure</span>&gt;
+  &lt;<span style="color:#000080">center</span>&gt;
+  &lt;<span style="color:#000080">img</span> <span style="color:#008080">src</span><span style="color:#000;font-weight:bold">=</span><span style="color:#d14">&#34;{{ .Destination | safeURL }}&#34;</span> <span style="color:#008080">alt</span><span style="color:#000;font-weight:bold">=</span><span style="color:#d14">&#34;{{ .Text }}&#34;</span>&gt;
+  &lt;<span style="color:#000080">figcaption</span>&gt;{{ .Text }}&lt;/<span style="color:#000080">figcaption</span>&gt;
+  &lt;/<span style="color:#000080">center</span>&gt;
+&lt;/<span style="color:#000080">figure</span>&gt;
+</code></pre></td></tr></table>
+</div>
+</div><p>或者用 <code>.Title</code> 代替代码块第三行的 <code>.Text</code> 来使用 Title 作为 Caption。然后在Markdone里加载图片没有变化，注意 Title 的位置：<code>![alt text](path &quot;title&quot;)</code>，title可以是空。</p>
+</li>
+<li>
+<p>添加网页图标</p>
+<p>一个常见的博客是：<a href="https://www.enthuseandinspire.co.uk/blog/favicon/">Favicon</a>，但是目前来看还没有起作用。但是在 <code>triloon.space</code> 上起作用了，后续需要补充上 windows 的格式。</p>
+</li>
+</ul>
+        
 	
 		<span>1</span>
 	</div>
@@ -168,7 +850,7 @@
         		<footer>
 			
 			<span>
-			&copy; <time datetime="2021-09-03 11:13:17.580774 &#43;0800 CST m=&#43;0.208379259">2021</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
+			&copy; <time datetime="2021-09-06 17:31:28.191886 &#43;0800 CST m=&#43;0.217586083">2021</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
 			</span>
 		</footer>
 

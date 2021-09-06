@@ -6,14 +6,23 @@
     <description>Recent content in Posts on Triloon</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Fri, 03 Sep 2021 11:05:44 +0800</lastBuildDate><atom:link href="https://triloon.space/posts/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 06 Sep 2021 16:26:11 +0800</lastBuildDate><atom:link href="https://triloon.space/posts/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>文明、现代化、价值投资与中国 - 读书笔记</title>
-      <link>https://triloon.space/posts/reading-lilu-valueinvestment/</link>
-      <pubDate>Fri, 03 Sep 2021 11:05:44 +0800</pubDate>
+      <title>Cnn Transformer 系列之 Volo</title>
+      <link>https://triloon.space/posts/cnn-transformer-volo/</link>
+      <pubDate>Mon, 06 Sep 2021 16:26:11 +0800</pubDate>
       
-      <guid>https://triloon.space/posts/reading-lilu-valueinvestment/</guid>
-      <description>&lt;p&gt;主要内容涉及到了人类文明发展历程简略，包括三个文明阶段，现代中西方发展道路差异化形成的原因；当前社会发展到现在的两个决定性因素，一些关于投资的演讲；一些关于未来的展望。有一些观点或者提到的观点非常新颖。&lt;/p&gt;</description>
+      <guid>https://triloon.space/posts/cnn-transformer-volo/</guid>
+      <description>&lt;p&gt;VOLO论文。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Efficient Transformer 系列之 Reformer</title>
+      <link>https://triloon.space/posts/efficient-transformer-reformer/</link>
+      <pubDate>Mon, 06 Sep 2021 10:50:19 +0800</pubDate>
+      
+      <guid>https://triloon.space/posts/efficient-transformer-reformer/</guid>
+      <description>&lt;p&gt;Reformer论文。&lt;/p&gt;</description>
     </item>
     
     <item>
