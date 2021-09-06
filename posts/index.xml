@@ -6,7 +6,16 @@
     <description>Recent content in Posts on Triloon</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Mon, 06 Sep 2021 16:26:11 +0800</lastBuildDate><atom:link href="https://triloon.space/posts/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 06 Sep 2021 20:04:32 +0800</lastBuildDate><atom:link href="https://triloon.space/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Origin Transformer</title>
+      <link>https://triloon.space/posts/origin-transformer/</link>
+      <pubDate>Mon, 06 Sep 2021 20:04:32 +0800</pubDate>
+      
+      <guid>https://triloon.space/posts/origin-transformer/</guid>
+      <description>&lt;p&gt;Attention is all your need.&lt;/p&gt;</description>
+    </item>
+    
     <item>
       <title>Cnn Transformer 系列之 Volo</title>
       <link>https://triloon.space/posts/cnn-transformer-volo/</link>
