@@ -49,7 +49,7 @@ VOLO论文。<!--more-->
 
 Stem 部分默认采用的是3层（Conv + BN + ReLU）结构，将输入数据下采样一倍，然后再经过一个 Patch Projection 层（Conv计算），继续下采样 4 倍，所以一共下采样8倍。这种 Stem 避免了 ViT 中的 $16 \times 16$这种大Kernel size / stride 的卷积计算，相关论文指出，这种大 ks / stride 的方式不利于训练稳定性。
 
-中间是由 Multi-head Outlook Attention 构成的Stage。
+中间是由 Multi-head Outlook Attention 构成的Stage。由于Stem Block将输入数据下采样了8倍，我们的目标是下采样16倍，作者选择在 Stage 1 结束后再做一次下采样，这里下采样通过`conv stride=2, ks=2`来实现。
 
 最后是 Transformer 层构成的 Stages。
 
