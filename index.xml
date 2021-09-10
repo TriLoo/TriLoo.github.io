@@ -35,6 +35,15 @@
     </item>
     
     <item>
+      <title>从Adam到AdamW</title>
+      <link>https://triloon.space/posts/adam-adamw/</link>
+      <pubDate>Fri, 03 Sep 2021 20:30:59 +0800</pubDate>
+      
+      <guid>https://triloon.space/posts/adam-adamw/</guid>
+      <description>&lt;p&gt;Adam算法的实现以及一个主要改进AdamW的原理与实现。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
       <title>Resnet Series</title>
       <link>https://triloon.space/posts/resnet-series/</link>
       <pubDate>Thu, 02 Sep 2021 14:12:59 +0800</pubDate>
