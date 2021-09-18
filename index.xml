@@ -6,7 +6,16 @@
     <description>Recent content on Triloon</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Mon, 06 Sep 2021 20:04:32 +0800</lastBuildDate><atom:link href="https://triloon.space/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sat, 18 Sep 2021 11:08:11 +0800</lastBuildDate><atom:link href="https://triloon.space/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Torch实现原理分析积累</title>
+      <link>https://triloon.space/posts/torch-impl-0/</link>
+      <pubDate>Sat, 18 Sep 2021 11:08:11 +0800</pubDate>
+      
+      <guid>https://triloon.space/posts/torch-impl-0/</guid>
+      <description>&lt;p&gt;Pytorch 实现学习积累。&lt;/p&gt;</description>
+    </item>
+    
     <item>
       <title>Origin Transformer</title>
       <link>https://triloon.space/posts/origin-transformer/</link>

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en-us">
+    <head>
+		
+		
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+		<title>Torch实现原理分析积累 &middot; Triloon</title>
+
+		
+		<link rel="stylesheet" href="/css/style.css">
+		<link rel="stylesheet" href="/css/fonts.css">
+		
+		<link rel="icon" href="favicon.ico" />
+		<link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+		<link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+		<link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+
+		
+		<link href="" rel="alternate" type="application/rss+xml" title="Triloon" />
+	</head>
+
+    <body>
+        <script type="text/javascript" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@2.7.4/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {
+    inlineMath: [['$','$'], ['\\(','\\)']],
+    displayMath: [['$$','$$'], ['\[','\]']],
+    processEscapes: true,
+    processEnvironments: true,
+    skipTags: ['script', 'noscript', 'style', 'textarea', 'pre','code'],
+    TeX: { equationNumbers: { autoNumber: "AMS" },
+         extensions: ["AMSmath.js", "AMSsymbols.js"] }
+  }
+});
+</script>
+
+<style>
+    code.has-jax {
+        font: inherit;
+        font-size: 100%;
+        background: inherit;
+        border: inherit;
+        color: #515151;
+    }
+</style>
+		<nav class="nav">
+			<div class="nav-container">
+				<a href="/">
+					
+						<h2 class="nav-title">Triloon</h2>
+					
+				</a>
+				<ul>
+    
+    
+        <li>
+            <a href="/about/about">
+                
+                <span>About</span>
+                
+            </a>
+        </li>
+    
+        <li>
+            <a href="/posts/">
+                
+                <span>Posts</span>
+                
+            </a>
+        </li>
+    
+</ul>
+			</div>
+		</nav>
+
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+        <link rel="manifest" href="/site.webmanifest">
+
+        
+
+<main>
+	<div class="post">
+		<div class="post-info">
+    <span>Written by</span>
+        triloon
+        <br>
+        <span>on&nbsp;</span><time datetime="2021-09-18 11:08:11 &#43;0800 CST">September 18, 2021</time>
+</div>
+
+		<h1 class="post-title">Torch实现原理分析积累</h1>
+<div class="post-line"></div>
+
+		
+
+		<p>Pytorch 实现学习积累。</p>
+<h2 id="基础">基础</h2>
+<ul>
+<li>All objects in pytorch are passed by reference in python. But doing <code>a=</code> does not try to change <code>a</code> in-place, it only give the name <code>a</code> to the object returned by the right hand side.</li>
+<li>矩阵乘：@， Matmul，mm（后两者的区别在于 mm 仅适用于二维Tensor，matmul适合高维Tensor）；*，mul 实现的是element-wise乘</li>
+<li><code>_</code> suffix ops 是in-place操作</li>
+<li>Tensor 与 Numpy 之间可以共享底层存储空间，所以修改一个也会导致另一个变量发生变化。如<code>.numpy()</code>操作，<code>from_numpy()</code>等</li>
+<li>自定义Dataset，需要自己实现<code>__init__</code>、<code>__len__</code>、<code>__getitem__</code>等函数；<code>ToTensor</code>会将PIL Image、NumPy ndarry转换成<code>FloatTensor</code>，并且将像素上的数值范围缩放到(0.0, 1.0)之间。</li>
+<li>继承<code>nn.Module</code>创建模型的时候，会自动收集定义在models内的fields，并且让所有的 parameters 都可以被<code>parameters()</code>以及<code>named_parameters()</code>等方法获取到</li>
+</ul>
+<h2 id="autograd">Autograd</h2>
+<p>通过设置Tensor的<code>requires_grad</code>来决定是否需要计算 Loss 对该 Tensor 的梯度。</p>
+<ul>
+<li>
+<p>torch.autograd.Function</p>
+<p>记录对Tensor的操作，是一个类，包含<code>forward()</code>、<code>backward()</code>两个静态成员函数。每个Function完成对 Tensor 的一个操作，并记录发生的事情。所有的 Function 被组织成有向无环图（DAG），边表示数据依赖(input &lt;&ndash; output)。当反向传播时，按照拓扑顺序依次调用Function的<code>backward()</code>函数。</p>
+<p>实际使用的时候就是继承Function类并实现这两个静态成员函数。一个具体例子如下，所以都是静态成员函数进行操作，无需创建具体实例。</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 0
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">Exp</span>(Function):
+    <span style="color:#3c5d5d;font-weight:bold">@staticmethod</span>
+    <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">forward</span>(ctx, i):
+        result <span style="color:#000;font-weight:bold">=</span> i<span style="color:#000;font-weight:bold">.</span>exp()
+        ctx<span style="color:#000;font-weight:bold">.</span>save_for_backward(result)
+        <span style="color:#000;font-weight:bold">return</span> result
+    <span style="color:#3c5d5d;font-weight:bold">@staticmethod</span>
+    <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">backward</span>(ctx, grad_output):
+        result, <span style="color:#000;font-weight:bold">=</span> ctx<span style="color:#000;font-weight:bold">.</span>saved_tensors
+        <span style="color:#000;font-weight:bold">return</span> grad_output <span style="color:#000;font-weight:bold">*</span> result
+
+  output <span style="color:#000;font-weight:bold">=</span> Exp<span style="color:#000;font-weight:bold">.</span>apply(<span style="color:#0086b3">input</span>)
+</code></pre></td></tr></table>
+</div>
+</div><p>注意，Function知道Tensor的前向计算，也支持后向传播，后向传播函数保存在<code>tensor.grad_fn</code>属性中。也就是说Function 是计算图中的节点，边才是 Tensor。</p>
+</li>
+<li>
+<p>is_leaf</p>
+<p>这个函数用来判断Tensor是否保存了grad。</p>
+<ul>
+<li>如果Tensor的<code>requires_grad=False</code>，则通常是 Leaf</li>
+<li>如果 Tensor 是用户创建的，那么即使<code>requires_grad=True</code>也是Leaf，意味着这些Tensor不是一个Op的结果，并且<code>grad_fn=None</code></li>
+<li>只有Leaf Tensor 才会在<code>backward()</code>过程中保存梯度结果；如果需要获取那些non-leaf节点的grad，可以使用<code>retain_grad</code>来修改</li>
+<li>第三条与第一条貌似冲突，其实不冲突，因为 <code>requires_grad=False</code>的含义是指这个 Tensor 的梯度不需要向后传播了，而不是不会计算该 Tensor 的梯度，也就是实际是指<code>grad_fn=None</code>。</li>
+<li>从CPU拷贝到 GPU 上也算是一个 Op 操作，具体例子可以查看：<a href="https://pytorch.org/docs/stable/generated/torch.Tensor.is_leaf.html?highlight=is_leaf#torch.Tensor.is_leaf">torch.tensor.is_leaf</a></li>
+</ul>
+</li>
+<li>
+<p>Disabling Gradient Tracking</p>
+<p>有时候需要停止一些 Tensor 的梯度后向传播，那些<code>requires_grad=True</code>的 Tensor 都会跟踪该Tensor 的计算历史，并支持梯度计算。所以要想阻止后向传播，有两种方式：</p>
+<ul>
+<li>使用 <code>torch.no_grad()</code> block 进行封装</li>
+<li>使用 <code>detach()</code>，相当于新建了一个Tensor返回的，所以计算梯度更新这个新的 Tensor，之前旧的 Tensor 数值也会保持不变。</li>
+</ul>
+<p>经过上述两种方式处理后的 Tensor 直接影响是，不会向后传播 Gradient，也不会发生数值变化。</p>
+</li>
+<li>
+<p>Tensor Gradients and Jacobian Products</p>
+<p>大部分情况下，Loss函数计算得到的是一个Scalar数值，计算梯度容易理解。但是当 Loss 是一个多维的Tensor时，反向传播计算的就是<code>Jacobian product</code>，而不是真正的梯度了。</p>
+<p>一般来说，输入、输出都是 Tensor 时，反向传播得到的是一个<code>Jacobian matrix</code>，但是 pytorch 支持<code>Jacobian product</code>的计算，此时需要一个与输出Loss同等尺寸的Tensor作为<code>backward()</code>函数的输入。</p>
+<p>下式中，<code>x, y</code>为输入输出，计算<code>y</code>对<code>x</code>的梯度时，引入的 <code>v</code> 就是上面提到的需要跟 <code>y</code> 尺寸相同的新引入的 Tensor，具体例子可参考<a href="https://pytorch.org/tutorials/beginner/basics/autogradqs_tutorial.html">Automatic Diff</a>下方。</p>
+<p>$$y=f(x), J = \frac{\partial y}{\partial x}, v^T \cdot J$$</p>
+</li>
+<li>
+<p>optimize steps</p>
+<ol>
+<li>call <code>optimizer.zero_grad()</code></li>
+<li>call <code>loss.backward()</code></li>
+<li>call <code>optimizer.step()</code></li>
+</ol>
+</li>
+<li>
+<p>其它</p>
+<ul>
+<li>每次<code>backward()</code>之后，创建的计算图都会被重置，从而支持每次 iter 之间修改数据的尺寸、条件判断修改计算图等，也就是对动态计算图的支持；如果想保留当前的计算图，可以在 <code>backward()</code>函数中设置<code>retain_graph=True</code></li>
+<li>但是连续两次<code>backward()</code>时，同一个 Tensor 的梯度会被累加。</li>
+</ul>
+</li>
+</ul>
+<h2 id="extending-pytorch">Extending Pytorch</h2>
+<p>主要参考：<a href="https://pytorch.org/docs/stable/notes/extending.html#extending-torch-autograd">Extending Pytorch</a></p>
+<h3 id="extending-autograd">Extending Autograd</h3>
+<p>TODO</p>
+<h2 id="optimizer">Optimizer</h2>
+<p>实现自己的 Optimizer 的时候，需要继承<code>torch.optim.Optimizer</code>类。需要实现<code>__init__、__setstate__、step</code>等函数；然后将新 Optimizer 的参数，比如lr, eps, betas等参数保存到<code>defaults</code>字典中，并跟parameters一起传给Base类的<code>__init__</code>函数。<code>__setstate__</code>函数主要是为了比如在pickle等序列化中使用，并做必要的更新，比如<code>self.param_groups</code>里的成员。在 <code>step()</code>函数里，会更新<code>self.state</code>成员变量，然后后面更新的时候就可以直接从 <code>state</code> 里面取出来进行更新就可以了。</p>
+<p>此外，defaults 字典里面的信息在<code>add_param_group()</code>函数里面被放入<code>self.param_groups</code>里面了，如lr, eps, betas等；特定Optimizer的相关数据放在<code>self.states</code>里面了，如Adam里面的 m / v 等。</p>
+<p>具体例子可以参考 TIMM 库里的AdamW算法实现。</p>
+
+		
+	</div>
+
+	<div class="pagination">
+		<a href="/posts/origin-transformer/" class="left arrow">&#8592;</a>
+
+		<a href="#" class="top">Top</a>
+	</div>
+</main>
+
+
+        		<footer>
+			
+			<span>
+			&copy; <time datetime="2021-09-18 21:00:18.959909 &#43;0800 CST m=&#43;0.180572968">2021</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
+			</span>
+		</footer>
+
+    </body>
+</html>
