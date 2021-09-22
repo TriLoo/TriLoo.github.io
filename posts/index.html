@@ -220,7 +220,7 @@
 <p>实际使用的时候就是继承Function类并实现这两个静态成员函数。一个具体例子如下，所以都是静态成员函数进行操作，无需创建具体实例。</p>
 <div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
 <table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
-<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 0
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 0
 </span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
 </span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
 </span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
@@ -234,7 +234,7 @@
 </span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
 </span></code></pre></td>
 <td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
-<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">Exp</span>(Function):
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">Exp</span>(Function):
     <span style="color:#3c5d5d;font-weight:bold">@staticmethod</span>
     <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">forward</span>(ctx, i):
         result <span style="color:#000;font-weight:bold">=</span> i<span style="color:#000;font-weight:bold">.</span>exp()
@@ -352,7 +352,7 @@ where, head_i = \text{Attention}(QW_i^Q, KW_i^K, VW_i^V)
 <p>具体的 Encoder - Decoder 部分这里基于 GRU 来实现。输入尺寸为：$(batch_size, num_steps, embed_size)$；GRU 的计算包含两个输出，一个是GRU 最后输出结果output，尺寸仍然是: $(num_steps, batch_size, embed_size)$，相当于每一步（共num_steps，可认为是 num_steps 个 Toke）都输出了一个新的 embed_size 大小的向量；另一个输出是隐空间变量 states，尺寸是 $(num_layers, batch_size, num_hiddens)$，相当于是当前输入Token与上一个Token对应的隐变量共同作用生成了当前Token对应的隐变量，这个隐变量就包含了前面所有 Token 的信息。 当前 token 的 output 与隐变量 state 之间的关系是：<code>output = Mlp(state)</code>。</p>
 <div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
 <table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
-<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 0
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 0
 </span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
 </span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
 </span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
@@ -365,7 +365,7 @@ where, head_i = \text{Attention}(QW_i^Q, KW_i^K, VW_i^V)
 </span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
 </span></code></pre></td>
 <td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
-<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">rnn</span>(inputs, state, params):
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">rnn</span>(inputs, state, params):
     <span style="color:#998;font-style:italic"># Shape of `inputs`: (`num_steps`, `batch_size`, `vocab_size`)</span>
     W_xh, W_hh, b_h, W_hq, b_q <span style="color:#000;font-weight:bold">=</span> params
     H, <span style="color:#000;font-weight:bold">=</span> state
@@ -382,7 +382,7 @@ where, head_i = \text{Attention}(QW_i^Q, KW_i^K, VW_i^V)
 <p>输入主要包含两个部分，首先是起始Token，这里起始 Token 是一个特殊字符，<code>&lt;bos&gt;</code>；另一个部分就是隐变量的确定，这里使用 Encoder 输出的隐变量作为初始隐变量，注意这里 Encoder - Decoder 需要使用相同的层数，这样隐变量的尺寸才匹配，即：$(num_layers, batch size, embed_size)$。下面给出的示例代码中，还会将 Encoder 输出的最后一层的隐变量与输入 X 拼接起来进行计算。Decoder 的输出就是$(batch size, num steps, vocab size)$。</p>
 <div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
 <table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
-<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 0
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 0
 </span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
 </span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
 </span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
@@ -410,14 +410,14 @@ where, head_i = \text{Attention}(QW_i^Q, KW_i^K, VW_i^V)
 </span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">25
 </span></code></pre></td>
 <td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
-<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">Seq2SeqDecoder</span>(d2l<span style="color:#000;font-weight:bold">.</span>Decoder):
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">Seq2SeqDecoder</span>(d2l<span style="color:#000;font-weight:bold">.</span>Decoder):
     <span style="color:#d14">&#34;&#34;&#34;The RNN decoder for sequence to sequence learning.&#34;&#34;&#34;</span>
     <span style="color:#000;font-weight:bold">def</span> __init__(<span style="color:#999">self</span>, vocab_size, embed_size, num_hiddens, num_layers,
                  dropout<span style="color:#000;font-weight:bold">=</span><span style="color:#099">0</span>, <span style="color:#000;font-weight:bold">**</span>kwargs):
         <span style="color:#0086b3">super</span>(Seq2SeqDecoder, <span style="color:#999">self</span>)<span style="color:#000;font-weight:bold">.</span>__init__(<span style="color:#000;font-weight:bold">**</span>kwargs)
         <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>embedding <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Embedding(vocab_size, embed_size)
         <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>rnn <span style="color:#000;font-weight:bold">=</span> rnn<span style="color:#000;font-weight:bold">.</span>GRU(num_hiddens, num_layers, dropout<span style="color:#000;font-weight:bold">=</span>dropout)
-        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>dense <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Dense(vocab_size, flatten<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">False</span>)
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>dense <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Dense(vocab_size, flatten<span style="color:#000;font-weight:bold">=</span><span style="color:#999">False</span>)
 
     <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">init_state</span>(<span style="color:#999">self</span>, enc_outputs, <span style="color:#000;font-weight:bold">*</span>args):
         <span style="color:#000;font-weight:bold">return</span> enc_outputs[<span style="color:#099">1</span>]
@@ -455,7 +455,7 @@ where, head_i = \text{Attention}(QW_i^Q, KW_i^K, VW_i^V)
 </ul>
 <div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
 <table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
-<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">  0
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">  0
 </span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">  1
 </span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">  2
 </span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">  3
@@ -674,7 +674,7 @@ where, head_i = \text{Attention}(QW_i^Q, KW_i^K, VW_i^V)
 </span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">216
 </span></code></pre></td>
 <td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
-<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">EncoderDecoder</span>(nn<span style="color:#000;font-weight:bold">.</span>Block):
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">EncoderDecoder</span>(nn<span style="color:#000;font-weight:bold">.</span>Block):
     <span style="color:#d14">&#34;&#34;&#34;The base class for the encoder-decoder architecture.&#34;&#34;&#34;</span>
     <span style="color:#000;font-weight:bold">def</span> __init__(<span style="color:#999">self</span>, encoder, decoder, <span style="color:#000;font-weight:bold">**</span>kwargs):
         <span style="color:#0086b3">super</span>(EncoderDecoder, <span style="color:#999">self</span>)<span style="color:#000;font-weight:bold">.</span>__init__(<span style="color:#000;font-weight:bold">**</span>kwargs)
@@ -689,7 +689,7 @@ where, head_i = \text{Attention}(QW_i^Q, KW_i^K, VW_i^V)
 <span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">EncoderBlock</span>(nn<span style="color:#000;font-weight:bold">.</span>Block):
     <span style="color:#d14">&#34;&#34;&#34;Transformer encoder block.&#34;&#34;&#34;</span>
     <span style="color:#000;font-weight:bold">def</span> __init__(<span style="color:#999">self</span>, num_hiddens, ffn_num_hiddens, num_heads, dropout,
-                 use_bias<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">False</span>, <span style="color:#000;font-weight:bold">**</span>kwargs):
+                 use_bias<span style="color:#000;font-weight:bold">=</span><span style="color:#999">False</span>, <span style="color:#000;font-weight:bold">**</span>kwargs):
         <span style="color:#0086b3">super</span>(EncoderBlock, <span style="color:#999">self</span>)<span style="color:#000;font-weight:bold">.</span>__init__(<span style="color:#000;font-weight:bold">**</span>kwargs)
         <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>attention <span style="color:#000;font-weight:bold">=</span> d2l<span style="color:#000;font-weight:bold">.</span>MultiHeadAttention(num_hiddens, num_heads,
                                                 dropout, use_bias)
@@ -704,7 +704,7 @@ where, head_i = \text{Attention}(QW_i^Q, KW_i^K, VW_i^V)
 <span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">TransformerEncoder</span>(d2l<span style="color:#000;font-weight:bold">.</span>Encoder):
     <span style="color:#d14">&#34;&#34;&#34;Transformer encoder.&#34;&#34;&#34;</span>
     <span style="color:#000;font-weight:bold">def</span> __init__(<span style="color:#999">self</span>, vocab_size, num_hiddens, ffn_num_hiddens, num_heads,
-                 num_layers, dropout, use_bias<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">False</span>, <span style="color:#000;font-weight:bold">**</span>kwargs):
+                 num_layers, dropout, use_bias<span style="color:#000;font-weight:bold">=</span><span style="color:#999">False</span>, <span style="color:#000;font-weight:bold">**</span>kwargs):
         <span style="color:#0086b3">super</span>(TransformerEncoder, <span style="color:#999">self</span>)<span style="color:#000;font-weight:bold">.</span>__init__(<span style="color:#000;font-weight:bold">**</span>kwargs)
         <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>num_hiddens <span style="color:#000;font-weight:bold">=</span> num_hiddens
         <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>embedding <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Embedding(vocab_size, num_hiddens)
@@ -720,7 +720,7 @@ where, head_i = \text{Attention}(QW_i^Q, KW_i^K, VW_i^V)
         <span style="color:#998;font-style:italic"># values are multiplied by the square root of the embedding dimension</span>
         <span style="color:#998;font-style:italic"># to rescale before they are summed up</span>
         X <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>pos_encoding(<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>embedding(X) <span style="color:#000;font-weight:bold">*</span> math<span style="color:#000;font-weight:bold">.</span>sqrt(<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>num_hiddens))
-        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>attention_weights <span style="color:#000;font-weight:bold">=</span> [<span style="color:#000;font-weight:bold">None</span>] <span style="color:#000;font-weight:bold">*</span> <span style="color:#0086b3">len</span>(<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>blks)
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>attention_weights <span style="color:#000;font-weight:bold">=</span> [<span style="color:#999">None</span>] <span style="color:#000;font-weight:bold">*</span> <span style="color:#0086b3">len</span>(<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>blks)
         <span style="color:#000;font-weight:bold">for</span> i, blk <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">enumerate</span>(<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>blks):
             X <span style="color:#000;font-weight:bold">=</span> blk(X, valid_lens)
             <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>attention_weights[
@@ -749,7 +749,7 @@ where, head_i = \text{Attention}(QW_i^Q, KW_i^K, VW_i^V)
         <span style="color:#998;font-style:italic"># When decoding any output sequence token by token during prediction,</span>
         <span style="color:#998;font-style:italic"># `state[2][self.i]` contains representations of the decoded output at</span>
         <span style="color:#998;font-style:italic"># the `i`-th block up to the current time step</span>
-        <span style="color:#000;font-weight:bold">if</span> state[<span style="color:#099">2</span>][<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>i] <span style="color:#000;font-weight:bold">is</span> <span style="color:#000;font-weight:bold">None</span>:
+        <span style="color:#000;font-weight:bold">if</span> state[<span style="color:#099">2</span>][<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>i] <span style="color:#000;font-weight:bold">is</span> <span style="color:#999">None</span>:
             key_values <span style="color:#000;font-weight:bold">=</span> X
         <span style="color:#000;font-weight:bold">else</span>:
             <span style="color:#998;font-style:italic"># 这里是只使用已预测的Token进行计算</span>
@@ -763,7 +763,7 @@ where, head_i = \text{Attention}(QW_i^Q, KW_i^K, VW_i^V)
             dec_valid_lens <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>tile(np<span style="color:#000;font-weight:bold">.</span>arange(<span style="color:#099">1</span>, num_steps <span style="color:#000;font-weight:bold">+</span> <span style="color:#099">1</span>, ctx<span style="color:#000;font-weight:bold">=</span>X<span style="color:#000;font-weight:bold">.</span>ctx),
                                      (batch_size, <span style="color:#099">1</span>))
         <span style="color:#000;font-weight:bold">else</span>:
-            dec_valid_lens <span style="color:#000;font-weight:bold">=</span> <span style="color:#000;font-weight:bold">None</span>
+            dec_valid_lens <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">None</span>
 
         <span style="color:#998;font-style:italic"># Self-attention</span>
         X2 <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>attention1(X, key_values, key_values, dec_valid_lens)
@@ -788,14 +788,14 @@ where, head_i = \text{Attention}(QW_i^Q, KW_i^K, VW_i^V)
             <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>blks<span style="color:#000;font-weight:bold">.</span>add(
                 DecoderBlock(num_hiddens, ffn_num_hiddens, num_heads, dropout,
                              i))
-        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>dense <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Dense(vocab_size, flatten<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">False</span>)
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>dense <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Dense(vocab_size, flatten<span style="color:#000;font-weight:bold">=</span><span style="color:#999">False</span>)
 
     <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">init_state</span>(<span style="color:#999">self</span>, enc_outputs, enc_valid_lens, <span style="color:#000;font-weight:bold">*</span>args):
-        <span style="color:#000;font-weight:bold">return</span> [enc_outputs, enc_valid_lens, [<span style="color:#000;font-weight:bold">None</span>] <span style="color:#000;font-weight:bold">*</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>num_layers]
+        <span style="color:#000;font-weight:bold">return</span> [enc_outputs, enc_valid_lens, [<span style="color:#999">None</span>] <span style="color:#000;font-weight:bold">*</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>num_layers]
 
     <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">forward</span>(<span style="color:#999">self</span>, X, state):
         X <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>pos_encoding(<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>embedding(X) <span style="color:#000;font-weight:bold">*</span> math<span style="color:#000;font-weight:bold">.</span>sqrt(<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>num_hiddens))
-        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>_attention_weights <span style="color:#000;font-weight:bold">=</span> [[<span style="color:#000;font-weight:bold">None</span>] <span style="color:#000;font-weight:bold">*</span> <span style="color:#0086b3">len</span>(<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>blks) <span style="color:#000;font-weight:bold">for</span> _ <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(<span style="color:#099">2</span>)]
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>_attention_weights <span style="color:#000;font-weight:bold">=</span> [[<span style="color:#999">None</span>] <span style="color:#000;font-weight:bold">*</span> <span style="color:#0086b3">len</span>(<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>blks) <span style="color:#000;font-weight:bold">for</span> _ <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(<span style="color:#099">2</span>)]
         <span style="color:#000;font-weight:bold">for</span> i, blk <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">enumerate</span>(<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>blks):
             X, state <span style="color:#000;font-weight:bold">=</span> blk(X, state)
             <span style="color:#998;font-style:italic"># Decoder self-attention weights</span>
@@ -827,12 +827,12 @@ engs <span style="color:#000;font-weight:bold">=</span> [<span style="color:#d14
 fras <span style="color:#000;font-weight:bold">=</span> [<span style="color:#d14">&#39;va !&#39;</span>, <span style="color:#d14">&#39;j</span><span style="color:#d14">\&#39;</span><span style="color:#d14">ai perdu .&#39;</span>, <span style="color:#d14">&#39;il est calme .&#39;</span>, <span style="color:#d14">&#39;je suis chez moi .&#39;</span>]
 <span style="color:#000;font-weight:bold">for</span> eng, fra <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">zip</span>(engs, fras):
     translation, dec_attention_weight_seq <span style="color:#000;font-weight:bold">=</span> d2l<span style="color:#000;font-weight:bold">.</span>predict_seq2seq(
-        net, eng, src_vocab, tgt_vocab, num_steps, device, <span style="color:#000;font-weight:bold">True</span>)
-    <span style="color:#0086b3">print</span>(<span style="color:#d14">f</span><span style="color:#d14">&#39;</span><span style="color:#d14">{</span>eng<span style="color:#d14">}</span><span style="color:#d14"> =&gt; </span><span style="color:#d14">{</span>translation<span style="color:#d14">}</span><span style="color:#d14">, &#39;</span>,
-          <span style="color:#d14">f</span><span style="color:#d14">&#39;bleu </span><span style="color:#d14">{</span>d2l<span style="color:#000;font-weight:bold">.</span>bleu(translation, fra, k<span style="color:#000;font-weight:bold">=</span><span style="color:#099">2</span>)<span style="color:#d14">:</span><span style="color:#d14">.3f</span><span style="color:#d14">}</span><span style="color:#d14">&#39;</span>)
+        net, eng, src_vocab, tgt_vocab, num_steps, device, <span style="color:#999">True</span>)
+    <span style="color:#000;font-weight:bold">print</span>(f<span style="color:#d14">&#39;{eng} =&gt; {translation}, &#39;</span>,
+          f<span style="color:#d14">&#39;bleu {d2l.bleu(translation, fra, k=2):.3f}&#39;</span>)
 
 <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">predict_seq2seq</span>(net, src_sentence, src_vocab, tgt_vocab, num_steps,
-                    device, save_attention_weights<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">False</span>):
+                    device, save_attention_weights<span style="color:#000;font-weight:bold">=</span><span style="color:#999">False</span>):
     <span style="color:#d14">&#34;&#34;&#34;Predict for sequence to sequence.&#34;&#34;&#34;</span>
     src_tokens <span style="color:#000;font-weight:bold">=</span> src_vocab[src_sentence<span style="color:#000;font-weight:bold">.</span>lower()<span style="color:#000;font-weight:bold">.</span>split(<span style="color:#d14">&#39; &#39;</span>)] <span style="color:#000;font-weight:bold">+</span> [
         src_vocab[<span style="color:#d14">&#39;&lt;eos&gt;&#39;</span>]]
@@ -864,7 +864,7 @@ fras <span style="color:#000;font-weight:bold">=</span> [<span style="color:#d14
 
 <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">train_seq2seq</span>(net, data_iter, lr, num_epochs, tgt_vocab, device):
     <span style="color:#d14">&#34;&#34;&#34;Train a model for sequence to sequence.&#34;&#34;&#34;</span>
-    net<span style="color:#000;font-weight:bold">.</span>initialize(init<span style="color:#000;font-weight:bold">.</span>Xavier(), force_reinit<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">True</span>, ctx<span style="color:#000;font-weight:bold">=</span>device)
+    net<span style="color:#000;font-weight:bold">.</span>initialize(init<span style="color:#000;font-weight:bold">.</span>Xavier(), force_reinit<span style="color:#000;font-weight:bold">=</span><span style="color:#999">True</span>, ctx<span style="color:#000;font-weight:bold">=</span>device)
     trainer <span style="color:#000;font-weight:bold">=</span> gluon<span style="color:#000;font-weight:bold">.</span>Trainer(net<span style="color:#000;font-weight:bold">.</span>collect_params(), <span style="color:#d14">&#39;adam&#39;</span>,
                             {<span style="color:#d14">&#39;learning_rate&#39;</span>: lr})
     loss <span style="color:#000;font-weight:bold">=</span> MaskedSoftmaxCELoss()
@@ -889,7 +889,7 @@ fras <span style="color:#000;font-weight:bold">=</span> [<span style="color:#d14
             metric<span style="color:#000;font-weight:bold">.</span>add(l<span style="color:#000;font-weight:bold">.</span>sum(), num_tokens)
         <span style="color:#000;font-weight:bold">if</span> (epoch <span style="color:#000;font-weight:bold">+</span> <span style="color:#099">1</span>) <span style="color:#000;font-weight:bold">%</span> <span style="color:#099">10</span> <span style="color:#000;font-weight:bold">==</span> <span style="color:#099">0</span>:
             animator<span style="color:#000;font-weight:bold">.</span>add(epoch <span style="color:#000;font-weight:bold">+</span> <span style="color:#099">1</span>, (metric[<span style="color:#099">0</span>] <span style="color:#000;font-weight:bold">/</span> metric[<span style="color:#099">1</span>],))
-    <span style="color:#0086b3">print</span>(<span style="color:#d14">f</span><span style="color:#d14">&#39;loss </span><span style="color:#d14">{</span>metric[<span style="color:#099">0</span>] <span style="color:#000;font-weight:bold">/</span> metric[<span style="color:#099">1</span>]<span style="color:#d14">:</span><span style="color:#d14">.3f</span><span style="color:#d14">}</span><span style="color:#d14">, </span><span style="color:#d14">{</span>metric[<span style="color:#099">1</span>] <span style="color:#000;font-weight:bold">/</span> timer<span style="color:#000;font-weight:bold">.</span>stop()<span style="color:#d14">:</span><span style="color:#d14">.1f</span><span style="color:#d14">}</span><span style="color:#d14"> &#39;</span>
+    <span style="color:#000;font-weight:bold">print</span>(f<span style="color:#d14">&#39;loss {metric[0] / metric[1]:.3f}, {metric[1] / timer.stop():.1f} &#39;</span>
 
 </code></pre></td></tr></table>
 </div>
@@ -1081,9 +1081,9 @@ $$\theta_t \leftarrow \theta_{t-1} - \frac{\alpha_t \cdot m_t}{\sqrt{v_t} + \hat
 <p>我们知道，VGG / ResNet / Mobilenet 等论文里已经说明现在网络结构设计可以通过简单的 Block 堆叠来构建，并且Blocks可以分组为若干个 Stage，每个 Stage 包含若干层 Block。为了提高计算性能以及提高感受野等，不同 Stage 之间会下采样降低空间分辨率同时提高 channel 个数（神经元）来保证模型容量。对于每个 Stage 的第一层 Block 需要完成下采样、channel翻倍的任务，为了保证输入数据与这两步处理后的输出数据尺寸相同，需要修改旁路，不再是 Indentity，而需要通过卷积完成映射。论文里在每个Block的第一层卷积里使用<code>stride=2</code>来完成下采样。 有论文表明，使用 avg pooling 进行下采样会更好，避免丢失很多的信息。</p>
 <p>另外，一般配合 BN 时，CNN 的 bias 作用不明显可去掉。对于 bias 的作用可简单参考：<a href="https://www.pico.net/kb/the-role-of-bias-in-neural-networks/">The role of bias in Neural Networks</a>，猜测是在 BN 之前用于修正 <code>W * x</code> 的偏置，<strong>防止方差过大导致训练困难</strong>，即学习一个参数来降低输出值的方差，类似于降噪。</p>
 <p>上述过程的示例代码如下：</p>
-<div class="highlight" linestart="0"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
 <table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
-<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
 </span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
 </span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
 </span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
@@ -1123,26 +1123,26 @@ $$\theta_t \leftarrow \theta_{t-1} - \frac{\alpha_t \cdot m_t}{\sqrt{v_t} + \hat
 </span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">38
 </span></code></pre></td>
 <td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
-<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#000;font-weight:bold">from</span> <span style="color:#555">torch</span> <span style="color:#000;font-weight:bold">import</span> nn
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#000;font-weight:bold">from</span> <span style="color:#555">torch</span> <span style="color:#000;font-weight:bold">import</span> nn
 
 <span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">ResBasicBlock</span>(nn<span style="color:#000;font-weight:bold">.</span>Module):
     expansion <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">1</span>
-    <span style="color:#000;font-weight:bold">def</span> __init__(<span style="color:#999">self</span>, in_c, out_c, stride, downsample<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">False</span>, reduce_first<span style="color:#000;font-weight:bold">=</span><span style="color:#099">1</span>, ks<span style="color:#000;font-weight:bold">=</span><span style="color:#099">3</span>, padding<span style="color:#000;font-weight:bold">=</span><span style="color:#099">1</span>, <span style="color:#000;font-weight:bold">**</span>kwargs):
+    <span style="color:#000;font-weight:bold">def</span> __init__(<span style="color:#999">self</span>, in_c, out_c, stride, downsample<span style="color:#000;font-weight:bold">=</span><span style="color:#999">False</span>, reduce_first<span style="color:#000;font-weight:bold">=</span><span style="color:#099">1</span>, ks<span style="color:#000;font-weight:bold">=</span><span style="color:#099">3</span>, padding<span style="color:#000;font-weight:bold">=</span><span style="color:#099">1</span>, <span style="color:#000;font-weight:bold">**</span>kwargs):
         first_planes <span style="color:#000;font-weight:bold">=</span> out_c <span style="color:#000;font-weight:bold">//</span> reduce_first
 
-        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>conv1 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Conv2d(in_c, first_planes, ks, stride, padding, bias<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">False</span>)
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>conv1 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Conv2d(in_c, first_planes, ks, stride, padding, bias<span style="color:#000;font-weight:bold">=</span><span style="color:#999">False</span>)
         <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>bn1 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>BatchNorm2d(first_planes)
         <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>act1 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>ReLU()
 
-        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>conv2 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Conv2d(first_planes, out_c, ks, stride, padding, bias<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">False</span>)
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>conv2 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Conv2d(first_planes, out_c, ks, stride, padding, bias<span style="color:#000;font-weight:bold">=</span><span style="color:#999">False</span>)
         <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>bn2 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>BatchNorm2d(out_c)
         <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>act2 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>ReLU()
 
         <span style="color:#998;font-style:italic">## for downsample &amp; double channel number</span>
-        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>downsample <span style="color:#000;font-weight:bold">=</span> <span style="color:#000;font-weight:bold">None</span>
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>downsample <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">None</span>
         <span style="color:#000;font-weight:bold">if</span> downsample:
             <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>downsample <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Sequential(
-                nn<span style="color:#000;font-weight:bold">.</span>Conv2d(in_c, out_c, ks, stride, padding, bias<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">False</span>),        <span style="color:#998;font-style:italic"># 通常这里的 ks = 1, senet 里 ks = 3</span>
+                nn<span style="color:#000;font-weight:bold">.</span>Conv2d(in_c, out_c, ks, stride, padding, bias<span style="color:#000;font-weight:bold">=</span><span style="color:#999">False</span>),        <span style="color:#998;font-style:italic"># 通常这里的 ks = 1, senet 里 ks = 3</span>
                 nn<span style="color:#000;font-weight:bold">.</span>BatchNorm2d(out_c)
             )
     
@@ -1155,7 +1155,7 @@ $$\theta_t \leftarrow \theta_{t-1} - \frac{\alpha_t \cdot m_t}{\sqrt{v_t} + \hat
         <span style="color:#998;font-style:italic">## add se block here</span>
         <span style="color:#998;font-style:italic"># feat = self.se(feat)</span>
 
-        <span style="color:#000;font-weight:bold">if</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>downsample <span style="color:#000;font-weight:bold">is</span> <span style="color:#000;font-weight:bold">not</span> <span style="color:#000;font-weight:bold">None</span>:
+        <span style="color:#000;font-weight:bold">if</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>downsample <span style="color:#000;font-weight:bold">is</span> <span style="color:#000;font-weight:bold">not</span> <span style="color:#999">None</span>:
             x <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>downsample(x)
         feat <span style="color:#000;font-weight:bold">+=</span> x
         feat <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>act2(feat)
@@ -1176,7 +1176,7 @@ $$\theta_t \leftarrow \theta_{t-1} - \frac{\alpha_t \cdot m_t}{\sqrt{v_t} + \hat
 <p>具体实现代码如下。</p>
 <div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
 <table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
-<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 0
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 0
 </span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
 </span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
 </span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
@@ -1225,31 +1225,31 @@ $$\theta_t \leftarrow \theta_{t-1} - \frac{\alpha_t \cdot m_t}{\sqrt{v_t} + \hat
 </span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">46
 </span></code></pre></td>
 <td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
-<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#000;font-weight:bold">from</span> <span style="color:#555">torch</span> <span style="color:#000;font-weight:bold">import</span> nn
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#000;font-weight:bold">from</span> <span style="color:#555">torch</span> <span style="color:#000;font-weight:bold">import</span> nn
 <span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">BottleneckBlock</span>(nn<span style="color:#000;font-weight:bold">.</span>Module):
-    <span style="color:#000;font-weight:bold">def</span> __init__(<span style="color:#999">self</span>, in_c<span style="color:#000;font-weight:bold">=</span><span style="color:#099">256</span>, out_c<span style="color:#000;font-weight:bold">=</span><span style="color:#099">64</span>, expansion<span style="color:#000;font-weight:bold">=</span><span style="color:#099">4</span>, stride<span style="color:#000;font-weight:bold">=</span><span style="color:#099">1</span>, downsample<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">False</span>, <span style="color:#000;font-weight:bold">**</span>kwargs):
+    <span style="color:#000;font-weight:bold">def</span> __init__(<span style="color:#999">self</span>, in_c<span style="color:#000;font-weight:bold">=</span><span style="color:#099">256</span>, out_c<span style="color:#000;font-weight:bold">=</span><span style="color:#099">64</span>, expansion<span style="color:#000;font-weight:bold">=</span><span style="color:#099">4</span>, stride<span style="color:#000;font-weight:bold">=</span><span style="color:#099">1</span>, downsample<span style="color:#000;font-weight:bold">=</span><span style="color:#999">False</span>, <span style="color:#000;font-weight:bold">**</span>kwargs):
         <span style="color:#0086b3">super</span>()<span style="color:#000;font-weight:bold">.</span>__init__(<span style="color:#000;font-weight:bold">**</span>kwargs)
         out_planes <span style="color:#000;font-weight:bold">=</span> out_c <span style="color:#000;font-weight:bold">*</span> expansion
 
-        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>conv1 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Conv2d(in_c, out_c, <span style="color:#099">1</span>, <span style="color:#099">1</span>, bias<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">False</span>)
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>conv1 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Conv2d(in_c, out_c, <span style="color:#099">1</span>, <span style="color:#099">1</span>, bias<span style="color:#000;font-weight:bold">=</span><span style="color:#999">False</span>)
         <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>bn1 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>BatchNorm2d(out_c)
         <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>act1 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>ReLU()
 
-        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>conv2 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Conv2d(out_c, out_c, <span style="color:#099">3</span>, stride, <span style="color:#099">1</span>, bias<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">False</span>)      <span style="color:#998;font-style:italic"># stride = 2 时进行下采样</span>
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>conv2 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Conv2d(out_c, out_c, <span style="color:#099">3</span>, stride, <span style="color:#099">1</span>, bias<span style="color:#000;font-weight:bold">=</span><span style="color:#999">False</span>)      <span style="color:#998;font-style:italic"># stride = 2 时进行下采样</span>
         <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>bn2 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>BatchNorm2d(out_c)
         <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>act1 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>ReLU()
 
-        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>conv3 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Conv2d(out_c, out_planes, <span style="color:#099">1</span>, <span style="color:#099">1</span>, bias<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">False</span>)         <span style="color:#998;font-style:italic"># 注意输出 channel 的个数</span>
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>conv3 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Conv2d(out_c, out_planes, <span style="color:#099">1</span>, <span style="color:#099">1</span>, bias<span style="color:#000;font-weight:bold">=</span><span style="color:#999">False</span>)         <span style="color:#998;font-style:italic"># 注意输出 channel 的个数</span>
         <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>bn3 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>BatchNorm2d(out_c)
         <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>act3 <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>ReLU()
 
         <span style="color:#000;font-weight:bold">if</span> downsample:
             <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>downsample <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Sequential(
-                nn<span style="color:#000;font-weight:bold">.</span>Conv2d(in_c, out_planes, <span style="color:#099">1</span>, <span style="color:#099">1</span>, bias<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">False</span>),
+                nn<span style="color:#000;font-weight:bold">.</span>Conv2d(in_c, out_planes, <span style="color:#099">1</span>, <span style="color:#099">1</span>, bias<span style="color:#000;font-weight:bold">=</span><span style="color:#999">False</span>),
                 nn<span style="color:#000;font-weight:bold">.</span>BatchNorm2d(out_planes)
             )
         <span style="color:#000;font-weight:bold">else</span>:
-            <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>downsample <span style="color:#000;font-weight:bold">=</span> <span style="color:#000;font-weight:bold">False</span>
+            <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>downsample <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">False</span>
     
     <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">forward</span>(<span style="color:#999">self</span>, x):
         feat <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>conv1(x)
@@ -1267,7 +1267,7 @@ $$\theta_t \leftarrow \theta_{t-1} - \frac{\alpha_t \cdot m_t}{\sqrt{v_t} + \hat
         <span style="color:#998;font-style:italic"># feat = self.se(feat)</span>
         <span style="color:#998;font-style:italic">## drop path here, i.e. random drop some samples along batch axis</span>
         <span style="color:#998;font-style:italic">## downsample projection path here</span>
-        <span style="color:#000;font-weight:bold">if</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>downsample <span style="color:#000;font-weight:bold">is</span> <span style="color:#000;font-weight:bold">not</span> <span style="color:#000;font-weight:bold">None</span>:
+        <span style="color:#000;font-weight:bold">if</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>downsample <span style="color:#000;font-weight:bold">is</span> <span style="color:#000;font-weight:bold">not</span> <span style="color:#999">None</span>:
             x <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>downsample(x)
         feat <span style="color:#000;font-weight:bold">+=</span> x
         feat <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>act3(feat)
@@ -1326,7 +1326,7 @@ $$\theta_t \leftarrow \theta_{t-1} - \frac{\alpha_t \cdot m_t}{\sqrt{v_t} + \hat
 <h2 id="floor-函数">floor() 函数</h2>
 <div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
 <table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
-<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 0
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 0
 </span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
 </span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
 </span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
@@ -1353,7 +1353,7 @@ $$\theta_t \leftarrow \theta_{t-1} - \frac{\alpha_t \cdot m_t}{\sqrt{v_t} + \hat
 </span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">24
 </span></code></pre></td>
 <td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
-<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">Key <span style="color:#900;font-weight:bold">floor</span>(Key key)
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">Key <span style="color:#900;font-weight:bold">floor</span>(Key key)
 {
     Node x <span style="color:#000;font-weight:bold">=</span> floor(root, key);
     <span style="color:#000;font-weight:bold">if</span> (x <span style="color:#000;font-weight:bold">==</span> <span style="color:#000;font-weight:bold">nullptr</span>)
@@ -1388,12 +1388,12 @@ Node <span style="color:#900;font-weight:bold">floor</span>(Node root, Key key)
 <p>主要在于递归返回结果，<strong>只需要将返回的链接赋给作为参数的链接</strong>。</p>
 <div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
 <table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
-<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">0
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">0
 </span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
 </span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
 </span></code></pre></td>
 <td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
-<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#998;font-style:italic">// ...
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#998;font-style:italic">// ...
 </span><span style="color:#998;font-style:italic"></span>x.left <span style="color:#000;font-weight:bold">=</span> deleteMin(x.left);     <span style="color:#998;font-style:italic">// delete minimum
 </span><span style="color:#998;font-style:italic">// ...
 </span></code></pre></td></tr></table>
@@ -1409,7 +1409,7 @@ Node <span style="color:#900;font-weight:bold">floor</span>(Node root, Key key)
 <p>实现示例如下：</p>
 <div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
 <table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
-<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 0
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 0
 </span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
 </span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
 </span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
@@ -1444,7 +1444,7 @@ Node <span style="color:#900;font-weight:bold">floor</span>(Node root, Key key)
 </span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">32
 </span></code></pre></td>
 <td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
-<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">Node <span style="color:#900;font-weight:bold">delete</span>(Key key)
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">Node <span style="color:#900;font-weight:bold">delete</span>(Key key)
 {
     <span style="color:#000;font-weight:bold">delete</span>(root, key);
 }
@@ -1632,7 +1632,7 @@ Node <span style="color:#900;font-weight:bold">delete</span>(Node t, key key)
         		<footer>
 			
 			<span>
-			&copy; <time datetime="2021-09-18 21:00:45.793138 &#43;0800 CST m=&#43;0.383906615">2021</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
+			&copy; <time datetime="2021-09-22 11:37:54.145412 &#43;0800 CST m=&#43;0.072502298">2021</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
 			</span>
 		</footer>
 
