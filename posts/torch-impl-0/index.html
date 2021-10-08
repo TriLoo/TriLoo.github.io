@@ -109,6 +109,14 @@ MathJax.Hub.Config({
 <li>自定义Dataset，需要自己实现<code>__init__</code>、<code>__len__</code>、<code>__getitem__</code>等函数；<code>ToTensor</code>会将PIL Image、NumPy ndarry转换成<code>FloatTensor</code>，并且将像素上的数值范围缩放到(0.0, 1.0)之间。</li>
 <li>继承<code>nn.Module</code>创建模型的时候，会自动收集定义在models内的fields，并且让所有的 parameters 都可以被<code>parameters()</code>以及<code>named_parameters()</code>等方法获取到</li>
 </ul>
+<h2 id="module">Module</h2>
+<p>Module 在调用的时候实际会调用<code>Module._call_impl()</code>函数，这个函数里调用顺序如下。</p>
+<ol>
+<li>调用<code>_global_forward_pre_hooks</code>或者<code>self._forward_pre_hooks</code>里面所有的hook，对当前的Module以及输入数据进行处理，hook 函数的格式是：<code>hook(module, input) -&gt; None or modified input</code>，如果 hook 函数会返回数据，那么这个返回的数据才是真正的输入 forward() 函数进行计算的数据</li>
+<li>调用<code>forward_call()</code>函数完成前向计算</li>
+<li>调用<code>_global_forward_hooks</code>或者<code>self._forward_hooks</code>里面的所有hook，hook函数签名是<code>hook(module, input, output) -&gt; None or modified output</code>，函数的输出是最终的输出</li>
+<li><code>full_backward_hooks</code>里的 hooks</li>
+</ol>
 <h2 id="autograd">Autograd</h2>
 <p>通过设置Tensor的<code>requires_grad</code>来决定是否需要计算 Loss 对该 Tensor 的梯度。</p>
 <ul>
@@ -166,6 +174,11 @@ MathJax.Hub.Config({
 <li>使用 <code>torch.no_grad()</code> block 进行封装</li>
 <li>使用 <code>detach()</code>，相当于新建了一个Tensor返回的，所以计算梯度更新这个新的 Tensor，之前旧的 Tensor 数值也会保持不变。</li>
 </ul>
+<p>下面的方式适合单个 Parameter 的梯度更新。</p>
+<ul>
+<li>设置<code>parameter.requires_grad=False</code></li>
+<li>设置<code>parameter.grad=None</code>，优化器在根据梯度更新这个参数时，如果发现 <code>grad=None</code>，则略过当前参数，从而实现防止梯度反向传播的目的</li>
+</ul>
 <p>经过上述两种方式处理后的 Tensor 直接影响是，不会向后传播 Gradient，也不会发生数值变化。</p>
 </li>
 <li>
@@ -205,6 +218,7 @@ MathJax.Hub.Config({
 
 	<div class="pagination">
 		<a href="/posts/model-visualization/" class="left arrow">&#8592;</a>
+		<a href="/posts/img-transform-ssl/" class="right arrow">&#8594;</a>
 
 		<a href="#" class="top">Top</a>
 	</div>
@@ -214,7 +228,7 @@ MathJax.Hub.Config({
         		<footer>
 			
 			<span>
-			&copy; <time datetime="2021-09-23 21:07:36.219527 &#43;0800 CST m=&#43;0.052964898">2021</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
+			&copy; <time datetime="2021-10-08 20:07:47.47901 &#43;0800 CST m=&#43;0.204426746">2021</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
 			</span>
 		</footer>
 
