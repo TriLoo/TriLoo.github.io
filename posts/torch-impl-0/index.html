@@ -162,7 +162,7 @@ MathJax.Hub.Config({
 <ul>
 <li>如果Tensor的<code>requires_grad=False</code>，则通常是 Leaf</li>
 <li>如果 Tensor 是用户创建的，那么即使<code>requires_grad=True</code>也是Leaf，意味着这些Tensor不是一个Op的结果，并且<code>grad_fn=None</code></li>
-<li>只有Leaf Tensor 才会在<code>backward()</code>过程中保存梯度结果；如果需要获取那些non-leaf节点的grad，可以使用<code>retain_grad</code>来修改</li>
+<li>只有Leaf Tensor 才会在<code>backward()</code>过程中保存梯度结果；如果需要获取那些non-leaf节点的grad，可以使用<code>Tensor.retain_grad()</code>来修改</li>
 <li>第三条与第一条貌似冲突，其实不冲突，因为 <code>requires_grad=False</code>的含义是指这个 Tensor 的梯度不需要向后传播了，而不是不会计算该 Tensor 的梯度，也就是实际是指<code>grad_fn=None</code>。</li>
 <li>从CPU拷贝到 GPU 上也算是一个 Op 操作，具体例子可以查看：<a href="https://pytorch.org/docs/stable/generated/torch.Tensor.is_leaf.html?highlight=is_leaf#torch.Tensor.is_leaf">torch.tensor.is_leaf</a></li>
 </ul>
@@ -228,7 +228,7 @@ MathJax.Hub.Config({
         		<footer>
 			
 			<span>
-			&copy; <time datetime="2021-10-08 20:08:24.839345 &#43;0800 CST m=&#43;0.212555680">2021</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
+			&copy; <time datetime="2021-10-14 15:29:13.537252 &#43;0800 CST m=&#43;0.076021781">2021</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
 			</span>
 		</footer>
 

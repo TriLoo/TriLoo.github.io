@@ -655,7 +655,7 @@ $$PE(pos, 2i + 1) = \cos \left( \frac{pos}{10000^{2i / d_{model}}} \right)$$</p>
 <ul>
 <li>MoCo V3中，两个 Encoder 结构不一样，主要在于 Base Encoder 多了一个 Prediction Head；而DINO中两个模型的结构是完全相同的，都不包含 Prediction Head</li>
 <li>DINO 计算 Softmax 的$\tau$在两个 Encoder 中是不同的，使用的Loss也不同</li>
-<li>DINO 使用了 Multi Crop 的数据增广方式实现 local-to-global 内容的学习</li>
+<li>DINO 使用了 Multi Crop 的数据增广方式实现 local-to-global 内容的学习，也就是 DINO 不仅要学习对 Transformers 的不变性，还要学习到 local-to-global 的一致性!</li>
 <li>其它实现细节上的不同，如 $\tau_t$ 的调整等</li>
 </ul>
 <h2 id="moby">MoBY</h2>
@@ -749,7 +749,7 @@ $$PE(pos, 2i + 1) = \cos \left( \frac{pos}{10000^{2i / d_{model}}} \right)$$</p>
 </table>
 <h2 id="其它">其它</h2>
 <p>实际实验中，按照 SimSiam 的方式， Backbone 换成 VOLO，优化器使用 AdamW，然后模型就很容易塌缩了，表现在 Loss 数值快速到达 -1.0（SimSiam 使用的 Loss），表明已经达到最优了，无法继续优化。更换成 SGD 优化器之后，情况有所缓解，但是收敛速度还是非常快，Epoch 1 之后也开始坍塌。模型替换为 ResNet50 之后，模型就可以训练。所以暂定原因为 Transformer 模型不适用于 SimSiam 无监督训练框架。</p>
-<p>将自监督训练框架切换为 MoCo V3 的方式，可以正常训练。针对参数$T$，当取值为1.0时收敛变慢，取值为默认的0.2之后收敛变快。</p>
+<p>将自监督训练框架切换为 MoCo V3 的方式，可以正常训练。针对参数$T$，当取值为1.0时收敛变慢，取值为默认的0.2之后收敛变快。然后使用预训练后的参数初始化Transformer模型，可以让模型收敛的更好，达到与使用RandomAug等数据增广训练的模型非常接近的精度水平，而且前30个epoch的结果就基本稳定了；但是如果也加上这些数据增广，那么精度怎么变化呢？基于有限的实验，前60epoch的结果来看，使用自监督训练模型进行初始化时，精度比从头训练的情况增加了不到1个百分点（0.8左右）最终的精度对比时：80.63 vs 80.58，这里有一个因素是模型结构发生了变化，也就是 CNN Stem 的结构由(conv7x2 -&gt; conv3x1 -&gt; conv3x1 -&gt; conv4x4)变为(conv7x2 -&gt; conv3x2 -&gt; conv3x2 -&gt; conv3x1)。主要问题在于前者训练过程非常不稳定，精度增加非常缓慢，后者的精度则稳步上升。经过进一步验证，同一种架构同一个模型，不同初始化方式，精度对比是：80.63 vs 80.52，只有0.1个百分点的提高而已。至于温度参数的作用，可以参考<a href="https://arxiv.org/abs/2012.09740">Understanding the Behaviour of Contrastive Loss</a>这篇论文。</p>
 <p>将自监督训练框架切换为 DINO 的方式，也可以正常训练，但是训练速度会变慢比较多，毕竟 crop 的个数增加了。warmup epochs 占总的 epoch 的比例由 40% -&gt; 10% 之后，收敛速度变快。</p>
 
 		
@@ -757,6 +757,7 @@ $$PE(pos, 2i + 1) = \cos \left( \frac{pos}{10000^{2i / d_{model}}} \right)$$</p>
 
 	<div class="pagination">
 		<a href="/posts/torch-impl-0/" class="left arrow">&#8592;</a>
+		<a href="/posts/torch-usage/" class="right arrow">&#8594;</a>
 
 		<a href="#" class="top">Top</a>
 	</div>
@@ -766,7 +767,7 @@ $$PE(pos, 2i + 1) = \cos \left( \frac{pos}{10000^{2i / d_{model}}} \right)$$</p>
         		<footer>
 			
 			<span>
-			&copy; <time datetime="2021-10-08 20:08:24.847214 &#43;0800 CST m=&#43;0.220424901">2021</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
+			&copy; <time datetime="2021-10-14 15:29:13.5505 &#43;0800 CST m=&#43;0.089269501">2021</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
 			</span>
 		</footer>
 

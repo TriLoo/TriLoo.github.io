@@ -6,7 +6,34 @@
     <description>Recent content in Posts on Triloon</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Tue, 28 Sep 2021 14:07:50 +0800</lastBuildDate><atom:link href="https://triloon.space/posts/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 13 Oct 2021 14:30:10 +0800</lastBuildDate><atom:link href="https://triloon.space/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Adversarial Training 2</title>
+      <link>https://triloon.space/posts/adversarial-training-2/</link>
+      <pubDate>Wed, 13 Oct 2021 14:30:10 +0800</pubDate>
+      
+      <guid>https://triloon.space/posts/adversarial-training-2/</guid>
+      <description>&lt;p&gt;对PGD算法的改进，包括FreeAT, FreeLB, SMART等。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Adversarial Training</title>
+      <link>https://triloon.space/posts/adversarial-training/</link>
+      <pubDate>Tue, 05 Oct 2021 11:21:33 +0800</pubDate>
+      
+      <guid>https://triloon.space/posts/adversarial-training/</guid>
+      <description>&lt;p&gt;几个基础的常见的对抗样本的生成算法，包括FGM/FGSM, PGD等。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Torch的一些使用方法记录</title>
+      <link>https://triloon.space/posts/torch-usage/</link>
+      <pubDate>Fri, 01 Oct 2021 16:06:21 +0800</pubDate>
+      
+      <guid>https://triloon.space/posts/torch-usage/</guid>
+      <description>&lt;p&gt;记录一些Torch使用过程中会用到的小知识点。&lt;/p&gt;</description>
+    </item>
+    
     <item>
       <title>基于Transformer结构的图像自监督模型及训练</title>
       <link>https://triloon.space/posts/img-transform-ssl/</link>
