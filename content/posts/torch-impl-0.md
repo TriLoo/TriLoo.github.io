@@ -17,6 +17,15 @@ Pytorch 实现学习积累。<!--more-->
 * 自定义Dataset，需要自己实现`__init__`、`__len__`、`__getitem__`等函数；`ToTensor`会将PIL Image、NumPy ndarry转换成`FloatTensor`，并且将像素上的数值范围缩放到(0.0, 1.0)之间。
 * 继承`nn.Module`创建模型的时候，会自动收集定义在models内的fields，并且让所有的 parameters 都可以被`parameters()`以及`named_parameters()`等方法获取到
 
+## Module
+
+Module 在调用的时候实际会调用`Module._call_impl()`函数，这个函数里调用顺序如下。
+
+1. 调用`_global_forward_pre_hooks`或者`self._forward_pre_hooks`里面所有的hook，对当前的Module以及输入数据进行处理，hook 函数的格式是：`hook(module, input) -> None or modified input`，如果 hook 函数会返回数据，那么这个返回的数据才是真正的输入 forward() 函数进行计算的数据
+2. 调用`forward_call()`函数完成前向计算
+3. 调用`_global_forward_hooks`或者`self._forward_hooks`里面的所有hook，hook函数签名是`hook(module, input, output) -> None or modified output`，函数的输出是最终的输出
+4. `full_backward_hooks`里的 hooks
+
 ## Autograd
 
 通过设置Tensor的`requires_grad`来决定是否需要计算 Loss 对该 Tensor 的梯度。
@@ -50,7 +59,7 @@ Pytorch 实现学习积累。<!--more-->
 
   * 如果Tensor的`requires_grad=False`，则通常是 Leaf
   * 如果 Tensor 是用户创建的，那么即使`requires_grad=True`也是Leaf，意味着这些Tensor不是一个Op的结果，并且`grad_fn=None`
-  * 只有Leaf Tensor 才会在`backward()`过程中保存梯度结果；如果需要获取那些non-leaf节点的grad，可以使用`retain_grad`来修改
+  * 只有Leaf Tensor 才会在`backward()`过程中保存梯度结果；如果需要获取那些non-leaf节点的grad，可以使用`Tensor.retain_grad()`来修改
   * 第三条与第一条貌似冲突，其实不冲突，因为 `requires_grad=False`的含义是指这个 Tensor 的梯度不需要向后传播了，而不是不会计算该 Tensor 的梯度，也就是实际是指`grad_fn=None`。
   * 从CPU拷贝到 GPU 上也算是一个 Op 操作，具体例子可以查看：[torch.tensor.is_leaf](https://pytorch.org/docs/stable/generated/torch.Tensor.is_leaf.html?highlight=is_leaf#torch.Tensor.is_leaf)
 
@@ -60,6 +69,11 @@ Pytorch 实现学习积累。<!--more-->
 
   * 使用 `torch.no_grad()` block 进行封装
   * 使用 `detach()`，相当于新建了一个Tensor返回的，所以计算梯度更新这个新的 Tensor，之前旧的 Tensor 数值也会保持不变。
+
+  下面的方式适合单个 Parameter 的梯度更新。
+
+  * 设置`parameter.requires_grad=False`
+  * 设置`parameter.grad=None`，优化器在根据梯度更新这个参数时，如果发现 `grad=None`，则略过当前参数，从而实现防止梯度反向传播的目的
 
   经过上述两种方式处理后的 Tensor 直接影响是，不会向后传播 Gradient，也不会发生数值变化。
 
