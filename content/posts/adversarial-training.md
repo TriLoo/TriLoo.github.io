@@ -107,7 +107,7 @@ $$\mathbf{g} = \nabla_x \log p(y | \mathbf{x}; \hat{\theta})$$
 
 $$r_{adv} = -\epsilon \mathbf{g} / \parallel \mathbf{g} \parallel_2, \mathrm{where} \mathbf{g} = \nabla_s \log p(y | \mathbf{s}; \hat{\theta})$$
 
-然后在训练过程中对应的 Loss 项为：
+实际实现中，这里应该是$+\epsilon \mathbf{g} / \parallel \mathbf{g} \parallel_2$而不是-。然后在训练过程中对应的 Loss 项为：
 
 $$L_{\mathrm{adv}}(\theta) = - \frac{1}{N} \sum_{n=1}^N \log p(y_n | s_n + r_{\mathrm{adv}, n}; \theta)$$
 

@@ -145,9 +145,13 @@ SMART算法实现的伪代码如图-5。
 
   发现，virtual adversarial training 比 conventional adversarial trainging 效果更好，尤其是存在 noisy label 的时候。 BERT 预训练的 MLM 就是属于 noisy label 的情况，因为被 mask 的 word 实际上可以有很多的选择。所以 SMART 中的 $\lambda$ 在预训练阶段会比较大，比如 = 10，微调阶段为 = 1。
 
+* CIFS: [CIFS: Improving Adversarial Robustness of CNNs via Channel-wise Importance-based Feature Selection](https://arxiv.org/abs/2102.05311)
+  
+  对每个channel进行channel-wise 的扰动！
+
 ## 代码实现
 
-先来看下 FreeLB 的代码实现，参考：[FreeLB - github](https://github.com/zhuchen03/FreeLB)。在这个[run_glue.sh](https://github.com/zhuchen03/FreeLB/blob/master/huggingface-transformers/launch/run_glue.sh) 脚本中，不同的下游任务对 $\delta$ 的初始化也不同，比如全零，或者`uniform()`等。
+先来看下 FreeLB 的代码实现，参考：[FreeLB - github](https://github.com/zhuchen03/FreeLB)。在这个[run_glue.sh](https://github.com/zhuchen03/FreeLB/blob/master/huggingface-transformers/launch/run_glue.sh) 脚本中，不同的下游任务对 $\delta$ 的初始化也不同，比如全零，或者`uniform()`等。[FreeAT - github](https://github.com/mahyarnajibi/FreeAdversarialTraining)的实现代码其实与此类似。
 
 代码里的亮点在于：(1) 首先获取输入文本的 Embedding 表示 (2) 初始化 $\delta$ (3) 迭代求解最优的对抗样本。
 
