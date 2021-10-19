@@ -63,6 +63,19 @@
 <main>
 	<div class="catalogue">
 		
+			<a href="https://triloon.space/posts/swin-transformer/" class="catalogue-item">
+    <div>
+        <time datetime="2021-10-15 22:07:45 &#43;0800 CST" class="catalogue-time">October 15, 2021</time>
+        <h2 class="catalogue-title">ICCV2021 Best Paper - Swin Transformer</h2>
+        <div class="catalogue-line"></div>
+
+        <p>
+            <p>重读论文之后，发现还真是一个非常精巧的模型。</p>
+        </p>
+    </div>
+</a>
+
+		
 			<a href="https://triloon.space/posts/adversarial-training-2/" class="catalogue-item">
     <div>
         <time datetime="2021-10-13 14:30:10 &#43;0800 CST" class="catalogue-time">October 13, 2021</time>
@@ -180,19 +193,6 @@
 </a>
 
 		
-			<a href="https://triloon.space/posts/adam-adamw/" class="catalogue-item">
-    <div>
-        <time datetime="2021-09-03 20:30:59 &#43;0800 CST" class="catalogue-time">September 3, 2021</time>
-        <h2 class="catalogue-title">从Adam到AdamW</h2>
-        <div class="catalogue-line"></div>
-
-        <p>
-            <p>Adam算法的实现以及一个主要改进AdamW的原理与实现。</p>
-        </p>
-    </div>
-</a>
-
-		
 	</div>
 	
 	<div class="pagination">
@@ -200,6 +200,638 @@
 		
 			<a href="/posts/page/2/" class="right arrow">&#8594;</a>
 		
+        
+            <p>重读论文之后，发现还真是一个非常精巧的模型。</p>
+<h2 id="模型结构">模型结构</h2>
+<p>Swin-Transformer的创新点主要提出了下面几个新的结构：</p>
+<ul>
+<li>基于Transformer的层级结构提取多尺度的Feature Map</li>
+<li>Shifted Window based Self-Attention</li>
+</ul>
+<p>对于多尺度Feature Map与ViT等模型的但尺度对比如下，左图红色框表示 Windows，灰色框表示Patch。SwinT 每层 Feature Map 的Windows 不同（每个 Windows 内Patch数量固定），包含的总的 Patch 也就不同（即分辨率不同）；而右边 ViT 模型自始至终都只包含一个 Windows，且 Windows 内都包含固定的 Patch 个数。</p>
+<p><figure>
+    <center>
+    <img src="/imgs/swin-transformer/swin0.png" alt="图 - 1 多尺度Feature Map示意图">
+    <figcaption>图 - 1 多尺度Feature Map示意图</figcaption>
+    </center>
+</figure></p>
+<p>Swin-Transformer 中涉及了几个层次概念：Pixels, Patch, Windows。Pixels 是在输入的原始图像中定义的，比如 224 * 224 的空间维度；Patch 是基于Pixels定义的，每个Patch论文中指定为 4 * 4 个像素，扁平化之后，每个 Patch 对应的尺寸是：<code>1 * 48</code>，其中48 = 4 * 4 * 3，即每个像素包含3个 RGB 通道；Windows 基于 Patch，论文中每个 Windows 内包含7 * 7 个Patch，计算Self-Attention时是在每个 Windows 内进行的，所以只要固定 Windows 大小，则 Windows 的个数与图像的 H * W 成正比，而不是与 $(H<em>W)^2$成正比了。注意，在不同的 Stage 中的 Windows 对应的 Pixels 个数是不同的，比如在 Stage1，对应的像素是 28 * 28(4</em>7)，在 Stage 2 就对应了 56 * 56(4 * 7 * 2)。</p>
+<p>由于不同的 Windows 之间不会重叠，所以作者机智的引入了 Shifted Window Self Attention并引出了对应提高计算效率的做法。</p>
+<p>总而言之，模型结构还是非常巧妙的。</p>
+<h3 id="整体结构">整体结构</h3>
+<p>整个模型结构可以分为3个部分：Stem / Backbone / Head 部分。</p>
+<p>对于 Stem 部分，Swin-Transformer 定义了 Patch，每个 Patch 是 raw pixel RGB 数值拼接起来的，论文中每个 Patch 对应 4 * 4 个raw pixels，所以每个 Patch 的特征维度是 4 * 4 * 3 = 48。然后经过一个全连阶层映射到 embedding size 维度，也就是论文以及代码中的 C，实际实现中，这一步是通过一个 <code>conv2d(ks=4, stride=4)</code> 的卷积层实现的。</p>
+<p>Backbone 部分是本文的主要内容，包含四个 Stage，每个 Stage 都是由若干层 Swin Transformer Block构成，不同 Stage 之间通过 Patch Merge 来下采样。Patch Merge 的实现过程就是将<code>2 * 2</code>个相邻的Patch拼接起来，由<code>2 * 2 * C</code>的数据得到一个<code>1 * 4C</code>的数据，然后再经过一个全连阶层降维到<code>1 * 2C</code>，经过这一步，Tokens 数量下降4倍，在空间维度相当于将Feature Map的维度下采样一倍，这既提高了后续层的计算效率，与提高了模型的感受野，生成具有不同感受野的Feature Map！每个 Stage 下采样1倍，Stage 2/3/4 对应的 Feature Map 的空间维度分别为：$\frac{H}{8} \times \frac{W}{8}, \frac{H}{16} \times \frac{W}{16}, \frac{H}{32} \times \frac{W}{32}$，输入是 224 * 224的图像，最后输出的是 7 * 7的Feature Map。</p>
+<p>对于 Swin Transformer Block的结构细节在下面。</p>
+<p>Head 部分就是一个普通的Global Pooling + Linear(feat dim, cls num) 的结构。</p>
+<p>说回 Swin Transformer Block，与正常 Transformer 的唯一区别是计算 Self Attention的时候，FFN 与正常 Transformer 结构一致。Swin Transformer Block 使用了Shifted Window based Self-Attention进行计算，将普通 Self Attention 中计算 Attention Score 的复杂度由与像素个数的平方成正比下降到与像素个数成正比！</p>
+<p>主要涉及到的想法有两点：</p>
+<ul>
+<li>Windows Based Self Attiontion: 只在 Windows 内计算Attention Score，假设Windows 的大小是 M（即每个 Windows 内包含 M * M 个Patch，对应M * 4 * M * 4个像素），则计算复杂度与 $M^2$成正比，不同 Windows 之间不重叠</li>
+<li>Shifted Windows Based Self Attention: 上一步导致Windows 内的像素与 Windows 外的像素关联性较低，作者提出了 Shifted Window Partition in Successive Blocks，也就是下一层 Transformer 计算时，Feature Map 会有一个平移，所以原来不交互的相邻的两个 Windows现在属于同一个 Windows了</li>
+</ul>
+<p>对于第二点，在Shifted的时候会导致 Windows 的分区变多（因为要保证原来属于边界两边的像素不能互相计算相关性），作者提出了 Efficient Batch Computation For Shifted Configuration 的方法 + 配合 Attention Mask 来提高计算效率。</p>
+<p>对于Patch / Shifted Windows 的示意图如下图。</p>
+<p><figure>
+    <center>
+    <img src="/imgs/swin-transformer/swin1.png" alt="图 - 2 Shifted Window示意图">
+    <figcaption>图 - 2 Shifted Window示意图</figcaption>
+    </center>
+</figure></p>
+<p>包含 Patch Merging 的整体模型结构如下图，可以看到核心的 Patch Parttition (Stem Block) 以及 Patch Merging 以及对应的 Token 的个数与特征维度。</p>
+<p><figure>
+    <center>
+    <img src="/imgs/swin-transformer/swin2.png" alt="图 - 3 多尺度Feature Map示意图">
+    <figcaption>图 - 3 多尺度Feature Map示意图</figcaption>
+    </center>
+</figure></p>
+<p>这里 Patch Merging 是在每个 Stage 开始的时候完成的，但实际在代码实现中，是在每个 Stage 的最后才进行的，这样 Feature Dim 导致模型的计算量增加速度会下降。</p>
+<p>在Swin Transformer Block中，正常 Windows Based Self Attention 与 Shifted Windows Based Self Attention 的分布是相互交替的，并且这里 Shift 的大小是 <code>window_size // 2</code>。</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">    <span style="color:#998;font-style:italic"># ...</span>
+        shift_size<span style="color:#000;font-weight:bold">=</span><span style="color:#099">0</span> <span style="color:#000;font-weight:bold">if</span> (i <span style="color:#000;font-weight:bold">%</span> <span style="color:#099">2</span> <span style="color:#000;font-weight:bold">==</span> <span style="color:#099">0</span>) <span style="color:#000;font-weight:bold">else</span> window_size <span style="color:#000;font-weight:bold">//</span> <span style="color:#099">2</span>,
+    <span style="color:#998;font-style:italic"># ...</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>针对不同的参数量，模型结构如下。</p>
+<p><figure>
+    <center>
+    <img src="/imgs/swin-transformer/swin9.png" alt="图 - 4 不同参数量SwinT的结构">
+    <figcaption>图 - 4 不同参数量SwinT的结构</figcaption>
+    </center>
+</figure></p>
+<p>下面详细说明一下两种 Windows Based Self Attention 的实现。</p>
+<h3 id="windows-based-self-attention">Windows based Self Attention</h3>
+<p>与正常 Transformer 中 Self Attention 的区别在于这里计算 Attention Score 时仅限于 Windows 内的 Patch 之间计算，与 Windows 外的 Patch 不会计算，这一步通过将 Seq Len 由 $H * W$ 变为 $\frac{H}{window size} \times \frac{W}{windows size}$，其余多出来的数据加入到 Batch 维度实现的。这一步是基于<code>window_partition / window_reverse</code>函数实现的。</p>
+<p>其中，<code>window_partion()</code>就是切分然后合并到 Batch 维度上。</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">23
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">24
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">25
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">26
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">27
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">28
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">29
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">window_partition</span>(x, window_size):
+    <span style="color:#d14">&#34;&#34;&#34;
+</span><span style="color:#d14">    Args:
+</span><span style="color:#d14">        x: (B, H, W, C)
+</span><span style="color:#d14">        window_size (int): window size
+</span><span style="color:#d14">
+</span><span style="color:#d14">    Returns:
+</span><span style="color:#d14">        windows: (num_windows*B, window_size, window_size, C)
+</span><span style="color:#d14">    &#34;&#34;&#34;</span>
+    B, H, W, C <span style="color:#000;font-weight:bold">=</span> x<span style="color:#000;font-weight:bold">.</span>shape
+    x <span style="color:#000;font-weight:bold">=</span> x<span style="color:#000;font-weight:bold">.</span>view(B, H <span style="color:#000;font-weight:bold">//</span> window_size, window_size, W <span style="color:#000;font-weight:bold">//</span> window_size, window_size, C)
+    windows <span style="color:#000;font-weight:bold">=</span> x<span style="color:#000;font-weight:bold">.</span>permute(<span style="color:#099">0</span>, <span style="color:#099">1</span>, <span style="color:#099">3</span>, <span style="color:#099">2</span>, <span style="color:#099">4</span>, <span style="color:#099">5</span>)<span style="color:#000;font-weight:bold">.</span>contiguous()<span style="color:#000;font-weight:bold">.</span>view(<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>, window_size, window_size, C)
+    <span style="color:#000;font-weight:bold">return</span> windows
+
+<span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">window_reverse</span>(windows, window_size, H, W):
+    <span style="color:#d14">&#34;&#34;&#34;
+</span><span style="color:#d14">    Args:
+</span><span style="color:#d14">        windows: (num_windows*B, window_size, window_size, C)
+</span><span style="color:#d14">        window_size (int): Window size
+</span><span style="color:#d14">        H (int): Height of image
+</span><span style="color:#d14">        W (int): Width of image
+</span><span style="color:#d14">
+</span><span style="color:#d14">    Returns:
+</span><span style="color:#d14">        x: (B, H, W, C)
+</span><span style="color:#d14">    &#34;&#34;&#34;</span>
+    B <span style="color:#000;font-weight:bold">=</span> <span style="color:#0086b3">int</span>(windows<span style="color:#000;font-weight:bold">.</span>shape[<span style="color:#099">0</span>] <span style="color:#000;font-weight:bold">/</span> (H <span style="color:#000;font-weight:bold">*</span> W <span style="color:#000;font-weight:bold">/</span> window_size <span style="color:#000;font-weight:bold">/</span> window_size))
+    x <span style="color:#000;font-weight:bold">=</span> windows<span style="color:#000;font-weight:bold">.</span>view(B, H <span style="color:#000;font-weight:bold">//</span> window_size, W <span style="color:#000;font-weight:bold">//</span> window_size, window_size, window_size, <span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>)
+    x <span style="color:#000;font-weight:bold">=</span> x<span style="color:#000;font-weight:bold">.</span>permute(<span style="color:#099">0</span>, <span style="color:#099">1</span>, <span style="color:#099">3</span>, <span style="color:#099">2</span>, <span style="color:#099">4</span>, <span style="color:#099">5</span>)<span style="color:#000;font-weight:bold">.</span>contiguous()<span style="color:#000;font-weight:bold">.</span>view(B, H, W, <span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>)
+    <span style="color:#000;font-weight:bold">return</span> x
+</code></pre></td></tr></table>
+</div>
+</div><p>这一步的计算量变化。正常 Transformer 层的计算复杂度：</p>
+<p>$$\Omega (\textrm{MSA}) = 4hwC^2 + 2 (hw)^2 C$$</p>
+<p>变为 Windows Based Self Attention 的计算复杂度：</p>
+<p>$$\Omega (\textrm{MSA}) = 4hwC^2 + 2 M^2 (hw) C$$</p>
+<p>两个式子等号右边的第一项都是表示4个Linear层的计算复杂度（Q, K, V + 输出），第二项是 Self Attention 的计算复杂度，可以看出，当每个 Windows 内的 Patch 数量 M * M 固定时，这一项与像素个数（图像大小）成正比，而第一个式子是与像素个数的平方成正比！这里每个 Windows 之间互相不重叠。</p>
+<p>另一点是，虽然这里是在 Windows 范围内计算 Self Attention，但是对于计算Multi Head的方式计算并不影响，所以还是可以实现MultiHead Windows based Self Attention。<code>WindowAttention</code>类的实现如下。</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">WindowAttention</span>(nn<span style="color:#000;font-weight:bold">.</span>Module):
+    <span style="color:#d14">r</span><span style="color:#d14">&#34;&#34;&#34; Window based multi-head self attention (W-MSA) module with relative position bias.
+</span><span style="color:#d14">    It supports both of shifted and non-shifted window.
+</span><span style="color:#d14">
+</span><span style="color:#d14">    Args:
+</span><span style="color:#d14">        dim (int): Number of input channels.
+</span><span style="color:#d14">        window_size (tuple[int]): The height and width of the window.
+</span><span style="color:#d14">        num_heads (int): Number of attention heads.
+</span><span style="color:#d14">        qkv_bias (bool, optional):  If True, add a learnable bias to query, key, value. Default: True
+</span><span style="color:#d14">        qk_scale (float | None, optional): Override default qk scale of head_dim ** -0.5 if set
+</span><span style="color:#d14">        attn_drop (float, optional): Dropout ratio of attention weight. Default: 0.0
+</span><span style="color:#d14">        proj_drop (float, optional): Dropout ratio of output. Default: 0.0
+</span><span style="color:#d14">    &#34;&#34;&#34;</span>
+
+    <span style="color:#000;font-weight:bold">def</span> __init__(<span style="color:#999">self</span>, dim, window_size, num_heads, qkv_bias<span style="color:#000;font-weight:bold">=</span><span style="color:#999">True</span>, qk_scale<span style="color:#000;font-weight:bold">=</span><span style="color:#999">None</span>, attn_drop<span style="color:#000;font-weight:bold">=</span><span style="color:#099">0.</span>, proj_drop<span style="color:#000;font-weight:bold">=</span><span style="color:#099">0.</span>):
+
+        <span style="color:#0086b3">super</span>()<span style="color:#000;font-weight:bold">.</span>__init__()
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>dim <span style="color:#000;font-weight:bold">=</span> dim
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>window_size <span style="color:#000;font-weight:bold">=</span> window_size  <span style="color:#998;font-style:italic"># Wh, Ww</span>
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>num_heads <span style="color:#000;font-weight:bold">=</span> num_heads
+        head_dim <span style="color:#000;font-weight:bold">=</span> dim <span style="color:#000;font-weight:bold">//</span> num_heads
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>scale <span style="color:#000;font-weight:bold">=</span> qk_scale <span style="color:#000;font-weight:bold">or</span> head_dim <span style="color:#000;font-weight:bold">**</span> <span style="color:#000;font-weight:bold">-</span><span style="color:#099">0.5</span>
+
+        <span style="color:#998;font-style:italic"># define a parameter table of relative position bias</span>
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>relative_position_bias_table <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Parameter(
+            torch<span style="color:#000;font-weight:bold">.</span>zeros((<span style="color:#099">2</span> <span style="color:#000;font-weight:bold">*</span> window_size[<span style="color:#099">0</span>] <span style="color:#000;font-weight:bold">-</span> <span style="color:#099">1</span>) <span style="color:#000;font-weight:bold">*</span> (<span style="color:#099">2</span> <span style="color:#000;font-weight:bold">*</span> window_size[<span style="color:#099">1</span>] <span style="color:#000;font-weight:bold">-</span> <span style="color:#099">1</span>), num_heads))  <span style="color:#998;font-style:italic"># 2*Wh-1 * 2*Ww-1, nH</span>
+
+        <span style="color:#998;font-style:italic"># get pair-wise relative position index for each token inside the window</span>
+        coords_h <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>arange(<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>window_size[<span style="color:#099">0</span>])
+        coords_w <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>arange(<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>window_size[<span style="color:#099">1</span>])
+        coords <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>stack(torch<span style="color:#000;font-weight:bold">.</span>meshgrid([coords_h, coords_w]))  <span style="color:#998;font-style:italic"># 2, Wh, Ww</span>
+        coords_flatten <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>flatten(coords, <span style="color:#099">1</span>)  <span style="color:#998;font-style:italic"># 2, Wh*Ww</span>
+        relative_coords <span style="color:#000;font-weight:bold">=</span> coords_flatten[:, :, <span style="color:#999">None</span>] <span style="color:#000;font-weight:bold">-</span> coords_flatten[:, <span style="color:#999">None</span>, :]  <span style="color:#998;font-style:italic"># 2, Wh*Ww, Wh*Ww</span>
+        relative_coords <span style="color:#000;font-weight:bold">=</span> relative_coords<span style="color:#000;font-weight:bold">.</span>permute(<span style="color:#099">1</span>, <span style="color:#099">2</span>, <span style="color:#099">0</span>)<span style="color:#000;font-weight:bold">.</span>contiguous()  <span style="color:#998;font-style:italic"># Wh*Ww, Wh*Ww, 2</span>
+        relative_coords[:, :, <span style="color:#099">0</span>] <span style="color:#000;font-weight:bold">+=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>window_size[<span style="color:#099">0</span>] <span style="color:#000;font-weight:bold">-</span> <span style="color:#099">1</span>  <span style="color:#998;font-style:italic"># shift to start from 0</span>
+        relative_coords[:, :, <span style="color:#099">1</span>] <span style="color:#000;font-weight:bold">+=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>window_size[<span style="color:#099">1</span>] <span style="color:#000;font-weight:bold">-</span> <span style="color:#099">1</span>
+        relative_coords[:, :, <span style="color:#099">0</span>] <span style="color:#000;font-weight:bold">*=</span> <span style="color:#099">2</span> <span style="color:#000;font-weight:bold">*</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>window_size[<span style="color:#099">1</span>] <span style="color:#000;font-weight:bold">-</span> <span style="color:#099">1</span>
+        relative_position_index <span style="color:#000;font-weight:bold">=</span> relative_coords<span style="color:#000;font-weight:bold">.</span>sum(<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>)  <span style="color:#998;font-style:italic"># Wh*Ww, Wh*Ww</span>
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>register_buffer(<span style="color:#d14">&#34;relative_position_index&#34;</span>, relative_position_index)
+
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>qkv <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Linear(dim, dim <span style="color:#000;font-weight:bold">*</span> <span style="color:#099">3</span>, bias<span style="color:#000;font-weight:bold">=</span>qkv_bias)
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>attn_drop <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Dropout(attn_drop)
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>proj <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Linear(dim, dim)
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>proj_drop <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Dropout(proj_drop)
+
+        trunc_normal_(<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>relative_position_bias_table, std<span style="color:#000;font-weight:bold">=.</span><span style="color:#099">02</span>)
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>softmax <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Softmax(dim<span style="color:#000;font-weight:bold">=-</span><span style="color:#099">1</span>)
+
+    <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">forward</span>(<span style="color:#999">self</span>, x, mask<span style="color:#000;font-weight:bold">=</span><span style="color:#999">None</span>):
+        <span style="color:#d14">&#34;&#34;&#34;
+</span><span style="color:#d14">        Args:
+</span><span style="color:#d14">            x: input features with shape of (num_windows*B, N, C)
+</span><span style="color:#d14">            mask: (0/-inf) mask with shape of (num_windows, Wh*Ww, Wh*Ww) or None
+</span><span style="color:#d14">        &#34;&#34;&#34;</span>
+        B_, N, C <span style="color:#000;font-weight:bold">=</span> x<span style="color:#000;font-weight:bold">.</span>shape
+        <span style="color:#998;font-style:italic"># B_ = num_windows * B</span>
+        <span style="color:#998;font-style:italic"># (B_, num_heads, N, C // num_heads), N = Wh * Ww</span>
+        qkv <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>qkv(x)<span style="color:#000;font-weight:bold">.</span>reshape(B_, N, <span style="color:#099">3</span>, <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>num_heads, C <span style="color:#000;font-weight:bold">//</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>num_heads)<span style="color:#000;font-weight:bold">.</span>permute(<span style="color:#099">2</span>, <span style="color:#099">0</span>, <span style="color:#099">3</span>, <span style="color:#099">1</span>, <span style="color:#099">4</span>)
+        q, k, v <span style="color:#000;font-weight:bold">=</span> qkv[<span style="color:#099">0</span>], qkv[<span style="color:#099">1</span>], qkv[<span style="color:#099">2</span>]  <span style="color:#998;font-style:italic"># make torchscript happy (cannot use tensor as tuple)</span>
+
+        q <span style="color:#000;font-weight:bold">=</span> q <span style="color:#000;font-weight:bold">*</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>scale
+        attn <span style="color:#000;font-weight:bold">=</span> (q <span style="color:#a61717;background-color:#e3d2d2">@</span> k<span style="color:#000;font-weight:bold">.</span>transpose(<span style="color:#000;font-weight:bold">-</span><span style="color:#099">2</span>, <span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>))    <span style="color:#998;font-style:italic"># (B_, num_heads, N, N), N = Wh * Ww</span>
+
+        relative_position_bias <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>relative_position_bias_table[<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>relative_position_index<span style="color:#000;font-weight:bold">.</span>view(<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>)]<span style="color:#000;font-weight:bold">.</span>view(
+            <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>window_size[<span style="color:#099">0</span>] <span style="color:#000;font-weight:bold">*</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>window_size[<span style="color:#099">1</span>], <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>window_size[<span style="color:#099">0</span>] <span style="color:#000;font-weight:bold">*</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>window_size[<span style="color:#099">1</span>], <span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>)  <span style="color:#998;font-style:italic"># Wh*Ww,Wh*Ww,nH</span>
+        <span style="color:#998;font-style:italic"># nH = num_heads</span>
+        relative_position_bias <span style="color:#000;font-weight:bold">=</span> relative_position_bias<span style="color:#000;font-weight:bold">.</span>permute(<span style="color:#099">2</span>, <span style="color:#099">0</span>, <span style="color:#099">1</span>)<span style="color:#000;font-weight:bold">.</span>contiguous()  <span style="color:#998;font-style:italic"># nH, Wh*Ww, Wh*Ww</span>
+        attn <span style="color:#000;font-weight:bold">=</span> attn <span style="color:#000;font-weight:bold">+</span> relative_position_bias<span style="color:#000;font-weight:bold">.</span>unsqueeze(<span style="color:#099">0</span>)
+
+        <span style="color:#000;font-weight:bold">if</span> mask <span style="color:#000;font-weight:bold">is</span> <span style="color:#000;font-weight:bold">not</span> <span style="color:#999">None</span>:
+            nW <span style="color:#000;font-weight:bold">=</span> mask<span style="color:#000;font-weight:bold">.</span>shape[<span style="color:#099">0</span>]
+            attn <span style="color:#000;font-weight:bold">=</span> attn<span style="color:#000;font-weight:bold">.</span>view(B_ <span style="color:#000;font-weight:bold">//</span> nW, nW, <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>num_heads, N, N) <span style="color:#000;font-weight:bold">+</span> mask<span style="color:#000;font-weight:bold">.</span>unsqueeze(<span style="color:#099">1</span>)<span style="color:#000;font-weight:bold">.</span>unsqueeze(<span style="color:#099">0</span>)
+            attn <span style="color:#000;font-weight:bold">=</span> attn<span style="color:#000;font-weight:bold">.</span>view(<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>, <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>num_heads, N, N)
+            attn <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>softmax(attn)
+        <span style="color:#000;font-weight:bold">else</span>:
+            attn <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>softmax(attn)
+
+        attn <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>attn_drop(attn)
+
+        x <span style="color:#000;font-weight:bold">=</span> (attn <span style="color:#a61717;background-color:#e3d2d2">@</span> v)<span style="color:#000;font-weight:bold">.</span>transpose(<span style="color:#099">1</span>, <span style="color:#099">2</span>)<span style="color:#000;font-weight:bold">.</span>reshape(B_, N, C)
+        x <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>proj(x)
+        x <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>proj_drop(x)
+        <span style="color:#000;font-weight:bold">return</span> x
+</code></pre></div><h3 id="shifted-windows-based-self-attention">Shifted Windows based Self-Attention</h3>
+<p>主要是提高不同 window 之间的信息交互程度。</p>
+<p>正常的 attention mask的输入尺寸是:<code>[bs, seq_len]</code>，然后被扩展到 <code>[bs, 1, 1, seq_len]</code>，其中第二维对应的是 head 维，第三维对应的是batch内当前样本的Token输入。</p>
+<p>使用<code>[PAD]</code>表示仅用于拼接的无效Token，然后一个正常的输入 Token 系列是：<code>[我][是][谁][PAD][PAD][PAD]</code>等，也就是<code>seq_len=6</code>，对应的 <code>attention_mask=[1, 1, 1, 0, 0, 0]</code>，并假设每个 Token 对应的维度是128，则计算 Attention Score 的结果（相似度得分）如下：</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">我-我       我-是       我-谁       我-PAD      我-PAD      我-PAD
+是-我       是-是       是-谁       是-PAD      是-PAD      是-PAD
+谁-我       谁-是       谁-谁       谁-PAD      谁-PAD      谁-PAD
+PAD-PAD     PAD-PAD       PAD-PAD       PAD-PAD      PAD-PAD      PAD-PAD
+PAD-PAD     PAD-PAD       PAD-PAD       PAD-PAD      PAD-PAD      PAD-PAD
+PAD-PAD     PAD-PAD       PAD-PAD       PAD-PAD      PAD-PAD      PAD-PAD
+</code></pre></div><p>然后对应的 Attention Mask 就是：</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">1   1   1   0   0   0
+1   1   1   0   0   0
+1   1   1   0   0   0
+1   1   1   0   0   0
+1   1   1   0   0   0
+1   1   1   0   0   0
+</code></pre></div><p>所以与Attention Score矩阵求和时，只有前三个字计算 Softmax 权重，后面三个 PAD 的权重都非常小；但是这里也有一个问题，就是 Attention Score矩阵的下面三行以及左边三列对应的Softmax权重也不是一个非常小的数，所以下一层的时候，对应上一层 PAD 位置的输出就包含了上一层中的<code>我是谁</code>三个字的信息了。这会不会造成什么污染呢？有待验证。</p>
+<p>图-2展示了 Shifted Window 前后 Windows 范围的比较，论文中选在向Top-Left方向进行平移，借助<code>torch.roll(+-)</code>来实现以及复原。需要指出的，平移之后，原本在左上角的Patch会移动到右下角，与正常 Feature Map的右下角的 Patch 变成相邻的，但是此时虽然相邻，但是不能将它们按照正常 Windows based Self Attention 进行计算，而应该分开计算，即原来相邻的 Patch 计算 Attention Score，不相邻的Patch之间不能计算 Attention Score。对应下图，其中A, C, D, E, F, G几个区域都应该单独计算 Attention Score。</p>
+<p><figure>
+    <center>
+    <img src="/imgs/swin-transformer/swin3.png" alt="图 - 5 Shifted Windows分区示意图">
+    <figcaption>图 - 5 Shifted Windows分区示意图</figcaption>
+    </center>
+</figure></p>
+<p>这导致Windows的个数由正常的$\lceil \frac{H}{M} \rceil \times \lceil \frac{W}{M} \rceil$ 变成 $(\lceil \frac{H}{M} \rceil + 1) \times (\lceil \frac{W}{M} \rceil + 1)$，这一点虽然看上增加不多，但是当$\lceil \frac{H}{M} \rceil = 2$时，由2 变为3，则相当于计算量增加了2.25倍，所以有必要对一点进行优化。</p>
+<p>作者提出使用Batch computation for shifted configuration计算 Self Attention，但当前的代码前提是所有输入图片的尺寸是不一致的。主要思想就是配合 Attention Mask 来保证只关注自己区域内的 Patch。代码如下。</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">        <span style="color:#000;font-weight:bold">if</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>shift_size <span style="color:#000;font-weight:bold">&gt;</span> <span style="color:#099">0</span>:
+            <span style="color:#998;font-style:italic"># calculate attention mask for SW-MSA</span>
+            H, W <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>input_resolution
+            img_mask <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>zeros((<span style="color:#099">1</span>, H, W, <span style="color:#099">1</span>))  <span style="color:#998;font-style:italic"># 1 H W 1</span>
+            h_slices <span style="color:#000;font-weight:bold">=</span> (<span style="color:#0086b3">slice</span>(<span style="color:#099">0</span>, <span style="color:#000;font-weight:bold">-</span><span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>window_size),    <span style="color:#998;font-style:italic"># start = 0, stop = -window_size, step=None</span>
+                        <span style="color:#0086b3">slice</span>(<span style="color:#000;font-weight:bold">-</span><span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>window_size, <span style="color:#000;font-weight:bold">-</span><span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>shift_size),
+                        <span style="color:#0086b3">slice</span>(<span style="color:#000;font-weight:bold">-</span><span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>shift_size, <span style="color:#999">None</span>))
+            w_slices <span style="color:#000;font-weight:bold">=</span> (<span style="color:#0086b3">slice</span>(<span style="color:#099">0</span>, <span style="color:#000;font-weight:bold">-</span><span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>window_size),
+                        <span style="color:#0086b3">slice</span>(<span style="color:#000;font-weight:bold">-</span><span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>window_size, <span style="color:#000;font-weight:bold">-</span><span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>shift_size),
+                        <span style="color:#0086b3">slice</span>(<span style="color:#000;font-weight:bold">-</span><span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>shift_size, <span style="color:#999">None</span>))
+            cnt <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">0</span>
+            <span style="color:#000;font-weight:bold">for</span> h <span style="color:#000;font-weight:bold">in</span> h_slices:
+                <span style="color:#000;font-weight:bold">for</span> w <span style="color:#000;font-weight:bold">in</span> w_slices:
+                    img_mask[:, h, w, :] <span style="color:#000;font-weight:bold">=</span> cnt
+                    cnt <span style="color:#000;font-weight:bold">+=</span> <span style="color:#099">1</span>
+
+            mask_windows <span style="color:#000;font-weight:bold">=</span> window_partition(img_mask, <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>window_size)  <span style="color:#998;font-style:italic"># nW, window_size, window_size, 1</span>
+            mask_windows <span style="color:#000;font-weight:bold">=</span> mask_windows<span style="color:#000;font-weight:bold">.</span>view(<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>, <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>window_size <span style="color:#000;font-weight:bold">*</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>window_size)
+            attn_mask <span style="color:#000;font-weight:bold">=</span> mask_windows<span style="color:#000;font-weight:bold">.</span>unsqueeze(<span style="color:#099">1</span>) <span style="color:#000;font-weight:bold">-</span> mask_windows<span style="color:#000;font-weight:bold">.</span>unsqueeze(<span style="color:#099">2</span>)
+            attn_mask <span style="color:#000;font-weight:bold">=</span> attn_mask<span style="color:#000;font-weight:bold">.</span>masked_fill(attn_mask <span style="color:#000;font-weight:bold">!=</span> <span style="color:#099">0</span>, <span style="color:#0086b3">float</span>(<span style="color:#000;font-weight:bold">-</span><span style="color:#099">100.0</span>))<span style="color:#000;font-weight:bold">.</span>masked_fill(attn_mask <span style="color:#000;font-weight:bold">==</span> <span style="color:#099">0</span>, <span style="color:#0086b3">float</span>(<span style="color:#099">0.0</span>))
+        <span style="color:#000;font-weight:bold">else</span>:
+            attn_mask <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">None</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>这里主要思路就是将属于同一个区域内的 Patch 赋值一个相同的标记<code>cnt</code>，然后同一个Windows的Patch的标记与其它patch的标记相减以后，相同 Windows 内对应的数值就为0，而不为0就意味着需要Masked掉对应位置的Attention Score的计算，也就是赋值为-100.0。对于<code>window_partion()</code>函数的实现见下面具体的代码实现。</p>
+<h3 id="relative-position-bias">Relative position bias</h3>
+<p>SwinT使用Windows内的相对位置编码来学习位置信息。</p>
+<p>$$\textrm{Attention}(Q, K, V) = \textrm{SoftMax}(QK^T/\sqrt{d} + B) V$$</p>
+<p>其中，$Q, K, V \in \mathbb{R}^{M^2 \times d}$，由于所有的 Stage 中相对位置的取值范围是：$[-M + 1, M - 1]$，所以作者让 B 的取值来自于$\hat{B} \in \mathbb{R}^{(2M-1) \times (2M-1)}$，这样对于Windows内任意两个Patch之间都会有一个相对位置编码向量进行表示(而且还考虑了分axis)！注意，每个 Swin Transformer Block层的 B 取值是不同的。</p>
+<p>这里最主要的代码逻辑是要将所有的相对位置$[(-M + 1, -M+1) \times (M-1, M-1)]$映射到$[0, (2M - 1) * (2M - 1)]$范围内唯一的索引。对应代码实现，就是将每个元素的用二维坐标进行编码，然后将二维坐标映射到一维数字。映射成二维坐标是通过三行代码实现的：</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">    coords_h <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>arange(<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>window_size[<span style="color:#099">0</span>])
+    coords_w <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>arange(<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>window_size[<span style="color:#099">1</span>])
+    <span style="color:#998;font-style:italic"># [0, ...] 表示行索引，[1, ...]表示列索引</span>
+    coords <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>stack(torch<span style="color:#000;font-weight:bold">.</span>meshgrid([coords_h, coords_w]))  <span style="color:#998;font-style:italic"># 2, Wh, Ww</span>
+</code></pre></div><p>然后是基于二维坐标计算相对位置，这里相对位置的计算也是分成行、列分别进行计算。</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">    coords_flatten <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>flatten(coords, <span style="color:#099">1</span>)  <span style="color:#998;font-style:italic"># 2, Wh*Ww</span>
+    relative_coords <span style="color:#000;font-weight:bold">=</span> coords_flatten[:, :, <span style="color:#999">None</span>] <span style="color:#000;font-weight:bold">-</span> coords_flatten[:, <span style="color:#999">None</span>, :]  <span style="color:#998;font-style:italic"># 2, Wh*Ww, Wh*Ww</span>
+    relative_coords <span style="color:#000;font-weight:bold">=</span> relative_coords<span style="color:#000;font-weight:bold">.</span>permute(<span style="color:#099">1</span>, <span style="color:#099">2</span>, <span style="color:#099">0</span>)<span style="color:#000;font-weight:bold">.</span>contiguous()  <span style="color:#998;font-style:italic"># Wh*Ww, Wh*Ww, 2</span>
+</code></pre></div><p>现在<code>relative_coords</code>的最后两维分别表示行、列的相对位置，取值范围都是：$[-M + 1, M - 1]$。</p>
+<p>然后就是将二维相对位置信息映射到一维索引，首先是将相对位置的取值范围变为：$[0, 2M - 2]$，这一步通过加上$M - 1$实现，然后就是将行相对位置 * 宽度 + 列相对位置，这里宽度是$2M - 1$，映射后的一维索引取值范围是：$[0, (2M - 1) \times (2M - 1)$。</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">    relative_coords[:, :, <span style="color:#099">0</span>] <span style="color:#000;font-weight:bold">+=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>window_size[<span style="color:#099">0</span>] <span style="color:#000;font-weight:bold">-</span> <span style="color:#099">1</span>  <span style="color:#998;font-style:italic"># shift to start from 0</span>
+    relative_coords[:, :, <span style="color:#099">1</span>] <span style="color:#000;font-weight:bold">+=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>window_size[<span style="color:#099">1</span>] <span style="color:#000;font-weight:bold">-</span> <span style="color:#099">1</span>
+    relative_coords[:, :, <span style="color:#099">0</span>] <span style="color:#000;font-weight:bold">*=</span> <span style="color:#099">2</span> <span style="color:#000;font-weight:bold">*</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>window_size[<span style="color:#099">1</span>] <span style="color:#000;font-weight:bold">-</span> <span style="color:#099">1</span>
+    relative_position_index <span style="color:#000;font-weight:bold">=</span> relative_coords<span style="color:#000;font-weight:bold">.</span>sum(<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>)  <span style="color:#998;font-style:italic"># Wh*Ww, Wh*Ww</span>
+    <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>register_buffer(<span style="color:#d14">&#34;relative_position_index&#34;</span>, relative_position_index)
+</code></pre></div><p>上述得到相对位置的一维索引后，需要根据一个 Table 来获取对应的相对位置编码，也就是从 $\hat{B}$ 中获取，定义如下：</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>relative_position_bias_table <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Parameter(
+    torch<span style="color:#000;font-weight:bold">.</span>zeros((<span style="color:#099">2</span> <span style="color:#000;font-weight:bold">*</span> window_size[<span style="color:#099">0</span>] <span style="color:#000;font-weight:bold">-</span> <span style="color:#099">1</span>) <span style="color:#000;font-weight:bold">*</span> (<span style="color:#099">2</span> <span style="color:#000;font-weight:bold">*</span> window_size[<span style="color:#099">1</span>] <span style="color:#000;font-weight:bold">-</span> <span style="color:#099">1</span>), num_heads))  <span style="color:#998;font-style:italic"># 2*Wh-1 * 2*Ww-1, nH</span>
+</code></pre></div><p>至此就是所有的Swin Transformer的算法结构了。</p>
+<h2 id="代码实现与一些细节">代码实现与一些细节</h2>
+<ul>
+<li>drop rate: 0.0</li>
+<li>atten drop rate: 0.0</li>
+<li>drop path rate: 0.1</li>
+</ul>
+<p>然后 Multi-Head Self Attention中Output Mlp用到的 drop rate 与 FFN 中用到的 drop rate 是同一个，atten drop rate 只用于Self Attention中对 Attention Mask进行处理。FFN中的Dropout的位置即结构如下: Linear + Act + Dropout + Linear + Dropout。</p>
+<p>Patch Merge 层的位置，论文中这个层被放在每个 Stage 开始的位置，但是实际代码里是被放在每个Stage最后一层的。</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">23
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">24
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">25
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">26
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">27
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">28
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">29
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">30
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">31
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">32
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">33
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">34
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">35
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">36
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">37
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">38
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">39
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">BasicLayer</span>(nn<span style="color:#000;font-weight:bold">.</span>Module):
+    <span style="color:#000;font-weight:bold">def</span> __init__(<span style="color:#999">self</span>, dim, input_resolution, depth, num_heads, window_size,
+                 mlp_ratio<span style="color:#000;font-weight:bold">=</span><span style="color:#099">4.</span>, qkv_bias<span style="color:#000;font-weight:bold">=</span><span style="color:#999">True</span>, qk_scale<span style="color:#000;font-weight:bold">=</span><span style="color:#999">None</span>, drop<span style="color:#000;font-weight:bold">=</span><span style="color:#099">0.</span>, attn_drop<span style="color:#000;font-weight:bold">=</span><span style="color:#099">0.</span>,
+                 drop_path<span style="color:#000;font-weight:bold">=</span><span style="color:#099">0.</span>, norm_layer<span style="color:#000;font-weight:bold">=</span>nn<span style="color:#000;font-weight:bold">.</span>LayerNorm, downsample<span style="color:#000;font-weight:bold">=</span><span style="color:#999">None</span>, use_checkpoint<span style="color:#000;font-weight:bold">=</span><span style="color:#999">False</span>):
+
+        <span style="color:#0086b3">super</span>()<span style="color:#000;font-weight:bold">.</span>__init__()
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>dim <span style="color:#000;font-weight:bold">=</span> dim
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>input_resolution <span style="color:#000;font-weight:bold">=</span> input_resolution
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>depth <span style="color:#000;font-weight:bold">=</span> depth
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>use_checkpoint <span style="color:#000;font-weight:bold">=</span> use_checkpoint
+
+        <span style="color:#998;font-style:italic"># build blocks</span>
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>blocks <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>ModuleList([
+            SwinTransformerBlock(dim<span style="color:#000;font-weight:bold">=</span>dim, input_resolution<span style="color:#000;font-weight:bold">=</span>input_resolution,
+                                 num_heads<span style="color:#000;font-weight:bold">=</span>num_heads, window_size<span style="color:#000;font-weight:bold">=</span>window_size,
+                                 shift_size<span style="color:#000;font-weight:bold">=</span><span style="color:#099">0</span> <span style="color:#000;font-weight:bold">if</span> (i <span style="color:#000;font-weight:bold">%</span> <span style="color:#099">2</span> <span style="color:#000;font-weight:bold">==</span> <span style="color:#099">0</span>) <span style="color:#000;font-weight:bold">else</span> window_size <span style="color:#000;font-weight:bold">//</span> <span style="color:#099">2</span>,
+                                 mlp_ratio<span style="color:#000;font-weight:bold">=</span>mlp_ratio,
+                                 qkv_bias<span style="color:#000;font-weight:bold">=</span>qkv_bias, qk_scale<span style="color:#000;font-weight:bold">=</span>qk_scale,
+                                 drop<span style="color:#000;font-weight:bold">=</span>drop, attn_drop<span style="color:#000;font-weight:bold">=</span>attn_drop,
+                                 drop_path<span style="color:#000;font-weight:bold">=</span>drop_path[i] <span style="color:#000;font-weight:bold">if</span> <span style="color:#0086b3">isinstance</span>(drop_path, <span style="color:#0086b3">list</span>) <span style="color:#000;font-weight:bold">else</span> drop_path,
+                                 norm_layer<span style="color:#000;font-weight:bold">=</span>norm_layer)
+            <span style="color:#000;font-weight:bold">for</span> i <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(depth)])
+
+        <span style="color:#998;font-style:italic"># patch merging layer</span>
+        <span style="color:#000;font-weight:bold">if</span> downsample <span style="color:#000;font-weight:bold">is</span> <span style="color:#000;font-weight:bold">not</span> <span style="color:#999">None</span>:
+            <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>downsample <span style="color:#000;font-weight:bold">=</span> downsample(input_resolution, dim<span style="color:#000;font-weight:bold">=</span>dim, norm_layer<span style="color:#000;font-weight:bold">=</span>norm_layer)
+        <span style="color:#000;font-weight:bold">else</span>:
+            <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>downsample <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">None</span>
+
+    <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">forward</span>(<span style="color:#999">self</span>, x):
+        <span style="color:#000;font-weight:bold">for</span> blk <span style="color:#000;font-weight:bold">in</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>blocks:
+            <span style="color:#000;font-weight:bold">if</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>use_checkpoint:
+                x <span style="color:#000;font-weight:bold">=</span> checkpoint<span style="color:#000;font-weight:bold">.</span>checkpoint(blk, x)
+            <span style="color:#000;font-weight:bold">else</span>:
+                x <span style="color:#000;font-weight:bold">=</span> blk(x)
+        <span style="color:#000;font-weight:bold">if</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>downsample <span style="color:#000;font-weight:bold">is</span> <span style="color:#000;font-weight:bold">not</span> <span style="color:#999">None</span>:
+            x <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>downsample(x)
+        <span style="color:#000;font-weight:bold">return</span> x
+
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="patchmerging">PatchMerging</h3>
+<p>可以看出，后续每个Patch的Merge过程就是取出 x0, x1, x2, x3 四个矩阵，然后拼接起来，送入一个<code>LayerNorm + Linear</code>层，后面的 Linear 层将channel维度从 4C 映射到 2C，也就是每个 Stage 下采样一倍，然后特征维度也只增加一倍。</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">23
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">24
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">25
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">26
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">27
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">28
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">29
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">30
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">PatchMerging</span>(nn<span style="color:#000;font-weight:bold">.</span>Module):
+    <span style="color:#000;font-weight:bold">def</span> __init__(<span style="color:#999">self</span>, input_resolution, dim, norm_layer<span style="color:#000;font-weight:bold">=</span>nn<span style="color:#000;font-weight:bold">.</span>LayerNorm):
+        <span style="color:#0086b3">super</span>()<span style="color:#000;font-weight:bold">.</span>__init__()
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>input_resolution <span style="color:#000;font-weight:bold">=</span> input_resolution
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>dim <span style="color:#000;font-weight:bold">=</span> dim
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>reduction <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Linear(<span style="color:#099">4</span> <span style="color:#000;font-weight:bold">*</span> dim, <span style="color:#099">2</span> <span style="color:#000;font-weight:bold">*</span> dim, bias<span style="color:#000;font-weight:bold">=</span><span style="color:#999">False</span>)
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>norm <span style="color:#000;font-weight:bold">=</span> norm_layer(<span style="color:#099">4</span> <span style="color:#000;font-weight:bold">*</span> dim)
+
+    <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">forward</span>(<span style="color:#999">self</span>, x):
+        <span style="color:#d14">&#34;&#34;&#34;
+</span><span style="color:#d14">        x: B, H*W, C
+</span><span style="color:#d14">        &#34;&#34;&#34;</span>
+        H, W <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>input_resolution
+        B, L, C <span style="color:#000;font-weight:bold">=</span> x<span style="color:#000;font-weight:bold">.</span>shape
+        <span style="color:#000;font-weight:bold">assert</span> L <span style="color:#000;font-weight:bold">==</span> H <span style="color:#000;font-weight:bold">*</span> W, <span style="color:#d14">&#34;input feature has wrong size&#34;</span>
+        <span style="color:#000;font-weight:bold">assert</span> H <span style="color:#000;font-weight:bold">%</span> <span style="color:#099">2</span> <span style="color:#000;font-weight:bold">==</span> <span style="color:#099">0</span> <span style="color:#000;font-weight:bold">and</span> W <span style="color:#000;font-weight:bold">%</span> <span style="color:#099">2</span> <span style="color:#000;font-weight:bold">==</span> <span style="color:#099">0</span>, f<span style="color:#d14">&#34;x size ({H}*{W}) are not even.&#34;</span>
+
+        x <span style="color:#000;font-weight:bold">=</span> x<span style="color:#000;font-weight:bold">.</span>view(B, H, W, C)
+
+        x0 <span style="color:#000;font-weight:bold">=</span> x[:, <span style="color:#099">0</span>::<span style="color:#099">2</span>, <span style="color:#099">0</span>::<span style="color:#099">2</span>, :]  <span style="color:#998;font-style:italic"># B H/2 W/2 C</span>
+        x1 <span style="color:#000;font-weight:bold">=</span> x[:, <span style="color:#099">1</span>::<span style="color:#099">2</span>, <span style="color:#099">0</span>::<span style="color:#099">2</span>, :]  <span style="color:#998;font-style:italic"># B H/2 W/2 C</span>
+        x2 <span style="color:#000;font-weight:bold">=</span> x[:, <span style="color:#099">0</span>::<span style="color:#099">2</span>, <span style="color:#099">1</span>::<span style="color:#099">2</span>, :]  <span style="color:#998;font-style:italic"># B H/2 W/2 C</span>
+        x3 <span style="color:#000;font-weight:bold">=</span> x[:, <span style="color:#099">1</span>::<span style="color:#099">2</span>, <span style="color:#099">1</span>::<span style="color:#099">2</span>, :]  <span style="color:#998;font-style:italic"># B H/2 W/2 C</span>
+        x <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>cat([x0, x1, x2, x3], <span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>)  <span style="color:#998;font-style:italic"># B H/2 W/2 4*C</span>
+        x <span style="color:#000;font-weight:bold">=</span> x<span style="color:#000;font-weight:bold">.</span>view(B, <span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>, <span style="color:#099">4</span> <span style="color:#000;font-weight:bold">*</span> C)  <span style="color:#998;font-style:italic"># B H/2*W/2 4*C</span>
+
+        x <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>norm(x)
+        x <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>reduction(x)
+
+        <span style="color:#000;font-weight:bold">return</span> x
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="swintransformerblock">SwinTransformerBlock</h3>
+<p>基于上面提到的 Shifted Windows based Self Attention 中 Mask 的分析以及 window partion以及WindowAttention等函数/类的实现，现在可以给出 Swin Transormer Block 的完整实现了。</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">SwinTransformerBlock</span>(nn<span style="color:#000;font-weight:bold">.</span>Module):
+    <span style="color:#d14">r</span><span style="color:#d14">&#34;&#34;&#34; Swin Transformer Block.
+</span><span style="color:#d14">
+</span><span style="color:#d14">    Args:
+</span><span style="color:#d14">        dim (int): Number of input channels.
+</span><span style="color:#d14">        input_resolution (tuple[int]): Input resulotion.
+</span><span style="color:#d14">        num_heads (int): Number of attention heads.
+</span><span style="color:#d14">        window_size (int): Window size.
+</span><span style="color:#d14">        shift_size (int): Shift size for SW-MSA.
+</span><span style="color:#d14">        mlp_ratio (float): Ratio of mlp hidden dim to embedding dim.
+</span><span style="color:#d14">        qkv_bias (bool, optional): If True, add a learnable bias to query, key, value. Default: True
+</span><span style="color:#d14">        qk_scale (float | None, optional): Override default qk scale of head_dim ** -0.5 if set.
+</span><span style="color:#d14">        drop (float, optional): Dropout rate. Default: 0.0
+</span><span style="color:#d14">        attn_drop (float, optional): Attention dropout rate. Default: 0.0
+</span><span style="color:#d14">        drop_path (float, optional): Stochastic depth rate. Default: 0.0
+</span><span style="color:#d14">        act_layer (nn.Module, optional): Activation layer. Default: nn.GELU
+</span><span style="color:#d14">        norm_layer (nn.Module, optional): Normalization layer.  Default: nn.LayerNorm
+</span><span style="color:#d14">    &#34;&#34;&#34;</span>
+
+    <span style="color:#000;font-weight:bold">def</span> __init__(<span style="color:#999">self</span>, dim, input_resolution, num_heads, window_size<span style="color:#000;font-weight:bold">=</span><span style="color:#099">7</span>, shift_size<span style="color:#000;font-weight:bold">=</span><span style="color:#099">0</span>,
+                 mlp_ratio<span style="color:#000;font-weight:bold">=</span><span style="color:#099">4.</span>, qkv_bias<span style="color:#000;font-weight:bold">=</span><span style="color:#999">True</span>, qk_scale<span style="color:#000;font-weight:bold">=</span><span style="color:#999">None</span>, drop<span style="color:#000;font-weight:bold">=</span><span style="color:#099">0.</span>, attn_drop<span style="color:#000;font-weight:bold">=</span><span style="color:#099">0.</span>, drop_path<span style="color:#000;font-weight:bold">=</span><span style="color:#099">0.</span>,
+                 act_layer<span style="color:#000;font-weight:bold">=</span>nn<span style="color:#000;font-weight:bold">.</span>GELU, norm_layer<span style="color:#000;font-weight:bold">=</span>nn<span style="color:#000;font-weight:bold">.</span>LayerNorm):
+        <span style="color:#0086b3">super</span>()<span style="color:#000;font-weight:bold">.</span>__init__()
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>dim <span style="color:#000;font-weight:bold">=</span> dim
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>input_resolution <span style="color:#000;font-weight:bold">=</span> input_resolution
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>num_heads <span style="color:#000;font-weight:bold">=</span> num_heads
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>window_size <span style="color:#000;font-weight:bold">=</span> window_size
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>shift_size <span style="color:#000;font-weight:bold">=</span> shift_size
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>mlp_ratio <span style="color:#000;font-weight:bold">=</span> mlp_ratio
+        <span style="color:#000;font-weight:bold">if</span> <span style="color:#0086b3">min</span>(<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>input_resolution) <span style="color:#000;font-weight:bold">&lt;=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>window_size:
+            <span style="color:#998;font-style:italic"># if window size is larger than input resolution, we don&#39;t partition windows</span>
+            <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>shift_size <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">0</span>
+            <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>window_size <span style="color:#000;font-weight:bold">=</span> <span style="color:#0086b3">min</span>(<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>input_resolution)
+        <span style="color:#000;font-weight:bold">assert</span> <span style="color:#099">0</span> <span style="color:#000;font-weight:bold">&lt;=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>shift_size <span style="color:#000;font-weight:bold">&lt;</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>window_size, <span style="color:#d14">&#34;shift_size must in 0-window_size&#34;</span>
+
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>norm1 <span style="color:#000;font-weight:bold">=</span> norm_layer(dim)
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>attn <span style="color:#000;font-weight:bold">=</span> WindowAttention(
+            dim, window_size<span style="color:#000;font-weight:bold">=</span>to_2tuple(<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>window_size), num_heads<span style="color:#000;font-weight:bold">=</span>num_heads,
+            qkv_bias<span style="color:#000;font-weight:bold">=</span>qkv_bias, qk_scale<span style="color:#000;font-weight:bold">=</span>qk_scale, attn_drop<span style="color:#000;font-weight:bold">=</span>attn_drop, proj_drop<span style="color:#000;font-weight:bold">=</span>drop)
+
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>drop_path <span style="color:#000;font-weight:bold">=</span> DropPath(drop_path) <span style="color:#000;font-weight:bold">if</span> drop_path <span style="color:#000;font-weight:bold">&gt;</span> <span style="color:#099">0.</span> <span style="color:#000;font-weight:bold">else</span> nn<span style="color:#000;font-weight:bold">.</span>Identity()
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>norm2 <span style="color:#000;font-weight:bold">=</span> norm_layer(dim)
+        mlp_hidden_dim <span style="color:#000;font-weight:bold">=</span> <span style="color:#0086b3">int</span>(dim <span style="color:#000;font-weight:bold">*</span> mlp_ratio)
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>mlp <span style="color:#000;font-weight:bold">=</span> Mlp(in_features<span style="color:#000;font-weight:bold">=</span>dim, hidden_features<span style="color:#000;font-weight:bold">=</span>mlp_hidden_dim, act_layer<span style="color:#000;font-weight:bold">=</span>act_layer, drop<span style="color:#000;font-weight:bold">=</span>drop)
+
+        <span style="color:#000;font-weight:bold">if</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>shift_size <span style="color:#000;font-weight:bold">&gt;</span> <span style="color:#099">0</span>:
+            <span style="color:#998;font-style:italic"># calculate attention mask for SW-MSA</span>
+            H, W <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>input_resolution
+            img_mask <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>zeros((<span style="color:#099">1</span>, H, W, <span style="color:#099">1</span>))  <span style="color:#998;font-style:italic"># 1 H W 1</span>
+            h_slices <span style="color:#000;font-weight:bold">=</span> (<span style="color:#0086b3">slice</span>(<span style="color:#099">0</span>, <span style="color:#000;font-weight:bold">-</span><span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>window_size),    <span style="color:#998;font-style:italic"># start = 0, stop = -window_size, step=None</span>
+                        <span style="color:#0086b3">slice</span>(<span style="color:#000;font-weight:bold">-</span><span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>window_size, <span style="color:#000;font-weight:bold">-</span><span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>shift_size),
+                        <span style="color:#0086b3">slice</span>(<span style="color:#000;font-weight:bold">-</span><span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>shift_size, <span style="color:#999">None</span>))
+            w_slices <span style="color:#000;font-weight:bold">=</span> (<span style="color:#0086b3">slice</span>(<span style="color:#099">0</span>, <span style="color:#000;font-weight:bold">-</span><span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>window_size),
+                        <span style="color:#0086b3">slice</span>(<span style="color:#000;font-weight:bold">-</span><span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>window_size, <span style="color:#000;font-weight:bold">-</span><span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>shift_size),
+                        <span style="color:#0086b3">slice</span>(<span style="color:#000;font-weight:bold">-</span><span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>shift_size, <span style="color:#999">None</span>))
+            cnt <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">0</span>
+            <span style="color:#000;font-weight:bold">for</span> h <span style="color:#000;font-weight:bold">in</span> h_slices:
+                <span style="color:#000;font-weight:bold">for</span> w <span style="color:#000;font-weight:bold">in</span> w_slices:
+                    img_mask[:, h, w, :] <span style="color:#000;font-weight:bold">=</span> cnt
+                    cnt <span style="color:#000;font-weight:bold">+=</span> <span style="color:#099">1</span>
+
+            mask_windows <span style="color:#000;font-weight:bold">=</span> window_partition(img_mask, <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>window_size)  <span style="color:#998;font-style:italic"># nW, window_size, window_size, 1</span>
+            mask_windows <span style="color:#000;font-weight:bold">=</span> mask_windows<span style="color:#000;font-weight:bold">.</span>view(<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>, <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>window_size <span style="color:#000;font-weight:bold">*</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>window_size)
+            attn_mask <span style="color:#000;font-weight:bold">=</span> mask_windows<span style="color:#000;font-weight:bold">.</span>unsqueeze(<span style="color:#099">1</span>) <span style="color:#000;font-weight:bold">-</span> mask_windows<span style="color:#000;font-weight:bold">.</span>unsqueeze(<span style="color:#099">2</span>)
+            attn_mask <span style="color:#000;font-weight:bold">=</span> attn_mask<span style="color:#000;font-weight:bold">.</span>masked_fill(attn_mask <span style="color:#000;font-weight:bold">!=</span> <span style="color:#099">0</span>, <span style="color:#0086b3">float</span>(<span style="color:#000;font-weight:bold">-</span><span style="color:#099">100.0</span>))<span style="color:#000;font-weight:bold">.</span>masked_fill(attn_mask <span style="color:#000;font-weight:bold">==</span> <span style="color:#099">0</span>, <span style="color:#0086b3">float</span>(<span style="color:#099">0.0</span>))
+        <span style="color:#000;font-weight:bold">else</span>:
+            attn_mask <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">None</span>
+
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>register_buffer(<span style="color:#d14">&#34;attn_mask&#34;</span>, attn_mask)
+
+    <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">forward</span>(<span style="color:#999">self</span>, x):
+        H, W <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>input_resolution
+        B, L, C <span style="color:#000;font-weight:bold">=</span> x<span style="color:#000;font-weight:bold">.</span>shape
+        <span style="color:#000;font-weight:bold">assert</span> L <span style="color:#000;font-weight:bold">==</span> H <span style="color:#000;font-weight:bold">*</span> W, <span style="color:#d14">&#34;input feature has wrong size&#34;</span>
+
+        shortcut <span style="color:#000;font-weight:bold">=</span> x
+        x <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>norm1(x)
+        x <span style="color:#000;font-weight:bold">=</span> x<span style="color:#000;font-weight:bold">.</span>view(B, H, W, C)
+
+        <span style="color:#998;font-style:italic"># cyclic shift</span>
+        <span style="color:#000;font-weight:bold">if</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>shift_size <span style="color:#000;font-weight:bold">&gt;</span> <span style="color:#099">0</span>:
+            shifted_x <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>roll(x, shifts<span style="color:#000;font-weight:bold">=</span>(<span style="color:#000;font-weight:bold">-</span><span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>shift_size, <span style="color:#000;font-weight:bold">-</span><span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>shift_size), dims<span style="color:#000;font-weight:bold">=</span>(<span style="color:#099">1</span>, <span style="color:#099">2</span>))
+        <span style="color:#000;font-weight:bold">else</span>:
+            shifted_x <span style="color:#000;font-weight:bold">=</span> x
+
+        <span style="color:#998;font-style:italic"># partition windows</span>
+        x_windows <span style="color:#000;font-weight:bold">=</span> window_partition(shifted_x, <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>window_size)  <span style="color:#998;font-style:italic"># nW*B, window_size, window_size, C</span>
+        x_windows <span style="color:#000;font-weight:bold">=</span> x_windows<span style="color:#000;font-weight:bold">.</span>view(<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>, <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>window_size <span style="color:#000;font-weight:bold">*</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>window_size, C)  <span style="color:#998;font-style:italic"># nW*B, window_size*window_size, C</span>
+
+        <span style="color:#998;font-style:italic"># W-MSA/SW-MSA</span>
+        attn_windows <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>attn(x_windows, mask<span style="color:#000;font-weight:bold">=</span><span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>attn_mask)  <span style="color:#998;font-style:italic"># nW*B, window_size*window_size, C</span>
+
+        <span style="color:#998;font-style:italic"># merge windows</span>
+        attn_windows <span style="color:#000;font-weight:bold">=</span> attn_windows<span style="color:#000;font-weight:bold">.</span>view(<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>, <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>window_size, <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>window_size, C)
+        shifted_x <span style="color:#000;font-weight:bold">=</span> window_reverse(attn_windows, <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>window_size, H, W)  <span style="color:#998;font-style:italic"># B H&#39; W&#39; C</span>
+
+        <span style="color:#998;font-style:italic"># reverse cyclic shift</span>
+        <span style="color:#000;font-weight:bold">if</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>shift_size <span style="color:#000;font-weight:bold">&gt;</span> <span style="color:#099">0</span>:
+            x <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>roll(shifted_x, shifts<span style="color:#000;font-weight:bold">=</span>(<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>shift_size, <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>shift_size), dims<span style="color:#000;font-weight:bold">=</span>(<span style="color:#099">1</span>, <span style="color:#099">2</span>))
+        <span style="color:#000;font-weight:bold">else</span>:
+            x <span style="color:#000;font-weight:bold">=</span> shifted_x
+        x <span style="color:#000;font-weight:bold">=</span> x<span style="color:#000;font-weight:bold">.</span>view(B, H <span style="color:#000;font-weight:bold">*</span> W, C)
+
+        <span style="color:#998;font-style:italic"># FFN</span>
+        x <span style="color:#000;font-weight:bold">=</span> shortcut <span style="color:#000;font-weight:bold">+</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>drop_path(x)
+        x <span style="color:#000;font-weight:bold">=</span> x <span style="color:#000;font-weight:bold">+</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>drop_path(<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>mlp(<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>norm2(x)))
+
+        <span style="color:#000;font-weight:bold">return</span> x
+</code></pre></div><h2 id="实验结果">实验结果</h2>
+<p>Swin Transformer 在 分类、识别、分割几个任务上都获得了提高，尤其是识别、分割提升显著。</p>
+<p>ImageNet上的性能表现。</p>
+<p><figure>
+    <center>
+    <img src="/imgs/swin-transformer/swin4.png" alt="图 - 6 SwinT在ImageNet上的性能对比">
+    <figcaption>图 - 6 SwinT在ImageNet上的性能对比</figcaption>
+    </center>
+</figure></p>
+<p>COCO上的性能表现。</p>
+<p><figure>
+    <center>
+    <img src="/imgs/swin-transformer/swin5.png" alt="图 - 7 SwinT在COCO上识别性能对比">
+    <figcaption>图 - 7 SwinT在COCO上识别性能对比</figcaption>
+    </center>
+</figure></p>
+<p>分割性能表现。</p>
+<p><figure>
+    <center>
+    <img src="/imgs/swin-transformer/swin6.png" alt="图 - 8 SwinT在分割任务上的性能对比">
+    <figcaption>图 - 8 SwinT在分割任务上的性能对比</figcaption>
+    </center>
+</figure></p>
+<p>不同位置编码的影响。</p>
+<p><figure>
+    <center>
+    <img src="/imgs/swin-transformer/swin7.png" alt="图 - 9 SwinT中不同位置编码对精度的影响">
+    <figcaption>图 - 9 SwinT中不同位置编码对精度的影响</figcaption>
+    </center>
+</figure></p>
+<p>速度对比，GPU为V100。</p>
+<p><figure>
+    <center>
+    <img src="/imgs/swin-transformer/swin8.png" alt="图 - 10 SwinT速度对比">
+    <figcaption>图 - 10 SwinT速度对比</figcaption>
+    </center>
+</figure></p>
         
             <p>对PGD算法的改进，包括FreeAT, FreeLB, SMART等。</p>
 <p>博客<a href="/content/posts/adversarial-training.md">Adversarial Trainig</a>里面的PGD模型在对抗样本训练中可以起到很好的效果，但是缺点在于求解最优扰动时需要进行迭代，比如迭代K次，则意味着训练耗时增加K + 1倍。本文提到的几个算法主要就是针对这个问题进行优化，包括 FreeAT, FreeLB, SMART 等算法。</p>
@@ -308,9 +940,13 @@
 <p>这篇文章就提到了，对抗训练一方面是为了提高鲁棒性，另一方面是为了提高泛化性。本文提出的模型叫做 MT-DNN，上面的 SMART 算法与这个算法也可以结合起来。本文发现对抗学习也可以提高预训练阶段的效果，。</p>
 <p>发现，virtual adversarial training 比 conventional adversarial trainging 效果更好，尤其是存在 noisy label 的时候。 BERT 预训练的 MLM 就是属于 noisy label 的情况，因为被 mask 的 word 实际上可以有很多的选择。所以 SMART 中的 $\lambda$ 在预训练阶段会比较大，比如 = 10，微调阶段为 = 1。</p>
 </li>
+<li>
+<p>CIFS: <a href="https://arxiv.org/abs/2102.05311">CIFS: Improving Adversarial Robustness of CNNs via Channel-wise Importance-based Feature Selection</a></p>
+<p>对每个channel进行channel-wise 的扰动！</p>
+</li>
 </ul>
 <h2 id="代码实现">代码实现</h2>
-<p>先来看下 FreeLB 的代码实现，参考：<a href="https://github.com/zhuchen03/FreeLB">FreeLB - github</a>。在这个<a href="https://github.com/zhuchen03/FreeLB/blob/master/huggingface-transformers/launch/run_glue.sh">run_glue.sh</a> 脚本中，不同的下游任务对 $\delta$ 的初始化也不同，比如全零，或者<code>uniform()</code>等。</p>
+<p>先来看下 FreeLB 的代码实现，参考：<a href="https://github.com/zhuchen03/FreeLB">FreeLB - github</a>。在这个<a href="https://github.com/zhuchen03/FreeLB/blob/master/huggingface-transformers/launch/run_glue.sh">run_glue.sh</a> 脚本中，不同的下游任务对 $\delta$ 的初始化也不同，比如全零，或者<code>uniform()</code>等。<a href="https://github.com/mahyarnajibi/FreeAdversarialTraining">FreeAT - github</a>的实现代码其实与此类似。</p>
 <p>代码里的亮点在于：(1) 首先获取输入文本的 Embedding 表示 (2) 初始化 $\delta$ (3) 迭代求解最优的对抗样本。</p>
 <div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
 <table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
@@ -593,7 +1229,7 @@ Attacks</a>等。</p>
 <p>注意是对输入 x 的梯度，计算Loss的梯度时需要Label信息$y$的存在，$\hat{\theta}$为模型的权重，在计算题的过程中，这个权重不发生变化。</p>
 <p>结合上文提到对于文本任务，这里对 Token Embedding 进行加性扰动。此时用$\mathbf{s}$表示word embedding vectors，Label为y，则定义扰动数值为：</p>
 <p>$$r_{adv} = -\epsilon \mathbf{g} / \parallel \mathbf{g} \parallel_2, \mathrm{where} \mathbf{g} = \nabla_s \log p(y | \mathbf{s}; \hat{\theta})$$</p>
-<p>然后在训练过程中对应的 Loss 项为：</p>
+<p>实际实现中，这里应该是$+\epsilon \mathbf{g} / \parallel \mathbf{g} \parallel_2$而不是-。然后在训练过程中对应的 Loss 项为：</p>
 <p>$$L_{\mathrm{adv}}(\theta) = - \frac{1}{N} \sum_{n=1}^N \log p(y_n | s_n + r_{\mathrm{adv}, n}; \theta)$$</p>
 <p>其中，N是样本的个数，可以是 Mini-Batch 内样本的个数。</p>
 <h3 id="virtual-adversarial-training">Virtual adversarial training</h3>
@@ -2610,120 +3246,6 @@ fras <span style="color:#000;font-weight:bold">=</span> [<span style="color:#d14
 <p>对比普通的 Self-Attention (如下式)，新的LSH Attention改动如下。</p>
 <p>$$Attention(Q, K, V) = Softmax(\frac{QK^T}{\sqrt{d_k}}) \times V$$</p>
         
-            <p>Adam算法的实现以及一个主要改进AdamW的原理与实现。</p>
-<p>突然觉着NCHW尺寸的张量比 NHWC Layout 的张量更容易理解，因为后者来看，就是N个样本，每个样本 H * W 的空间维度，然后每个空间元素点是一个 C 维的特征向量。NCHW Layout 的话就需要从后向前理解了&hellip;</p>
-<h2 id="adam">Adam</h2>
-<p>对于 Adam 的实现，参考下图即可。</p>
-<p><figure>
-    <center>
-    <img src="/imgs/adam-adamw/adam0.png" alt="图-1 Adam的实现">
-    <figcaption>图-1 Adam的实现</figcaption>
-    </center>
-</figure></p>
-<p>算法里最后面三行可以通过用下面两个式子代替用来提高计算性能。</p>
-<p>$$   \alpha_t = \alpha \cdot \frac{\sqrt{1 - \beta_2^t}}{ (1 - \beta_1^t)} $$
-$$\theta_t \leftarrow \theta_{t-1} - \frac{\alpha_t \cdot m_t}{\sqrt{v_t} + \hat{\epsilon}} $$</p>
-<p>其中，$\hat{\epsilon} = \frac{\epsilon}{\sqrt{1 - \beta_2^t}}$。此外，$\alpha$学习率设置了每次更新步长$\Delta_t$的置信区间，具体解释可以参考论文。二阶矩的计算中与普通方差的计算差别在于没有减去均值期望，所以被称为uncentered variacen。而最后上面第一个式子说明了两个超参对更新步长的控制，最后一个式子也说明一阶矩、二阶矩对更新步长的控制，如平地中，除式接近于1，陡峭部分除式小于1（因为方差大），更新会更保守一些。</p>
-<p>算法的实现里，另一个重要的步骤是对一阶、二阶矩偏置的矫正。即为什么要除以$\sqrt{1 - \beta_{1,2}^2}$这个式子，证明如下。</p>
-<p>以一阶矩$m_t$为例进行推导，首先假设$m_0 = 0$，即初始为一个零矩阵。则$t$时刻一阶矩的计算展开为：</p>
-<p>$$m_t = (1 - \beta_t) \sum_{i}^{t}\beta_1^{t-i}g_i$$</p>
-<p>我们的目标就是矫正$\mathbb{E}[m_t]$与$\mathbb{E}[g_t]$之间的差距。</p>
-<p>$$\begin{aligned}
-\mathbb{E}[m_t] = (1 - \beta_1) \mathbb{E}\left[ \sum_i^t \beta_1^{t-i} \cdot g_i \right] \<br>
-= &amp; \mathbb{E}[g_t] \cdot (1 - \beta_1) \sum_{i}^t\beta_1^{t-i} + \zeta \<br>
-= &amp; \mathbb{E}[g_t]\cdot (1 - \beta_1) + \zeta
-\end{aligned}$$</p>
-<p>其中，等比数列求和公式为：$\sum_i^t \beta_1^{t-i} = \frac{1 \cdot (1 - \beta_1^t)}{1 - \beta_1}$；另外一个地方是第一个等式，即$\mathbb{E}[g_i] = \mathbb{E}[g_t] + \zeta_i$，这里主要考虑使用等式右边近似表示等式左边的数值然后加上一个误差项，如果$g_i, g_t$属于独立同分布则这个误差项接近于0；论文里有提到，如果$\mathbb{E}[g_i]$比较稳定的时候，这里的误差项接近于0，或者当$\beta_1$比较小的时候，那么对于很久以前的梯度$g_i$赋予很小的权重。</p>
-<p>当不使用这些矫正项的时候，Adam退化为RMSProp + Momentum的优化算法，实验表明，随着$\beta_2 \rightarrow 1$ 时，训练越来越不稳定。下图左侧开始的地方给出了一个示意图，其中绿色为 ground truth，紫色为预测的曲线，可以看到紫色部分在开始的地方偏小。</p>
-<p><figure>
-    <center>
-    <img src="/imgs/adam-adamw/adam1.png" alt="图-2 偏置项矫正的作用">
-    <figcaption>图-2 偏置项矫正的作用</figcaption>
-    </center>
-</figure></p>
-<p>缺点是，像 Adam 这些 adaptive gradient optimization methods 在图像分类等任务上泛化性能不够高。常见的 adaptive gradient methods 包括：AdaGrad，RMSProp，Adam，AMSGrad等。可能的原因包括陡峭的局部最优解的出现或其他自身存在的缺点。</p>
-<h2 id="adamw">AdamW</h2>
-<p><a href="https://arxiv.org/pdf/1711.05101.pdf">Decoupled Weight Decay Regularization</a>作者发现，通过解偶weight decay以及基于loss的反向传播两个过程，可以让学习率、weight decay 两个超参的选取解偶，并且极大提高 adam 优化器在分类任务上的泛化性能，与 SGD + Momentum 取得类似的效果。</p>
-<p>既然泛化性能不够，那说明正则化强度不够，所以作者就想到了对 L2 / weight decay 在 Adam 中的使用进行了研究。论文研究了 L2 正则项与 weight decay 在 SGD / Adam 中作用的异同，包括下面几点。</p>
-<ul>
-<li>L2 正则化项与 weight decay 的实现是不同的</li>
-<li>Adam中L2正则项作用不明显</li>
-<li>SGD中 L2 与 weight decay 效果类似</li>
-<li>关于Adam中 Weight decay的选取，一般来说如果训练需要的迭代次数(iteration)越多，这个数值应该越小</li>
-<li>Adam配合全局的学习率调整可以进一步提高性能，比如 cosine annealing等</li>
-</ul>
-<p>考虑<a href="#l2%E6%AD%A3%E5%88%99%E5%8C%96%E4%B8%8Eweight-decay%E7%9A%84%E5%8C%BA%E5%88%AB">L2与WD区别</a>，论文提出了 SGDW 优化算法，用于解耦weight decay实现中依赖于学习率来计算l2参数。主要改动在于：惩罚项从计算 Momentum 计算之前移动到之后了；在不考虑momentum的实现时，图-3中的算法那才时 weight decay 的真正实现，至于所说的解耦的好处，这也是 weight decay 本身自带的优势。(当红色起作用时，绿色不起作用；或者相反)</p>
-<p><figure>
-    <center>
-    <img src="/imgs/adam-adamw/sgdw0.png" alt="图-3 SGDW的实现">
-    <figcaption>图-3 SGDW的实现</figcaption>
-    </center>
-</figure></p>
-<p>但是对于Adam的实现来说，带有weight decay的实现与 L2 Loss 计算梯度无法等价，这一点可以通过对 L2 loss 求导替换$\nabla f_t(\theta)$看出来，若需要两者等价，则L2的系数需要满足:</p>
-<p>$$\lambda' = \frac{\lambda}{\alpha \mathbf{M}_t}$$</p>
-<p>才行。在 SGD 中，L2 与 Weight Decay 的作用都是让权重接近于0，但是在 Adaptive gradient algorithms中，L2 却不会这样，下个式子给出了带有 L2 正则项的Loss函数求导然后更新权重的过程。</p>
-<p>$$\theta_{t+1} \leftarrow \theta_t - \alpha \mathbf{M}_t \nabla f_t(\theta_t) - \alpha \mathbf{M}_t\lambda' \theta_t$$</p>
-<p>也就是说，L2 惩罚项也会被用于计算梯度，然后这个计算的梯度被用于 Adam 更新算法中，惩罚项并不会直接作用于权重上，而是参与到自适应一阶、二阶矩$\mathbf{M}_t$的调整中。而在 weight decay 的实现中，没有这个问题，因为$\mathbf{M}_t$只依赖于梯度，而weight decay起作用的方式在于$(1 - \lambda)g_t$，具体公式见论文的Proposition2部分以及对应的附录部分。</p>
-<p>为什么 L2 惩罚项这种使用方式不明显呢？首先明确一点是，weight decay / L2 都是为了获得更小的权重值，这样模型泛化会更好一些，为了实现这一点，就需要让权重较大的元素下降的更快一些，权重已经比较小的元素更新小一些。来看 L2 在 Adam 中的具体作用。</p>
-<p><a href="https://towardsdatascience.com/why-adamw-matters-736223f31b5d">Why AdamW matters</a> 博客里最后一个公式，相当于对权重的exponential moving更新过程是：</p>
-<p>$$（1 - \frac{\alpha ( 1 - \beta_1)w}{\sqrt{v_t} + \epsilon})x_{t-1}$$</p>
-<p>所以当梯度较大的时候，$\sqrt{v_t}$也比较大，导致该权重的更新（exponential moving）比较小，且还不如那些梯度很小的权重变化大，所以L2作用被打折扣，这也是论文里提到的，拥有大梯度的权重x被惩罚的力度还不如其它权重。最后论文的prosition3 给出了weight decay 与 L2 作用等价时候的关系，但是实际不会在 adaptive gradient algorithms 中实现，而且按照公式关系就可以实现对大的权重进行惩罚，尤其是那些历史梯度都比较大的权重。</p>
-<p>那么可不可以理论证明 Weight Decay 的效果确实优于 L2 呢？见<a href="#%E4%BB%8E-bayesian-filtering-%E7%9A%84%E8%A7%92%E5%BA%A6%E7%9C%8B%E5%BE%85weight-decay">bayesian filtering</a></p>
-<p>图-4给出了准确的 adam with weight decay 的实现。</p>
-<p><figure>
-    <center>
-    <img src="/imgs/adam-adamw/adamw1.png" alt="图-4 AdamW的实现">
-    <figcaption>图-4 AdamW的实现</figcaption>
-    </center>
-</figure></p>
-<p>很明显的看出来，现在 weight decay 已经跟一阶、二阶矩没有关系了。论文中，作者实验证明，即使 Adam 会自适应的调整学习率，但是加上一个全局的乘积因子，如 Cosine Annealing 等，效果会更好。</p>
-<h3 id="从-bayesian-filtering-的角度看待weight-decay">从 Bayesian Filtering 的角度看待Weight Decay</h3>
-<p>论文引用<a href="https://openreview.net/forum?id=BygREjC9YQ">Aitchison 2018</a>论文的观点，将模型参数的优化过程看做是求解一系列权重参数最优分布的过程。并将训练过程看做是一系列根据训练数据求解模型权重最大似然的过程$P(\theta_t | y_{1..t})$，状态转移函数是一个训练数据无关的过程，即从$P(\theta_{t+1} | \theta_t)$；$\theta$被认为是state，$y_{1..t}$被认为是观测结果。这里还需要更详细的整理。</p>
-<p>对于Bayesian Filtering的一个发展是大名鼎鼎的卡尔曼滤波，此外还有其它更复杂的非线性情况下的扩展等实现，这方面一个比较好的教材是：<a href="http://asrl.utias.utoronto.ca/~tdb/bib/barfoot_ser17.pdf">State Estimation for Robotics</a>，上面提到的状态的预测、更新在这本书里都会有比较详细的支撑内容。</p>
-<p>补充书上式3.3推导过程中第一个等式（下图）的来源，参考<a href="https://math.stackexchange.com/questions/408774/bayes-rule-with-multiple-conditions">Bayes rule with multiple conditions</a>。</p>
-<p><figure>
-    <center>
-    <img src="/imgs/adam-adamw/adamw0.png" alt="图-5 Bayes推导公式">
-    <figcaption>图-5 Bayes推导公式</figcaption>
-    </center>
-</figure></p>
-<p>这可以基于chain rule 来思考：</p>
-<p>$$P(a, z, b) = P(a, z | b)P(b) = P(a | z, b) P(z, b) = P(a | z, b)P(z|b)P(b)$$</p>
-<p>所以就有了：</p>
-<p>$$P(x | v, y) = \frac{P(y, x, v)}{P(v, y)} = \frac{P(y|x, v)P(x|v)P(v)}{P(y|v)P(v)}$$</p>
-<p>多说一句，<a href="http://www.r-5.org/files/books/computers/algo-list/image-processing/vision/Richard_Hartley_Andrew_Zisserman-Multiple_View_Geometry_in_Computer_Vision-EN.pdf">Multiple View Gemometry in Computer Vision</a>与上面这本书是视觉SLAM领域两个非常重要的参考读物，一本讲解了从视觉图像上得到三维空间信息，另一本讲解了三维空间信息的使用、变换、误差优化等信息，完美相互配合。</p>
-<h3 id="其它的一些改进">其它的一些改进</h3>
-<p>论文里，作者用实验表明训练不同的迭代次数时，最优的 weight decay 也是不同的。作者提出了“Normalized Weight Decay”，计算如下：</p>
-<p>$$\lambda = \lambda_{norm}\frac{b}{BT}$$</p>
-<p>其中，$B$是 training point，T是total epochs数，b是batch size。training point 是单个 epoch 内迭代更新的次数（我的理解）。</p>
-<p>其它的改进包括 AdamW with Warm Restart and Cosine Annealing等，一个例子如下。</p>
-<p>$$\eta_t = 0.5 + 0.5\cos (\pi T_{cur} / T_i)$$</p>
-<p>可以配合上面的 normalized weight decay 对$\lambda$进行调整。Warm Restart 的好处是可以保留前几次的信息，形成一个 momentum，具体可以参考论文。此外，附录B, C部分给出了一个例子，用来说明每次 Restart 时 T 增大两倍，以及 $\eta$ 的变化过程。</p>
-<h2 id="l2正则化与weight-decay的区别">L2正则化与weight decay的区别</h2>
-<p>注意，L2 正则化项与 Weight Decay 在 SGD 中的使用是两个不同的公式，虽然两者之间存在一个基于学习率的系数差别。结论就是，在 Adaptive Gradient methods 中 L2 的正则化能力弱于weight decay。</p>
-<p>关于 weight decay，一般来说 CNN 模型会选取一个比较小的数值，如 10-4 / 10-5 这种量级，但是对于 transformer 模型来说，这个数值一般都会在10-2量级，直观的反映了模型容量对正则化强度的需求变化。</p>
-<p>下面来看具体的区别。首先是定义，L2正则化项的定义是修改 Loss 函数，即：</p>
-<p>$$f_t^{reg}(\mathbf{\theta}) = f_t(\theta) + \frac{\lambda'}{2}\parallel \theta \parallel^2$$</p>
-<p>其中$f_t(\theta)$为 Loss 函数，$\theta$为模型的权重。而SGD中 weight decay 对应的实现是在参数更新的时候起作用，即：</p>
-<p>$$\theta_{t+1} = (1 - \lambda) \theta_t + \alpha \nabla f_t(\theta_t) $$</p>
-<p>可以看出来是在原来的权重基础上做了一个 expontional decay 的类似计算，$\alpha$为学习率。对 L2 正则项的Loss函数求导并更新权重的公式如下：</p>
-<p>$$\theta_{t+1} = \theta - \alpha \nabla f_t(\theta_t) - \alpha \lambda' \theta$$</p>
-<p>结合上面两个参数更新过程的式子，可以得出，当L2正则项的参数满足$\lambda' = \frac{\lambda}{\alpha}$条件时，这两个正则方式是等价的。另一方面，在 SGD 中，L2 与 weight decay 的参数（$\lambda'$与$\lambda$）是紧密关联的，前者是后者除以学习率得到。</p>
-<h2 id="其它">其它</h2>
-<ol>
-<li>
-<p>为什么weight decay正则化项不会包含 bias 项？</p>
-<p>参考下面的<a href="https://stats.stackexchange.com/questions/153605/no-regularisation-term-for-bias-unit-in-neural-network">答案</a>。</p>
-<blockquote>
-<p>Overfitting usually requires the output of the model to be sensitive to small changes in the input data (i.e. to exactly interpolate the target values, you tend to need a lot of curvature in the fitted function). The bias parameters don&rsquo;t contribute to the curvature of the model, so there is usually little point in regularising them as well.</p>
-</blockquote>
-<p>事实上， bias项一般会用 mean = 1 的随机数进行初始化，而不是 mean = 0。</p>
-</li>
-<li>
-<p>另有Adam的一个改进时：<a href="https://openreview.net/pdf?id=ryQu7f-RZ">AMSGrad</a>，用于改进Adam很多时候仅能收敛到局部最优点的问题。</p>
-</li>
-</ol>
-        
 	
 		<span>1</span>
 	</div>
@@ -2733,7 +3255,7 @@ $$\theta_t \leftarrow \theta_{t-1} - \frac{\alpha_t \cdot m_t}{\sqrt{v_t} + \hat
         		<footer>
 			
 			<span>
-			&copy; <time datetime="2021-10-14 15:30:25.285032 &#43;0800 CST m=&#43;0.085963921">2021</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
+			&copy; <time datetime="2021-10-19 13:53:47.372668 &#43;0800 CST m=&#43;0.112644725">2021</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
 			</span>
 		</footer>
 

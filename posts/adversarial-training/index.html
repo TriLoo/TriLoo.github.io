@@ -184,7 +184,7 @@ Attacks</a>等。</p>
 <p>注意是对输入 x 的梯度，计算Loss的梯度时需要Label信息$y$的存在，$\hat{\theta}$为模型的权重，在计算题的过程中，这个权重不发生变化。</p>
 <p>结合上文提到对于文本任务，这里对 Token Embedding 进行加性扰动。此时用$\mathbf{s}$表示word embedding vectors，Label为y，则定义扰动数值为：</p>
 <p>$$r_{adv} = -\epsilon \mathbf{g} / \parallel \mathbf{g} \parallel_2, \mathrm{where} \mathbf{g} = \nabla_s \log p(y | \mathbf{s}; \hat{\theta})$$</p>
-<p>然后在训练过程中对应的 Loss 项为：</p>
+<p>实际实现中，这里应该是$+\epsilon \mathbf{g} / \parallel \mathbf{g} \parallel_2$而不是-。然后在训练过程中对应的 Loss 项为：</p>
 <p>$$L_{\mathrm{adv}}(\theta) = - \frac{1}{N} \sum_{n=1}^N \log p(y_n | s_n + r_{\mathrm{adv}, n}; \theta)$$</p>
 <p>其中，N是样本的个数，可以是 Mini-Batch 内样本的个数。</p>
 <h3 id="virtual-adversarial-training">Virtual adversarial training</h3>
@@ -469,7 +469,7 @@ K <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">3<
         		<footer>
 			
 			<span>
-			&copy; <time datetime="2021-10-14 15:30:25.269503 &#43;0800 CST m=&#43;0.070434959">2021</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
+			&copy; <time datetime="2021-10-19 13:53:47.352323 &#43;0800 CST m=&#43;0.092299726">2021</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
 			</span>
 		</footer>
 

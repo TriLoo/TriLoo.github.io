@@ -206,9 +206,13 @@ MathJax.Hub.Config({
 <p>这篇文章就提到了，对抗训练一方面是为了提高鲁棒性，另一方面是为了提高泛化性。本文提出的模型叫做 MT-DNN，上面的 SMART 算法与这个算法也可以结合起来。本文发现对抗学习也可以提高预训练阶段的效果，。</p>
 <p>发现，virtual adversarial training 比 conventional adversarial trainging 效果更好，尤其是存在 noisy label 的时候。 BERT 预训练的 MLM 就是属于 noisy label 的情况，因为被 mask 的 word 实际上可以有很多的选择。所以 SMART 中的 $\lambda$ 在预训练阶段会比较大，比如 = 10，微调阶段为 = 1。</p>
 </li>
+<li>
+<p>CIFS: <a href="https://arxiv.org/abs/2102.05311">CIFS: Improving Adversarial Robustness of CNNs via Channel-wise Importance-based Feature Selection</a></p>
+<p>对每个channel进行channel-wise 的扰动！</p>
+</li>
 </ul>
 <h2 id="代码实现">代码实现</h2>
-<p>先来看下 FreeLB 的代码实现，参考：<a href="https://github.com/zhuchen03/FreeLB">FreeLB - github</a>。在这个<a href="https://github.com/zhuchen03/FreeLB/blob/master/huggingface-transformers/launch/run_glue.sh">run_glue.sh</a> 脚本中，不同的下游任务对 $\delta$ 的初始化也不同，比如全零，或者<code>uniform()</code>等。</p>
+<p>先来看下 FreeLB 的代码实现，参考：<a href="https://github.com/zhuchen03/FreeLB">FreeLB - github</a>。在这个<a href="https://github.com/zhuchen03/FreeLB/blob/master/huggingface-transformers/launch/run_glue.sh">run_glue.sh</a> 脚本中，不同的下游任务对 $\delta$ 的初始化也不同，比如全零，或者<code>uniform()</code>等。<a href="https://github.com/mahyarnajibi/FreeAdversarialTraining">FreeAT - github</a>的实现代码其实与此类似。</p>
 <p>代码里的亮点在于：(1) 首先获取输入文本的 Embedding 表示 (2) 初始化 $\delta$ (3) 迭代求解最优的对抗样本。</p>
 <div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
 <table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
@@ -411,6 +415,7 @@ MathJax.Hub.Config({
 
 	<div class="pagination">
 		<a href="/posts/adversarial-training/" class="left arrow">&#8592;</a>
+		<a href="/posts/swin-transformer/" class="right arrow">&#8594;</a>
 
 		<a href="#" class="top">Top</a>
 	</div>
@@ -420,7 +425,7 @@ MathJax.Hub.Config({
         		<footer>
 			
 			<span>
-			&copy; <time datetime="2021-10-14 15:30:25.268314 &#43;0800 CST m=&#43;0.069246371">2021</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
+			&copy; <time datetime="2021-10-19 13:53:47.349908 &#43;0800 CST m=&#43;0.089884999">2021</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
 			</span>
 		</footer>
 

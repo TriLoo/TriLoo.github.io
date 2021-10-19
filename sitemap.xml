@@ -2,13 +2,16 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>https://triloon.space/posts/adversarial-training-2/</loc>
-    <lastmod>2021-10-13T14:30:10+08:00</lastmod>
+    <loc>https://triloon.space/posts/swin-transformer/</loc>
+    <lastmod>2021-10-15T22:07:45+08:00</lastmod>
   </url><url>
     <loc>https://triloon.space/posts/</loc>
-    <lastmod>2021-10-13T14:30:10+08:00</lastmod>
+    <lastmod>2021-10-15T22:07:45+08:00</lastmod>
   </url><url>
     <loc>https://triloon.space/</loc>
+    <lastmod>2021-10-15T22:07:45+08:00</lastmod>
+  </url><url>
+    <loc>https://triloon.space/posts/adversarial-training-2/</loc>
     <lastmod>2021-10-13T14:30:10+08:00</lastmod>
   </url><url>
     <loc>https://triloon.space/posts/adversarial-training/</loc>
