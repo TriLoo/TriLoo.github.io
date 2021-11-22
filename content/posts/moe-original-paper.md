@@ -6,5 +6,3 @@ draft: true
 excerpt_separator: <!--more-->
 ---
 <!--more-->
-
-
