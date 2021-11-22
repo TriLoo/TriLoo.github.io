@@ -2,11 +2,14 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
+    <loc>https://triloon.space/posts/dali-intro/</loc>
+    <lastmod>2021-11-22T17:20:46+08:00</lastmod>
+  </url><url>
     <loc>https://triloon.space/posts/</loc>
-    <lastmod>2021-10-27T22:08:15+08:00</lastmod>
+    <lastmod>2021-11-22T17:20:46+08:00</lastmod>
   </url><url>
     <loc>https://triloon.space/</loc>
-    <lastmod>2021-10-27T22:08:15+08:00</lastmod>
+    <lastmod>2021-11-22T17:20:46+08:00</lastmod>
   </url><url>
     <loc>https://triloon.space/posts/mlm-related-2/</loc>
     <lastmod>2021-10-27T22:08:15+08:00</lastmod>
@@ -64,6 +67,9 @@
   </url><url>
     <loc>https://triloon.space/tags/tree/</loc>
     <lastmod>2021-08-31T15:00:22+08:00</lastmod>
+  </url><url>
+    <loc>https://triloon.space/posts/ssl-image-representation/</loc>
+    <lastmod>2021-08-31T14:15:48+08:00</lastmod>
   </url><url>
     <loc>https://triloon.space/tags/big-batch-size/</loc>
     <lastmod>2021-08-31T14:09:48+08:00</lastmod>

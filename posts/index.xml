@@ -6,7 +6,16 @@
     <description>Recent content in Posts on Triloon</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Wed, 27 Oct 2021 22:08:15 +0800</lastBuildDate><atom:link href="https://triloon.space/posts/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 22 Nov 2021 17:20:46 +0800</lastBuildDate><atom:link href="https://triloon.space/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>DALI简单实用案例</title>
+      <link>https://triloon.space/posts/dali-intro/</link>
+      <pubDate>Mon, 22 Nov 2021 17:20:46 +0800</pubDate>
+      
+      <guid>https://triloon.space/posts/dali-intro/</guid>
+      <description>&lt;p&gt;DALI(NVIDIA Data Loading Library)库是NVIDIA提供的用于加速数据加载过程的代码库，支持在GPU上完成一些数据处理，从而提高加载速度；另一方面是方便多种源数据文件格式的加载，包括MXNet RecordIO / TFRrecord / LMDB 或者 文件目录等形式的数据集加载；第三就是支持多种数据格式，包括图片、视频、音频等。&lt;/p&gt;</description>
+    </item>
+    
     <item>
       <title>常见掩码生成方式 2</title>
       <link>https://triloon.space/posts/mlm-related-2/</link>
@@ -149,6 +158,15 @@
       
       <guid>https://triloon.space/posts/binary-search-tree/</guid>
       <description>&lt;p&gt;二叉搜索树相关笔记&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>图像表征算法中的自监督学习方法</title>
+      <link>https://triloon.space/posts/ssl-image-representation/</link>
+      <pubDate>Tue, 31 Aug 2021 14:15:48 +0800</pubDate>
+      
+      <guid>https://triloon.space/posts/ssl-image-representation/</guid>
+      <description>&lt;p&gt;经典自监督模型，包括MoCo / SimCLR / SwAV / BYOL / SimSiam 等。&lt;/p&gt;</description>
     </item>
     
     <item>

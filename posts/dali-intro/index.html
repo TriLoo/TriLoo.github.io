@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en-us">
+    <head>
+		
+		
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+		<title>DALI简单实用案例 &middot; Triloon</title>
+
+		
+		<link rel="stylesheet" href="/css/style.css">
+		<link rel="stylesheet" href="/css/fonts.css">
+		
+		<link rel="icon" href="favicon.ico" />
+		<link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+		<link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+		<link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+
+		
+		<link href="" rel="alternate" type="application/rss+xml" title="Triloon" />
+	</head>
+
+    <body>
+        
+		<nav class="nav">
+			<div class="nav-container">
+				<a href="/">
+					
+						<h2 class="nav-title">Triloon</h2>
+					
+				</a>
+				<ul>
+    
+    
+        <li>
+            <a href="/about/about">
+                
+                <span>About</span>
+                
+            </a>
+        </li>
+    
+        <li>
+            <a href="/posts/">
+                
+                <span>Posts</span>
+                
+            </a>
+        </li>
+    
+</ul>
+			</div>
+		</nav>
+
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+        <link rel="manifest" href="/site.webmanifest">
+
+        
+
+<main>
+	<div class="post">
+		<div class="post-info">
+    <span>Written by</span>
+        triloon
+        <br>
+        <span>on&nbsp;</span><time datetime="2021-11-22 17:20:46 &#43;0800 CST">November 22, 2021</time>
+</div>
+
+		<h1 class="post-title">DALI简单实用案例</h1>
+<div class="post-line"></div>
+
+		
+
+		<p>DALI(NVIDIA Data Loading Library)库是NVIDIA提供的用于加速数据加载过程的代码库，支持在GPU上完成一些数据处理，从而提高加载速度；另一方面是方便多种源数据文件格式的加载，包括MXNet RecordIO / TFRrecord / LMDB 或者 文件目录等形式的数据集加载；第三就是支持多种数据格式，包括图片、视频、音频等。</p>
+<h2 id="总览">总览</h2>
+<p>使用DALI，大体分为三个步骤：</p>
+<ul>
+<li>定义预处理的 Graph</li>
+<li>编译Graph，用于Engine执行</li>
+<li>（可选）使用迭代器进行封装，进行数据遍历</li>
+</ul>
+<p>前两个步骤都是基于<code>Pipeline</code>类来完成，定义Graph对应的是定义新的 Pipeline 对象，下面会提到三种方式；编译的过程通过调用<code>Pipeline.build()</code>函数来实现。第三个步骤是可选的，DALI提供一些Iterator类，接受一个Pipeline作为参数来，然后进行迭代，其实通过<code>Pipeline.run()</code>也可以得到新的元素。</p>
+<h2 id="一些概念">一些概念</h2>
+<h3 id="pipeline">Pipeline</h3>
+<p>Pipeline就是定义数据预处理的对象，包含预处理的计算图定义、执行引擎。用户通过定义新的 Pipeline 来实现新的数据预处理过程，定义新的 Pipeline 的方式有三种：</p>
+<ul>
+<li>使用修饰器<code>pipeline_def()</code>进行定义</li>
+<li>定义<code>Pipeline</code>类，并借助<code>Pipeline.set_outputs()</code>函数来指定Pipeline的输出变量列表</li>
+<li>通过继承<code>Pipeline</code>类，并重定义派生类的<code>define_graph()</code>函数来定义新的计算图(这是传统的实现方法)</li>
+</ul>
+<p>上面三种方式都可以实现将预初期定义为<strong>当前</strong> Pipeline 的计算图，也就是说，<code>define_graph()</code>函数定的计算天然的属于当前的 Pipeline；使用第一种中的修饰器也是；对于第二种，则可以使用<code>with</code>语句实现，如下例：</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">pipe <span style="color:#000;font-weight:bold">=</span> dali<span style="color:#000;font-weight:bold">.</span>Pipeline(batch_size<span style="color:#000;font-weight:bold">=</span>N, num_threads<span style="color:#000;font-weight:bold">=</span><span style="color:#099">3</span>, device_id<span style="color:#000;font-weight:bold">=</span><span style="color:#099">0</span>)
+<span style="color:#000;font-weight:bold">with</span> pipe:
+    src <span style="color:#000;font-weight:bold">=</span> dali<span style="color:#000;font-weight:bold">.</span>ops<span style="color:#000;font-weight:bold">.</span>ExternalSource(my_source, num_outputs<span style="color:#000;font-weight:bold">=</span><span style="color:#099">2</span>)
+    a, b <span style="color:#000;font-weight:bold">=</span> src()
+    pipe<span style="color:#000;font-weight:bold">.</span>set_outputs(a, b)
+</code></pre></td></tr></table>
+</div>
+</div><p>其中用到的<code>Pipeline</code>类的重要参数包括：<code>batch_size</code>、<code>num_threads</code>、<code>device_id</code>等，<code>device_id=None</code>表示不实用GPU，其他的包括一些性能方面考虑的参数：<code>set_affinity、max_streams、bytes_per_sample</code>等。对应上面代码，使用第一种的等价实现代码如下：</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#3c5d5d;font-weight:bold">@dali.pipeline_def</span>(batch_size<span style="color:#000;font-weight:bold">=</span>N, num_threads<span style="color:#000;font-weight:bold">=</span><span style="color:#099">3</span>, device_id<span style="color:#000;font-weight:bold">=</span><span style="color:#099">0</span>)
+<span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">my_pipe</span>(my_source):
+    <span style="color:#000;font-weight:bold">return</span> dali<span style="color:#000;font-weight:bold">.</span>fn<span style="color:#000;font-weight:bold">.</span>external_source(my_source, num_outputs<span style="color:#000;font-weight:bold">=</span><span style="color:#099">2</span>)
+
+pipe <span style="color:#000;font-weight:bold">=</span> my_pipe(my_source)
+</code></pre></div><p>Pipeline 中的计算图（Graph）包含两类节点:</p>
+<ul>
+<li>Operators</li>
+<li>Data Nodes: 支持像Python一样的Indexing，并且可以数学计算</li>
+</ul>
+<p>Pipeline 按照 Stage 来划分计算流程，包括三种 Stage:</p>
+<ul>
+<li>cpu: CPU输入、CPU输出，通过调用<code>.gpu()</code>来将数据拷贝到 GPU 上</li>
+<li>gpu: GPU输入、GPU输出</li>
+<li>mixed： CPU输入、GPU输出</li>
+</ul>
+<p>注意，位于GPU上的数据在Graph中是不能被传回CPU的，只能后面使用``。大多数的DALI操作都会接收命名参数，支持的命名参数的种类有两个：</p>
+<ul>
+<li>Python constants</li>
+<li>Argument Input，这是特指的名字，必须是 CPU 操作的输出的变量，变量位于 CPU 上</li>
+</ul>
+<p>对应于由Graph编译得到 Engine，通过<code>build()</code>成员函数来实现。通过调用<code>run()</code>函数可以获得新的迭代元素进行处理，这一步得到的数据类型是下面提到的<code>TensorList</code>格式。</p>
+<h3 id="tensorlist">TensorList</h3>
+<p><code>Pipeline.run(), Pipeline.outputs(), Pipeline.share_ouptuts()</code>等函数返回的数据的类型是<code>TensorList</code>，表示一个batch的Tensor；<code>Pipeline.releast_outputs()</code>让当前的 Tensor 不在可用，也就是说 DALI 将可以使用对应的存储资源来存放其他的变量，而且当前 iteration 的 Tensor 在下一个 iteration 也会变得不可用，只能保存到其他数据里（如 Torch 的 Tensor / MXNet 的 NDArray）才可以另作他用。</p>
+<p>TensorList 包含两个具体的子类，<code>TensorListCPU / TensorListGPU</code>，顾名思义不赘述。重要的成员函数包括<code>at(), as_array()</code>等，前者类似获取列表对应位置索引处的数据，后者用于将 Tensor 转换为numpy array。<code>TensorListGPU</code>的<code>as_cpu()</code>来将数据拷贝到  <code>cpu</code>端。<code>layout()</code>函数获取当前TensorList的数据存储格式，如HWC / CHW等。</p>
+<p>与DataNode的区别。DataNode是TensorList的一个表示符号，并不真正的包含数据，只用于Graph定义阶段，也就是链接两个 Operator。既然 TensorList 在Graph定义阶段使用DataNode表征的，所以用于Graph定义的数学计算操作也是对DataNode进行处理的，包括三角函数、指数/对数、开方、N次方、floor、ceil、clamp、加减乘除等操作。注意这些数学表达式中至少有一个参数是DALI Operator的输出才行，其他的输入可以是<code>nvidia.dali.types.Constant</code>或者常规的 Python 常量数据；此外，所有的计算操作都是 element-wise 的方式进行的，支持广播。</p>
+<p>多说一些 DataNode。DataNode支持indexing / slicing，并且支持负数的索引或者表示范围等。</p>
+<h3 id="reader">Reader</h3>
+<p>DALI的一个优势就是对各种数据的文件类型进行了抽象与统一，也就是使用特定的函数/类完成数据的加载以后，后续的所有的处理操作都可以复用。Reader的意思就是从磁盘文件进行数据解析、加载的函数，<strong>一般是Graph定义的第一个步骤</strong>。几个常见的Reader是：</p>
+<ul>
+<li>nvidia.dali.fn.readers.mxnet()，读入<code>RecordIO</code>格式的数据，输入<code>.rec / .idx</code>文件路径</li>
+<li>nvidia.dali.fn.readers.tfrecord()，读入<code>TFRecord</code>格式数据；这里需要先调用<code>tfrecord2idx</code>脚本来生成<code>.idx</code>文件，然后作为参数使用。<code>tfrecord2idx</code>脚本的实现可以帮助理解一下tfrecord文件的布局，整体思路与 RecordIO 的类似，但是应该是使用了 Protobuf 进行了编码，所以解析过程不够直观</li>
+<li>nvidia.dali.fn.readers.caffe()，读入<code>LMDB</code>格式数据</li>
+<li>nvidia.dali.fn.readers.file()解码文件目录等</li>
+</ul>
+<p>这些Reader的创建函数都会接收两个参数，<code>shard_id</code>以及<code>num_shards</code>，后者表示将原始数据分成多少份、前者表示当前是第几部分，可以用于多进程训练时数据的分配。此外，在定义过程中一般使用<code>name</code>参数来指定Reader的名称，可用于后面的Iterator等。</p>
+<p>Reader函数都接收<code>random_shuffle</code>参数，用于表明是否对数据集进行随机打乱。这里所说的随机打乱并非进行 Global 层次的打乱，而是在参数<code>initialize_fill</code>参数指定的 buffer 里进行打乱，也就是Local 层次的随机打乱；当然如果有多个文档输入的时候，会现在文档层次进行打乱。</p>
+<p>另一个比较特殊的是<code>dali.ops.ExternalSource</code>可调用类或<code>dali.fn.external_source()</code>函数的使用，在上面 Pipeline 的代码实例里也提到了，可以接受一个 Python 实现的 Iterator 来产生数据，用于封装在 DALI 中使用，主要的参数就是<code>num_outputs</code>这个了，用于表明这个 Iterator 有几个输出。</p>
+<h3 id="iterator">Iterator</h3>
+<p>上面提到，Reader作为数据来源，是 Graph 定义的第一个步骤；然后就是其他操作的定义以及 Graph 的编译；第三个步骤是可选的，主要是用一个新的 Iterator 进行封装，然后迭代产生<strong>特定于DL框架</strong>的数据格式，比如 MXNet 的 NDArray、Torch的Tensor等。以MXNet为例进行说明，DALI提供了两个主要的类，一个用于生成简单分类任务的数据，输出只有两个变量：Image / Label；另一个是更加通用的迭代器，可以生成多个多个输出。</p>
+<ul>
+<li>
+<p>nvidia.dali.plugin.mxnet.DALIClassificationIterator()</p>
+<p>该类用于分类任务，只输出两个变量，分别是 data 与 label，类型是MXNet中的 DataBatch of NDArrays。</p>
+</li>
+<li>
+<p>nvidia.dali.plugin.mxnet.DALIGenericIterator()</p>
+<p>更加通用的 Iterator，可以输出任意数量的MXNet&rsquo;s DataBatch of NDArrays格式的数据。</p>
+</li>
+</ul>
+<p>注意，这两种 Iterator 返回的 DataBatch 数据的所有权仍然属于DALI，并且只在当前的 Iteration 里有效，如果想在其他 Iteration 中使用，需要将它拷贝到其他 NDArray 里保存才行。</p>
+<p>至于针对 Pytorch 提供的 Iterator 也是这两个，功能与MXNet类似。</p>
+<h3 id="其他一些操作">其他一些操作</h3>
+<p>其他的包括数据解码函数：</p>
+<ul>
+<li>nvidia.dali.fn.decoders.audio()</li>
+<li>nvidia.dali.fn.decoders.image()</li>
+<li>nvidia.dali.fn.decoders.image_crop()</li>
+<li>nvidia.dali.fn.decoders.image_random_crop()，比先使用<code>image()</code>函数进行解码然后使用<code>crop()</code>的方式会更高效一些，即使用<code>libjpect-turbo / nvJPEG</code>等库提供的 ROI 解码函数，也就是只解码特定区域的图像数据</li>
+<li>nvidia.dali.fn.decoders.image_slice()</li>
+<li></li>
+</ul>
+<p>生成随机数的函数：</p>
+<ul>
+<li>nvidia.dali.fn.random.coin_flip()</li>
+<li>nvidia.dali.fn.random.normal()</li>
+<li>nvidia.dali.fn.random.uniform()</li>
+</ul>
+<p>数据简单变换函数：</p>
+<ul>
+<li>nvidia.dali.fn.transforms.combine()</li>
+<li>nvidia.dali.fn.transforms.crop()</li>
+<li>nvidia.dali.fn.transforms.rotation(0)</li>
+<li>nvidia.dali.fn.transforms.scale()</li>
+<li>nvidia.dali.fn.transforms.shear()</li>
+<li>nvidia.dali.fn.transforms.translation()</li>
+</ul>
+<h2 id="支持的图像增广计算">支持的图像增广计算</h2>
+<p>DALI提供了也还算多的图像增广系列函数，包括：</p>
+<ul>
+<li>对比度调整</li>
+<li>颜色空间转换</li>
+<li>HSV，通过设置参数可以实现随机灰度化的功能</li>
+<li>插值算法</li>
+<li>Resize操作</li>
+<li>Warp Affine</li>
+<li>3D Transforms操作等</li>
+</ul>
+<p>其他通用的操作提供了<code>fn.normalize()</code>、<code>nvidia.dali.fn.crop_mirror_normalize()</code>等函数来实现Normalize。像后者一样，DALI还提供一些融合多个功能的Operator，这个函数实现的是随机裁剪、翻转、Normalize，而且这个函数支持改变输出数据的Layout，比如输入是 HWC，可以指定输出的Layout格式是CHW，如果只想实现Layout的转换，则可以将Crop / Mirror / Normalize对应的参数设置为不起作用即可，至于如何设置可以参考API文档，保持默认值即可。</p>
+<p>可以发现，DALI目前还没有RandAug / AutoAug / CutMix / Mixup 等复杂操作的实现的，文档里也提供了相应的自己实现新 Op 的说明，可以说还是非常的yin性化的。</p>
+<h2 id="一些具体的例子">一些具体的例子</h2>
+<p>这个例子以实现 Torch 框架下模型使用 RecordIO / TFRecord 等源数据文件格式进行训练的方式进行说明。</p>
+<p>首先是定义数据预处理的 Graph，这部分可以分为两部分，第一部分是针对两种文件格式的数据加载函数、另一部分是对加载的数据进行处理的部分，后者可以公用。</p>
+<p>公用的数据处理方式：</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">common_pipeline</span>(jpegs, labels):
+    images <span style="color:#000;font-weight:bold">=</span> fn<span style="color:#000;font-weight:bold">.</span>decoders<span style="color:#000;font-weight:bold">.</span>image(jpegs, device<span style="color:#000;font-weight:bold">=</span><span style="color:#d14">&#39;mixed&#39;</span>)
+    images <span style="color:#000;font-weight:bold">=</span> fn<span style="color:#000;font-weight:bold">.</span>resize(
+        images,
+        resize_shorter<span style="color:#000;font-weight:bold">=</span>fn<span style="color:#000;font-weight:bold">.</span>random<span style="color:#000;font-weight:bold">.</span>uniform(<span style="color:#0086b3">range</span><span style="color:#000;font-weight:bold">=</span>(<span style="color:#099">256</span>, <span style="color:#099">480</span>)),
+        interp_type<span style="color:#000;font-weight:bold">=</span>types<span style="color:#000;font-weight:bold">.</span>INTERP_LINEAR)
+    images <span style="color:#000;font-weight:bold">=</span> fn<span style="color:#000;font-weight:bold">.</span>crop_mirror_normalize(
+        images,
+        crop_pos_x<span style="color:#000;font-weight:bold">=</span>fn<span style="color:#000;font-weight:bold">.</span>random<span style="color:#000;font-weight:bold">.</span>uniform(<span style="color:#0086b3">range</span><span style="color:#000;font-weight:bold">=</span>(<span style="color:#099">0.0</span>, <span style="color:#099">1.0</span>)),
+        crop_pos_y<span style="color:#000;font-weight:bold">=</span>fn<span style="color:#000;font-weight:bold">.</span>random<span style="color:#000;font-weight:bold">.</span>uniform(<span style="color:#0086b3">range</span><span style="color:#000;font-weight:bold">=</span>(<span style="color:#099">0.0</span>, <span style="color:#099">1.0</span>)),
+        dtype<span style="color:#000;font-weight:bold">=</span>types<span style="color:#000;font-weight:bold">.</span>FLOAT,
+        crop<span style="color:#000;font-weight:bold">=</span>(<span style="color:#099">227</span>, <span style="color:#099">227</span>),
+        mean<span style="color:#000;font-weight:bold">=</span>[<span style="color:#099">128.</span>, <span style="color:#099">128.</span>, <span style="color:#099">128.</span>],
+        std<span style="color:#000;font-weight:bold">=</span>[<span style="color:#099">1.</span>, <span style="color:#099">1.</span>, <span style="color:#099">1.</span>])
+    <span style="color:#000;font-weight:bold">return</span> images, labels
+</code></pre></div><p>读取RecordIO数据：</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#3c5d5d;font-weight:bold">@pipeline_def</span>
+<span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">mxnet_reader_pipeline</span>(num_gpus):
+    jpegs, labels <span style="color:#000;font-weight:bold">=</span> fn<span style="color:#000;font-weight:bold">.</span>readers<span style="color:#000;font-weight:bold">.</span>mxnet(
+        path<span style="color:#000;font-weight:bold">=</span>[db_folder<span style="color:#000;font-weight:bold">+</span><span style="color:#d14">&#34;train.rec&#34;</span>],
+        index_path<span style="color:#000;font-weight:bold">=</span>[db_folder<span style="color:#000;font-weight:bold">+</span><span style="color:#d14">&#34;train.idx&#34;</span>],
+        random_shuffle<span style="color:#000;font-weight:bold">=</span><span style="color:#999">True</span>,
+        shard_id<span style="color:#000;font-weight:bold">=</span>Pipeline<span style="color:#000;font-weight:bold">.</span>current()<span style="color:#000;font-weight:bold">.</span>device_id,
+        num_shards<span style="color:#000;font-weight:bold">=</span>num_gpus,
+        name<span style="color:#000;font-weight:bold">=</span><span style="color:#d14">&#39;Reader&#39;</span>)
+
+    <span style="color:#000;font-weight:bold">return</span> common_pipeline(jpegs, labels)
+</code></pre></div><p>读取TFrecord数据：</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#000;font-weight:bold">import</span> <span style="color:#555">nvidia.dali.tfrecord</span> <span style="color:#000;font-weight:bold">as</span> <span style="color:#555">tfrec</span>
+
+<span style="color:#3c5d5d;font-weight:bold">@pipeline_def</span>
+<span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">tfrecord_reader_pipeline</span>(num_gpus):
+    inputs <span style="color:#000;font-weight:bold">=</span> fn<span style="color:#000;font-weight:bold">.</span>readers<span style="color:#000;font-weight:bold">.</span>tfrecord(
+        path <span style="color:#000;font-weight:bold">=</span> tfrecord,
+        index_path <span style="color:#000;font-weight:bold">=</span> tfrecord_idx,
+        features <span style="color:#000;font-weight:bold">=</span> {
+            <span style="color:#d14">&#34;image/encoded&#34;</span> : tfrec<span style="color:#000;font-weight:bold">.</span>FixedLenFeature((), tfrec<span style="color:#000;font-weight:bold">.</span>string, <span style="color:#d14">&#34;&#34;</span>),
+            <span style="color:#d14">&#34;image/class/label&#34;</span>: tfrec<span style="color:#000;font-weight:bold">.</span>FixedLenFeature([<span style="color:#099">1</span>], tfrec<span style="color:#000;font-weight:bold">.</span>int64,  <span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>)},
+        random_shuffle<span style="color:#000;font-weight:bold">=</span><span style="color:#999">True</span>,
+        shard_id<span style="color:#000;font-weight:bold">=</span>Pipeline<span style="color:#000;font-weight:bold">.</span>current()<span style="color:#000;font-weight:bold">.</span>device_id,
+        num_shards<span style="color:#000;font-weight:bold">=</span>num_gpus,
+        name<span style="color:#000;font-weight:bold">=</span><span style="color:#d14">&#39;Reader&#39;</span>)
+
+    <span style="color:#000;font-weight:bold">return</span> common_pipeline(inputs[<span style="color:#d14">&#34;image/encoded&#34;</span>], inputs[<span style="color:#d14">&#34;image/class/label&#34;</span>])
+</code></pre></div><p>最后是数据迭代：</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#000;font-weight:bold">import</span> <span style="color:#555">numpy</span> <span style="color:#000;font-weight:bold">as</span> <span style="color:#555">np</span>
+<span style="color:#000;font-weight:bold">from</span> <span style="color:#555">nvidia.dali.plugin.pytorch</span> <span style="color:#000;font-weight:bold">import</span> DALIGenericIterator
+
+
+pipe_types <span style="color:#000;font-weight:bold">=</span> [
+    [mxnet_reader_pipeline, (<span style="color:#099">0</span>, <span style="color:#099">999</span>)],
+    [tfrecord_reader_pipeline, (<span style="color:#099">1</span>, <span style="color:#099">1000</span>)]]
+
+<span style="color:#000;font-weight:bold">for</span> pipe_t <span style="color:#000;font-weight:bold">in</span> pipe_types:
+    pipe_name, label_range <span style="color:#000;font-weight:bold">=</span> pipe_t
+    <span style="color:#000;font-weight:bold">print</span> (<span style="color:#d14">&#34;RUN: &#34;</span>  <span style="color:#000;font-weight:bold">+</span> pipe_name<span style="color:#000;font-weight:bold">.</span>__name__)
+    pipes <span style="color:#000;font-weight:bold">=</span> [pipe_name(
+        batch_size<span style="color:#000;font-weight:bold">=</span>BATCH_SIZE, num_threads<span style="color:#000;font-weight:bold">=</span><span style="color:#099">2</span>, device_id<span style="color:#000;font-weight:bold">=</span>device_id, num_gpus<span style="color:#000;font-weight:bold">=</span>N) <span style="color:#000;font-weight:bold">for</span> device_id <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(N)]
+    dali_iter <span style="color:#000;font-weight:bold">=</span> DALIGenericIterator(pipes, [<span style="color:#d14">&#39;data&#39;</span>, <span style="color:#d14">&#39;label&#39;</span>], reader_name<span style="color:#000;font-weight:bold">=</span><span style="color:#d14">&#39;Reader&#39;</span>)
+
+    <span style="color:#000;font-weight:bold">for</span> i, data <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">enumerate</span>(dali_iter):
+        <span style="color:#998;font-style:italic"># Testing correctness of labels</span>
+        <span style="color:#000;font-weight:bold">for</span> d <span style="color:#000;font-weight:bold">in</span> data:
+            label <span style="color:#000;font-weight:bold">=</span> d[<span style="color:#d14">&#34;label&#34;</span>]
+            image <span style="color:#000;font-weight:bold">=</span> d[<span style="color:#d14">&#34;data&#34;</span>]
+            <span style="color:#998;font-style:italic">## labels need to be integers</span>
+            <span style="color:#000;font-weight:bold">assert</span>(np<span style="color:#000;font-weight:bold">.</span>equal(np<span style="color:#000;font-weight:bold">.</span>mod(label, <span style="color:#099">1</span>), <span style="color:#099">0</span>)<span style="color:#000;font-weight:bold">.</span>all())
+            <span style="color:#998;font-style:italic">## labels need to be in range pipe_name[2]</span>
+            <span style="color:#000;font-weight:bold">assert</span>((label <span style="color:#000;font-weight:bold">&gt;=</span> label_range[<span style="color:#099">0</span>])<span style="color:#000;font-weight:bold">.</span>all())
+            <span style="color:#000;font-weight:bold">assert</span>((label <span style="color:#000;font-weight:bold">&lt;=</span> label_range[<span style="color:#099">1</span>])<span style="color:#000;font-weight:bold">.</span>all())
+    <span style="color:#000;font-weight:bold">print</span>(<span style="color:#d14">&#34;OK : &#34;</span> <span style="color:#000;font-weight:bold">+</span> pipe_name<span style="color:#000;font-weight:bold">.</span>__name__)
+</code></pre></div><p>至于更多的细节可以参考DALI的官方文档。</p>
+
+		
+	</div>
+
+	<div class="pagination">
+		<a href="/posts/mlm-related-2/" class="left arrow">&#8592;</a>
+
+		<a href="#" class="top">Top</a>
+	</div>
+</main>
+
+
+        		<footer>
+			
+			<span>
+			&copy; <time datetime="2021-11-22 21:11:11.09101 &#43;0800 CST m=&#43;0.086148951">2021</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
+			</span>
+		</footer>
+
+    </body>
+</html>

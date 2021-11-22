@@ -84,6 +84,8 @@
 		
         
             <p>一些为了适应大的Batch Size训练的优化算法。</p>
+<p>偶尔就有时间看到有标题：训练 XX 模型只用 ** 秒 / 分钟，当然除了钱多卡多，在算法实现方面也看看有什么不同。</p>
+<p>有个概念是 cross-view prediction (Hinto92年的一篇论文)，现在很多自监督模型都是在 representation space 完成这个预测任务，但是这容易导致模型坍塌，所以 BYOL 增加了一个 Prediction Layer，这也是相对于 Mean Teacher 这篇论文最大的改进了。对比学习的做法相当于学习当前图片的一个augmentation与其他图片的augmentation之间的区分。</p>
 <p>主要包括：LARS, LAMB 等。</p>
 <h2 id="基础adam">基础：Adam</h2>
 <h2 id="lars算法">LARS算法</h2>
@@ -98,7 +100,7 @@
         		<footer>
 			
 			<span>
-			&copy; <time datetime="2021-10-28 21:45:05.717034 &#43;0800 CST m=&#43;0.089578452">2021</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
+			&copy; <time datetime="2021-11-22 21:11:11.102704 &#43;0800 CST m=&#43;0.097842369">2021</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
 			</span>
 		</footer>
 

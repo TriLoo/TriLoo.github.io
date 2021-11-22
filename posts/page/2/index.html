@@ -63,6 +63,19 @@
 <main>
 	<div class="catalogue">
 		
+			<a href="https://triloon.space/posts/model-visualization/" class="catalogue-item">
+    <div>
+        <time datetime="2021-09-11 15:16:07 &#43;0800 CST" class="catalogue-time">September 11, 2021</time>
+        <h2 class="catalogue-title">Model Visualization</h2>
+        <div class="catalogue-line"></div>
+
+        <p>
+            <p>深度学习中的一些可视化技术。</p>
+        </p>
+    </div>
+</a>
+
+		
 			<a href="https://triloon.space/posts/origin-transformer/" class="catalogue-item">
     <div>
         <time datetime="2021-09-06 20:04:32 &#43;0800 CST" class="catalogue-time">September 6, 2021</time>
@@ -141,6 +154,19 @@
 </a>
 
 		
+			<a href="https://triloon.space/posts/ssl-image-representation/" class="catalogue-item">
+    <div>
+        <time datetime="2021-08-31 14:15:48 &#43;0800 CST" class="catalogue-time">August 31, 2021</time>
+        <h2 class="catalogue-title">图像表征算法中的自监督学习方法</h2>
+        <div class="catalogue-line"></div>
+
+        <p>
+            <p>经典自监督模型，包括MoCo / SimCLR / SwAV / BYOL / SimSiam 等。</p>
+        </p>
+    </div>
+</a>
+
+		
 			<a href="https://triloon.space/posts/big-batchsize-train/" class="catalogue-item">
     <div>
         <time datetime="2021-08-31 14:09:48 &#43;0800 CST" class="catalogue-time">August 31, 2021</time>
@@ -167,32 +193,6 @@
 </a>
 
 		
-			<a href="https://triloon.space/posts/my-first-post/" class="catalogue-item">
-    <div>
-        <time datetime="2021-08-30 20:03:11 &#43;0800 CST" class="catalogue-time">August 30, 2021</time>
-        <h2 class="catalogue-title">My First Post</h2>
-        <div class="catalogue-line"></div>
-
-        <p>
-            <p>怕什么真理无穷，进一寸有一寸的欢喜。</p>
-        </p>
-    </div>
-</a>
-
-		
-			<a href="https://triloon.space/posts/hugo-notes/" class="catalogue-item">
-    <div>
-        <time datetime="2021-08-30 14:37:40 &#43;0800 CST" class="catalogue-time">August 30, 2021</time>
-        <h2 class="catalogue-title">Hugo Notes</h2>
-        <div class="catalogue-line"></div>
-
-        <p>
-            <p>一些hugo blog搭建过程中的记录。</p>
-        </p>
-    </div>
-</a>
-
-		
 	</div>
 	
 	<div class="pagination">
@@ -200,6 +200,190 @@
 			<a href="/posts/" class="left arrow">&#8592;</a>
 		
 		
+			<a href="/posts/page/3/" class="right arrow">&#8594;</a>
+		
+        
+            <p>深度学习中的一些可视化技术。</p>
+<p>主要包括CAM、t-SNE两个方面，CAM又包括Gradient Free 以及 Gradient Based 两种实现思路；t-SNE更多的是用于高维空间在低维空间的可视化。</p>
+<h2 id="cam">CAM</h2>
+<p>再记录GradCam之前，可以先看下Cam算法的实现。参考博客是：<a href="https://zhuanlan.zhihu.com/p/269702192">万字长文：特征可视化技术(CAM)</a>。</p>
+<h3 id="cam基础">CAM基础</h3>
+<p>全称 Class Activation Mapping。也就是获取每个类别在Feature Map上关注点的分布，比如利用最后一层CNN的Feature Map，将所有的Channel加权融合为一个二维图片，然后这个二维图片就被认作激活图。以ResNet18为例，最后一层CNN的Feature Map包含512个Channel，如果单独可视化每个通道，则比较难理解，所以CAM会根据每个通道不同的贡献大小对所有的通道进行加权融合获取一张CAM。</p>
+<p>效果如图-1。</p>
+<p><figure>
+    <center>
+    <img src="/imgs/model-visualization/cam0.png" alt="图 - 1 CAM结果示意图">
+    <figcaption>图 - 1 CAM结果示意图</figcaption>
+    </center>
+</figure></p>
+<p>CAM实现的步骤如下：</p>
+<ol>
+<li>提取需要可视化的特征层，例如尺寸为7 * 7 * 512的张量</li>
+<li>获取该张量的每个channel的权重，即长度为512的向量</li>
+<li>对 Step1 中的张量按照 Step2 中的权重进行加权，获取尺寸为 7 * 7 的Map</li>
+<li>对该Map进行归一化，并通过插值的方式</li>
+</ol>
+<p>上面提到，CAM可以分为Gradient Free / Gradient Based两种方式，两者的主要区别在于Step 2中计算Channel的权重方式不同，后者会利用梯度信息，前者不需要。</p>
+<p>Gradient Based常见的算法包括</p>
+<ul>
+<li>Grad CAM (2016.10)</li>
+<li>Grad CAM ++ (2017.10)</li>
+<li>Smooth Grad-CAM++ (2019.08)</li>
+</ul>
+<p>Gradient Free常见的算法包括</p>
+<ul>
+<li>CAM (2015.12)</li>
+<li>score-CAM (2019.10)</li>
+<li>ss-CAM (2020.06)</li>
+<li>Ablation-CAM (2020)</li>
+</ul>
+<h3 id="利用gap获取cam">利用GAP获取CAM</h3>
+<p>属于Gradient Free类算法。</p>
+<p>CAM的实现依赖于CNN卷积之后使用Global Average Pooling (GAP) 来实现；也就是说网络结构具有如下特征，经过若干层CNN得到Feature Map，然后利用GAP来压缩空间维度，然后压缩后的向量利用一个线性变换得到对应的类别预测。然后CAM就利用最后一个线性变换的权重作为每个类别的Channel的权重进行加权。示意图如图2所示，对于Australian terrier类的全连接权重为 $w_1, \ldots, w_n$。</p>
+<p><figure>
+    <center>
+    <img src="/imgs/model-visualization/cam1.png" alt="图 - 2 CAM实现示意图">
+    <figcaption>图 - 2 CAM实现示意图</figcaption>
+    </center>
+</figure></p>
+<blockquote>
+<p>Global average pooling outputs the spatial average of the feature map of each unit at the last convolutional layer. A weighted sum of these values is used to generate the final output. Similarly, we compute a weighted sum of the feature maps of the last convolutional layer to obtain our class activation maps.</p>
+</blockquote>
+<p>利用数学公式说明就是，设$f_k(x, y)$表示最后一层CNN的Feature Map中第 k 个unit (channel)在空间位置(x, y)处的数值，则GAP的计算就是$\sum_{x, y}f_k(x, y)$。然后对于类别 c，线性变换得到输入 Softmax 的数值，也就是 $S_c = \sum_k w_k^c F_k$，其中$w_k^c$也就是第 k channel 对类别 c 分类的重要度。</p>
+<p>然后，论文定义class activation map ($M_c$) 为：</p>
+<p>$$M_c(x, y) = \sum_k w_k^c f_k(x, y)$$</p>
+<p>CAM这种Gradient Free算法的定义就是上面公示了。</p>
+<p>作者分析了为啥不使用Global Max Pooling (GMP)，而是使用GAP。简单来说，GAP会让模型学习Object边界内的所有点的信息，而GMP则可以让模型只关注Object内最有区分性的空间位置即可，有很大可能 Object 内的其它位置对结果没有影响，毕竟对Max Pooling的结果没有影响。</p>
+<p>CAM的缺点就是要求模型输出层之前需要使用 GAP，如果模型默认不是这一计算，则还需要替换成 GAP 重新进行训练。实现代码示例如下。</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 0
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#998;font-style:italic"># 获取全连接层的权重</span>
+<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>_fc_weights <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>model<span style="color:#000;font-weight:bold">.</span>_modules<span style="color:#000;font-weight:bold">.</span>get(fc_layer)<span style="color:#000;font-weight:bold">.</span>weight<span style="color:#000;font-weight:bold">.</span>data
+<span style="color:#998;font-style:italic"># 获取目标类别的权重作为特征权重</span>
+weights<span style="color:#000;font-weight:bold">=</span><span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>_fc_weights[class_idx, :]
+<span style="color:#998;font-style:italic"># 这里self.hook_a为最后一层特征图的输出</span>
+batch_cams <span style="color:#000;font-weight:bold">=</span> (weights<span style="color:#000;font-weight:bold">.</span>unsqueeze(<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>)<span style="color:#000;font-weight:bold">.</span>unsqueeze(<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>) <span style="color:#000;font-weight:bold">*</span> 
+                <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>hook_a<span style="color:#000;font-weight:bold">.</span>squeeze(<span style="color:#099">0</span>))<span style="color:#000;font-weight:bold">.</span>sum(dim<span style="color:#000;font-weight:bold">=</span><span style="color:#099">0</span>)
+<span style="color:#998;font-style:italic"># relu操作,去除负值</span>
+batch_cams <span style="color:#000;font-weight:bold">=</span> F<span style="color:#000;font-weight:bold">.</span>relu(batch_cams, inplace<span style="color:#000;font-weight:bold">=</span><span style="color:#999">True</span>)
+<span style="color:#998;font-style:italic"># 归一化操作</span>
+batch_cams <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>_normalize(batch_cams)
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="grad-cam">Grad CAM</h3>
+<p>此算法可以克服上面CAM算法中要求模型必须包含GAP的存在才行。基本思路是用梯度来计算Channel加权的权重，而且用ReLU去除权重为负数的那些channel。Grad CAM支持对任意一层CNN的 Feature Map 进行CAM可视化。</p>
+<p>首先计算类别 c 的得分(score, before the softmax)对CNN层$A^k$的梯度，也就是$\frac{\partial y^c}{\partial A^k}$，然后这些题都在 $A^k$ 的空间维度上进行求平均，也就是 GAP（作者发现 GAP 好于 GMP），然后作为权重对$A^k$的channel进行加权，也就是</p>
+<p>$$\alpha_k^c = \overbrace{\frac{1}{Z}\sum_i \sum_j}^\text{global average pooling} \underbrace{\frac{\partial y^c}{\partial A_{ij}^k}}_\text{gradients via backprop}$$</p>
+<p>实验表明，越是浅层的CNN，Grad CAM的效果越差，因为这些层的感受野也越小。后就是ReLU的使用保留那些只起正向作用的空间点：</p>
+<p>$$L_{\text{Grad-CAM}}^c = ReLU(\sum_k \alpha_k^c A^k)$$</p>
+<p>注意，$y^c$在这里不一定必须是分类模型的class score，可以是任何可微分的激活函数的输出。</p>
+<p><figure>
+    <center>
+    <img src="/imgs/model-visualization/cam2.png" alt="图 - 3 Grad-CAM实现示意图">
+    <figcaption>图 - 3 Grad-CAM实现示意图</figcaption>
+    </center>
+</figure></p>
+<p>示意图可以看出，Grad CAM支持多种模型的输出层结构以及对应的任务。为了实现更高分辨率的可视化，作者提出首先将$L_{\text{Grad-CAM}}$使用双线性插值进行上采样，然后与 Guided Backpropagation 的结果进行按元素乘的结果作为可视化结果。</p>
+<p>另外一个方面，论文中提到使用Softmax之前的输入作为 $y^c$，但是某些代码中也使用了 Softmax 的输出作为 $y^c$，知乎文章里有给出为啥可能采用Softmax之前（论文中的做法）会效果更好。实现代码如下。</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 0
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#998;font-style:italic"># 利用onehot的形式锁定目标类别</span>
+one_hot <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>zeros((<span style="color:#099">1</span>, output<span style="color:#000;font-weight:bold">.</span>size()[<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>]), dtype<span style="color:#000;font-weight:bold">=</span>np<span style="color:#000;font-weight:bold">.</span>float32)
+one_hot[<span style="color:#099">0</span>][index] <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">1</span>
+one_hot <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>from_numpy(one_hot)<span style="color:#000;font-weight:bold">.</span>requires_grad_(<span style="color:#999">True</span>) 
+<span style="color:#998;font-style:italic"># 获取目标类别的输出,该值带有梯度链接关系,可进行求导操作</span>
+one_hot <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>sum(one_hot <span style="color:#000;font-weight:bold">*</span> output)
+<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>model<span style="color:#000;font-weight:bold">.</span>zero_grad()
+one_hot<span style="color:#000;font-weight:bold">.</span>backward(retain_graph<span style="color:#000;font-weight:bold">=</span><span style="color:#999">True</span>) <span style="color:#998;font-style:italic"># backward 求导</span>
+<span style="color:#998;font-style:italic"># 获取对应特征层的梯度map</span>
+grads_val <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>extractor<span style="color:#000;font-weight:bold">.</span>get_gradients()[<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>]<span style="color:#000;font-weight:bold">.</span>cpu()<span style="color:#000;font-weight:bold">.</span>data<span style="color:#000;font-weight:bold">.</span>numpy()
+target <span style="color:#000;font-weight:bold">=</span> features[<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>]<span style="color:#000;font-weight:bold">.</span>cpu()<span style="color:#000;font-weight:bold">.</span>data<span style="color:#000;font-weight:bold">.</span>numpy()[<span style="color:#099">0</span>, :] <span style="color:#998;font-style:italic"># 获取目标特征输出</span>
+weights <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>mean(grads_val, axis<span style="color:#000;font-weight:bold">=</span>(<span style="color:#099">2</span>, <span style="color:#099">3</span>))[<span style="color:#099">0</span>, :] <span style="color:#998;font-style:italic"># 利用GAP操作, 获取特征权重</span>
+cam <span style="color:#000;font-weight:bold">=</span> weights<span style="color:#000;font-weight:bold">.</span>dot(target<span style="color:#000;font-weight:bold">.</span>reshape((nc, h <span style="color:#000;font-weight:bold">*</span> w)))
+<span style="color:#998;font-style:italic"># relu操作,去除负值, 并缩放到原图尺寸</span>
+cam <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>maximum(cam, <span style="color:#099">0</span>)
+cam <span style="color:#000;font-weight:bold">=</span> cv2<span style="color:#000;font-weight:bold">.</span>resize(cam, <span style="color:#0086b3">input</span><span style="color:#000;font-weight:bold">.</span>shape[<span style="color:#099">2</span>:])
+<span style="color:#998;font-style:italic"># 归一化操作</span>
+batch_cams <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>_normalize(batch_cams)
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="grad-cam-1">Grad CAM++</h3>
+<p>Grad CAM++ 是对 Grad CAM 的进一步改进，优势在于定位更加精准，也更适用于图像中包含不止一个目标类别物体的情况。</p>
+<p>具体来说，Grad CAM认为 Feature Map上每一个点的重要度是一样的（使用GAP得到），而Grad CAM++认为每个位置上点的贡献度不同，因此额外增加了一个权重用来表示Feature Map上每个元素的重要度。</p>
+<p><figure>
+    <center>
+    <img src="/imgs/model-visualization/cam3.png" alt="图 - 4 Grad-CAM&#43;&#43;实现示意图">
+    <figcaption>图 - 4 Grad-CAM&#43;&#43;实现示意图</figcaption>
+    </center>
+</figure></p>
+<p>这里的重点也是权重$\alpha_{ij}^{kc}$的计算。</p>
+<p>$$\alpha_{ij}^{kc} = \frac{(\frac{\partial S^c}{\partial A_{ij}^k})^2}{2(\frac{\partial S^c}{\partial A^k_{ij}})^2 + \sum_a \sum_b A_{ab}^k (\frac{\partial S^c}{\partial A^k_{ij}})^3}$$</p>
+<p>知乎参考博客里还有其他一些比较新的Feature Map的可视化方法，可以去参考一下，这里略过。</p>
+<h2 id="t-sne">t-SNE</h2>
+<p>主要的参考是 <a href="https://en.wikipedia.org/wiki/T-distributed_stochastic_neighbor_embedding">t-distributed stochastic neighbor embedding</a>。</p>
+<p>这个算法其实适用于展示高维数据的，也就是将高维数据降维到低维数据，然后方便查看两个数据点之间的距离。与其他降维算法（如PCA）相比，t-SNE创建一个缩小的特征空间，相似的样本由附近的点建模，不相似的样本由高概率的远点建模。最后一句话可以通过下面的例子进行说明。</p>
+<p>整体来说，t-SNE是将高维数据映射到低维空间，所以就涉及到几个问题：这个映射过程怎么确定，等价于低维空间的点应该怎么选择；然后就是维度灾难，也就是原始高维空间的数据计算距离的时候会受维度灾难的影响。</p>
+<p>t-SNE其实更是为了更好的可视化相似性，而不是为了降维。整体思路也是保证映射前后，也就是高维空间、低维空间中，相似的点继续保持相似，也就是距离比较近。采取的方法是对两个空间中的点的距离进行概率建模，也就是一个点与其它所有点的距离映射成一个概率分布。首先是高维空间，将欧氏距离映射成高斯分布。</p>
+<p>N个高维空间点，$x_1, \ldots, x_N$，计算概率$p_{ij}$为与点$x_i, x_j$之间的欧式距离成正比。</p>
+<p>$$p_{j|i} = \frac{\exp{(-\parallel x_i - x_j\parallel^2} / 2\sigma_i^2)}{\sum_{k\neq i}\exp(-\parallel x_i - x_k \parallel^2 / 2\sigma_i^2)}$$</p>
+<p>其中，$j \neq i$，并且有$p_{i|i}=0$以及$\sum_j p_{j|i}=1, \forall i$。这个式子是指以$x_i$为中心点的概率分布中，点$x_j$的概率。由于距离是对称的，所以定义：</p>
+<p>$$p_{ij} = \frac{p_{j|i} + p_{i|j}}{2N}$$</p>
+<p>此时也就有$p_{ij}=p_{ji}, p_{ii}=0, \sum_{i,j}p_{ij}=1$了。</p>
+<p>其中参数$\sigma_i$是由高斯分布的perplexity(困惑度)与二分法（bisection method）计算得到的困惑度相等来得到的。就体现在，越密集的数据空间中，$\sigma_i$越小，也就是低困惑度更关注局部数据点，高困惑度更关注全局结构。</p>
+<p>这里需要注意的地方在于，$x_i$在高维空间中会面临维度灾难，此时欧氏距离没有区分性，也就是任何两个点之间看上去都不是那么相似了，毕竟高维空间里这些点还是非常稀疏的，也就导致计算的概率分布$p_{ij}$也区分性不大，针对这个问题，有一些方式是基于 <a href="https://en.wikipedia.org/wiki/Intrinsic_dimension">intrinsic dimension</a> 的 <a href="https://en.wikipedia.org/wiki/Power_transform">power transform</a> 来缓解这个问题。</p>
+<p>回到上文，t-SNE的目标也是获得对应的到d维空间的映射，$y_1, \ldots, y_N, y \in \mathbb{R}^d$，同时可以反映出高维空间的概率分布$p_{ij}$。具体做法是，计算低维空间里点的概率分布，用$q_{ij}$表示。</p>
+<p>$$q_{ij} = \frac{(1 + \parallel y_i - y_j \parallel^2)a^{-1}}{\sum_k \sum_{l\neq k}(1 + \parallel y_k - y_l \parallel^2)^{-1}}$$</p>
+<p>这里也有$q_{ii}=0$。而且不再使用高斯分布计算概率了，而是选择student t-distribution来计算概率分布，好处是这个分布相比高斯分布，是胖尾的，也就可以将不相似的两个点用更远的低维映射点进行拟合。</p>
+<p>优化映射过程是基于KL散度这个损失函数来实现的，高维、低维空间的分布分别用$P, Q$表示。</p>
+<p>$$\mathrm{KL}(P\parallel Q) = \sum_{i\neq j} p_{ij} \log \frac{p_{ij}}{q_{ij}}$$</p>
+<p>通过优化上述损失函数，利用梯度下降法来更新$y_i$的取值。优化的结果也就可以反映高维空间中点之间的相似度了。</p>
+<p>下面是一个用在多模态预训练中文本 embedding 矩阵使用 t-SNE 可视化的结果，直观来看分布是比较均匀的。</p>
+<p><figure>
+    <center>
+    <img src="/imgs/model-visualization/txt_embedding_0.png" alt="图 - 5 embedding 矩阵的t-SNE可视化">
+    <figcaption>图 - 5 embedding 矩阵的t-SNE可视化</figcaption>
+    </center>
+</figure></p>
+<p>对应PCA降维之后可视化的结果如下，就不是这么均匀了。</p>
+<p><figure>
+    <center>
+    <img src="/imgs/model-visualization/txt_embedding_1.png" alt="图 - 6 embedding 矩阵的PCA可视化">
+    <figcaption>图 - 6 embedding 矩阵的PCA可视化</figcaption>
+    </center>
+</figure></p>
         
             <p>Attention is all your need.</p>
 <h2 id="基础">基础</h2>
@@ -1396,7 +1580,55 @@ Node <span style="color:#900;font-weight:bold">delete</span>(Node t, key key)
 </li>
 </ul>
         
+            <p>经典自监督模型，包括MoCo / SimCLR / SwAV / BYOL / SimSiam 等。</p>
+<p>主要关注无监督策略的研究，模型结构不是本文重点，所以主要包括 MoCo 系列、SimCLR 系列、SwAV、BYOL 等几篇论文。无监督训练模型的一点在于要避免模型坍塌，通过 Contrastive Loss, Clustering Constraints, Predictor(Stop Gradient), Batch Normalization等。</p>
+<p>整体来说，图像自监督学习方法按照自监督实现思想可以分为下面几类。</p>
+<ul>
+<li>基于contrastive loss</li>
+<li>基于蒸馏的方式，一般设计 momentum</li>
+<li>基于聚类的方法</li>
+</ul>
+<p>关于预训练任务也存在多种选择。</p>
+<ul>
+<li>预测图像选装方向。图像经过 0/90/180/270 等几个角度的随机旋转，然后训练模型进行4分类</li>
+<li>预测图片不定位置相对关系。图像被分割成 3 * 3 的表格，然后选取中心小图与另外8个子图中的随机一个进行位置分类，分类类别为8（两个子图的输出拼接起来送入分类层），一些技巧是图像分割成子图时可以增加缝隙或者抖动等</li>
+<li>补丁拼图。将图片分割成 3 * 3 的子图，然后随机打乱，将子图的所有输出特征拼接起来送入分类层，正常来说，类别说应该是 9!，但是作者对这些排列类别做了合并，因为很多排列比较相似，合并过程基于汉明距离进行</li>
+<li>图片上色。灰度图片输入 Encoder，然后Decoder输出彩色图片，可以使用 L2 Loss，或者 LAB 颜色空间等</li>
+<li>自编码器系列。</li>
+<li>GAN系列。</li>
+<li>对比学习。需要构造丰富的负样本，比如大的 Batch Size 或者借助 Memory Bank等</li>
+</ul>
+<h2 id="moco-系列">MoCo 系列</h2>
+<h2 id="simclr-系列">SimCLR 系列</h2>
+<h2 id="swav">SwAV</h2>
+<h2 id="byol">BYOL</h2>
+<p>分析了怎么防止模型坍塌（也就是所有的输入的模型输出都是相同的），关键是要让模型的输出部分层学习到新的知识。在这里，一方面是借助 Mean Teacher，一方面是在 Student Network 上面增加了一层 Predictor，这两个因素可以让 Prediction 层不断学习新的知识，从而避免模型坍塌。BYOL包含两个模型，一个称为 Online，一个称为 Target。</p>
+<p>按理来说，没有负样本，那么优化损失函数的梯度$\nabla_{\theta}(\mathcal{L}_{\theta, \epsilon}^{\mathrm{BYOL}})$应该很快导致模型坍塌啊，也就是损失降为0，但实际没有发生，作者认为这是因为这个损失的梯度下降方向与 Target 模型参数的变化方向是不一致的，也就是梯度下降方向 与 Target 模型让 Online 模型参数更新的放向不一样，所以避免了模型坍塌。另一方面，这也就意味着不存在一个Loss可以同时优化 Target / Online 模型的权重，类似于 GAN 模型的G / D的参数无法同时优化一样。作者也用消融实验表明，保持 prediction 足够好貌似是防止坍塌的关键。</p>
+<p>为啥 SimCLR 依赖于 color jitter 这个变换，因为如果去掉这个变换的话，两次 crop 的图像的颜色直方图分布其实是非常接近的，导致模型非常容易学习。</p>
+<p>发现去掉 Weight Decay 后，模型发散，说明 WD 对自监督模型的重要性，但是增加模型初始化时的初始值范围对模型性能影响不大。</p>
+<h2 id="simsiam">SimSiam</h2>
+<p>SimSiam 的 Prediction Head 需要固定 Learning Rate，也就是不随 Scheduler 变化。</p>
+<h2 id="消融实验">消融实验</h2>
+<h2 id="一些-tricks">一些 Tricks</h2>
+<ul>
+<li>
+<p>Rethinking Image Mixture for Unsupervised Visual Representation Learning</p>
+<p>在无监督训练中引入了Image Mixture &amp; Label Smooth。</p>
+</li>
+<li>
+<p>Whitening for Self-Supervised Representation Learning</p>
+</li>
+<li>
+<p>Barlow Twins: Self-Supervised Learning via Redundancy Reduction</p>
+</li>
+<li>
+<p>Contrastive Multiview Coding</p>
+</li>
+</ul>
+        
             <p>一些为了适应大的Batch Size训练的优化算法。</p>
+<p>偶尔就有时间看到有标题：训练 XX 模型只用 ** 秒 / 分钟，当然除了钱多卡多，在算法实现方面也看看有什么不同。</p>
+<p>有个概念是 cross-view prediction (Hinto92年的一篇论文)，现在很多自监督模型都是在 representation space 完成这个预测任务，但是这容易导致模型坍塌，所以 BYOL 增加了一个 Prediction Layer，这也是相对于 Mean Teacher 这篇论文最大的改进了。对比学习的做法相当于学习当前图片的一个augmentation与其他图片的augmentation之间的区分。</p>
 <p>主要包括：LARS, LAMB 等。</p>
 <h2 id="基础adam">基础：Adam</h2>
 <h2 id="lars算法">LARS算法</h2>
@@ -1417,193 +1649,6 @@ Node <span style="color:#900;font-weight:bold">delete</span>(Node t, key key)
 <h2 id="longformer">Longformer</h2>
 <h2 id="a-survey">A Survey</h2>
         
-            <p>怕什么真理无穷，进一寸有一寸的欢喜。</p>
-<p>与开发人员的目标（架构 + 业务）不同，适合我的总目标：<strong>算法 + 业务</strong>，思路就是目标导向。</p>
-<p>算法以计算机视觉算法为主，不断积累；目标主要是系统全面了解算法 + 丰富的使用经验（创新点、效果调优tricks等）。涉及到的算法包括：图片（分类、检测、人脸、分割、GAN等）、文本NLP、图深度学习、传统机器学习。</p>
-<p>当前业务以搜索算法为主，其它比较主流的业务还包括推荐、风控等；此外可以了解一下以纯粹视觉算法为主题的业务，比如AR / VR / GAN / 人脸检测 / 内容理解等相关的业务！</p>
-<p>工程实现方面，可以以DDIA等书籍为基础 + 具体业务代码 + 目标性能优化进行学习。</p>
-<p>学习方式一方面是在对应的业务实践中学习，另一方面是先看书了解，但都需要理论 + 实践学习。</p>
-<div>
-    <h2>Table Of Contents</h2>
-    <nav id="TableOfContents">
-  <ul>
-    <li><a href="#todo">TODO</a>
-      <ul>
-        <li><a href="#posts">Posts</a></li>
-        <li><a href="#pending">Pending</a></li>
-        <li><a href="#reading">Reading</a></li>
-        <li><a href="#reading-done">Reading Done</a></li>
-        <li><a href="#实践">实践</a></li>
-      </ul>
-    </li>
-    <li><a href="#基础">基础</a>
-      <ul>
-        <li><a href="#数学">数学</a></li>
-        <li><a href="#编程">编程</a></li>
-        <li><a href="#计算机图形学">计算机图形学</a></li>
-      </ul>
-    </li>
-    <li><a href="#算法">算法</a></li>
-    <li><a href="#工程">工程</a></li>
-    <li><a href="#阅读">阅读</a></li>
-  </ul>
-</nav>
-</div>
-<h2 id="todo">TODO</h2>
-<h3 id="posts">Posts</h3>
-<ul>
-<li>CNN + Transformer系列模型</li>
-<li>多模态训练相关论文</li>
-<li>etc.</li>
-</ul>
-<h3 id="pending">Pending</h3>
-<ul>
-<li>LightSeq / DeepSpeed</li>
-</ul>
-<h3 id="reading">Reading</h3>
-<ul>
-<li>图深度学习</li>
-<li>这就是搜索引擎</li>
-<li>Fundamentals of Computer Graphics</li>
-<li>DDIA</li>
-<li>SICP</li>
-<li>算法复习</li>
-<li>Go语言</li>
-</ul>
-<h3 id="reading-done">Reading Done</h3>
-<ul>
-<li>文明、现代化、价值投资与中国</li>
-<li>设计模式</li>
-<li>Labuladong 的算法小抄</li>
-</ul>
-<h3 id="实践">实践</h3>
-<ul>
-<li>Leetcode</li>
-<li>多模态预训练</li>
-<li>无监督图像表征</li>
-</ul>
-<h2 id="基础">基础</h2>
-<h3 id="数学">数学</h3>
-<h3 id="编程">编程</h3>
-<ul>
-<li>C++/C</li>
-<li>CUDA</li>
-<li>TensorRT</li>
-<li>Python</li>
-<li>Golang</li>
-<li>数据结构与算法</li>
-<li>计算机网络</li>
-<li>编译原理</li>
-<li>分布式计算</li>
-</ul>
-<h3 id="计算机图形学">计算机图形学</h3>
-<p>为什么要学习计算机图形学？因为需要增加产出能力，也是工程实现能力。</p>
-<h2 id="算法">算法</h2>
-<ul>
-<li>
-<p>机器学习</p>
-</li>
-<li>
-<p>图深度学习</p>
-</li>
-<li>
-<p>分类</p>
-</li>
-<li>
-<p>识别</p>
-</li>
-<li>
-<p>全景分割</p>
-</li>
-<li>
-<p>人脸</p>
-</li>
-<li>
-<p>GAN</p>
-</li>
-<li>
-<p>视频理解</p>
-</li>
-<li>
-<p>多模态</p>
-</li>
-<li>
-<p>AR / VR</p>
-</li>
-</ul>
-<h2 id="工程">工程</h2>
-<ul>
-<li>MXNet</li>
-<li>Pytorch</li>
-<li>DeepSpeed</li>
-<li>Lightseq</li>
-<li>Onnxruntime</li>
-<li>Tvm</li>
-</ul>
-<h2 id="阅读">阅读</h2>
-<ul>
-<li>博弈论</li>
-<li>经济学与金融</li>
-<li>投资</li>
-<li>理性</li>
-<li>公司治理</li>
-<li>哲学思想</li>
-</ul>
-        
-            <p>一些hugo blog搭建过程中的记录。</p>
-<ul>
-<li>
-<p>添加 table of contents</p>
-<p>参考博客：<a href="https://codingreflections.com/hugo-table-of-contents/">How to Add Table Of Contents to a Hugo Blog</a>。目前用到的是第一种方式。
-包含两个步骤：</p>
-<ul>
-<li>create shortcode</li>
-<li>call the shortcode inside markdown</li>
-</ul>
-</li>
-<li>
-<p>添加代码块并展示行号</p>
-<p>参考博客：<a href="https://gohugo.io/content-management/syntax-highlighting/">Syntax Highlighting</a>，以及官方文档：<a href="https://gohugo.io/getting-started/configuration-markup#highlight">Configure Markup - highlight</a></p>
-<p>文中还给出了不同配置参数的解释、可用的 style 展示等。</p>
-</li>
-<li>
-<p>添加Latex公式支持</p>
-<p>无用的博客，因为已经过时了，hugo不在支持 mmark 这种 content format 了。<a href="https://dawnarc.com/2019/09/hugokatex-intergration/">KaTex Intergration - 玄冬Wong</a>。而且目前 mathjax 比 katex 支持的更全。</p>
-<p>另一篇博客是: <a href="https://rulenuts.netlify.app/post/config-hugo-with-mathjax-or-katex/">Config Hugo with Mathjax or Katex</a></p>
-<p>最终有用的博客是：<a href="https://www.gohugo.org/doc/tutorials/mathjax/">MathJax Support</a> 以及 <a href="http://xuchengpeng.com/hexo-blog/2018/07/10/setting-mathjax-with-hugo/">Setting MathJax with Hugo</a> 以及 <a href="https://note.qidong.name/2018/03/hugo-mathjax/">在Hugo中使用MathJax</a> 以及<a href="https://blog.csdn.net/weixin_42109159/article/details/105099962">hugo使用katex</a></p>
-</li>
-<li>
-<p>插入图片</p>
-<p>两个可行的参考是：<a href="https://discourse.gohugo.io/t/solved-how-to-insert-image-in-my-post/1473">how-to-insert-image-in-my-post</a> 以及 <a href="https://gohugo.io/content-management/shortcodes/#figure">hugo-conent-management shortcodes</a></p>
-<p>具体使用：将下载的图片保存到 static 目录，比如按照 post tilte 命名的目录下面（例如，<code>/User/apple/myblogs/static/imgs/binary-search-tree/img00.png</code>，<code>/User/apple/myblogs</code>为项目根目录，即运行<code>hugo server</code>等命令的目录，<code>/User/apple/myblogs/public</code>为编译后的结果），然后在.md正文里指定图片地址（例如，<code>![image caption](/imgs/binary-search-tree/img00.png)</code>，注意下直接从<code>/imgs</code>开始）。</p>
-<p>第二个博客里给出了另外一种加载图片的方式，即使用shortcodes（Markdown语言的补充，方便建立网页。），而且也给出了其他多媒体信息的加载方式，比如vimeo, youtube, gist, tweet, instagram等信息。</p>
-<p>显示图片 Caption 过程，可以参考<a href="https://sebastiandedeyne.com/captioned-images-with-markdown-render-hooks-in-hugo/">Caption images with markdown render hooks in Hugo</a>，也就是在<code>myblogs/layouts/_default/_makeup</code>目录下面创建一个<code>render-image.html</code>文件，然后填上如下内容：</p>
-<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
-<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
-<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">0
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
-</span></code></pre></td>
-<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
-<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-html" data-lang="html">&lt;<span style="color:#000080">figure</span>&gt;
-  &lt;<span style="color:#000080">center</span>&gt;
-  &lt;<span style="color:#000080">img</span> <span style="color:#008080">src</span><span style="color:#000;font-weight:bold">=</span><span style="color:#d14">&#34;{{ .Destination | safeURL }}&#34;</span> <span style="color:#008080">alt</span><span style="color:#000;font-weight:bold">=</span><span style="color:#d14">&#34;{{ .Text }}&#34;</span>&gt;
-  &lt;<span style="color:#000080">figcaption</span>&gt;{{ .Text }}&lt;/<span style="color:#000080">figcaption</span>&gt;
-  &lt;/<span style="color:#000080">center</span>&gt;
-&lt;/<span style="color:#000080">figure</span>&gt;
-</code></pre></td></tr></table>
-</div>
-</div><p>或者用 <code>.Title</code> 代替代码块第三行的 <code>.Text</code> 来使用 Title 作为 Caption。然后在Markdone里加载图片没有变化，注意 Title 的位置：<code>![alt text](path &quot;title&quot;)</code>，title可以是空。</p>
-</li>
-<li>
-<p>添加网页图标</p>
-<p>一个常见的博客是：<a href="https://www.enthuseandinspire.co.uk/blog/favicon/">Favicon</a>，但是目前来看还没有起作用。但是在 <code>triloon.space</code> 上起作用了，后续需要补充上 windows 的格式。</p>
-</li>
-</ul>
-        
 	
 		<span>2</span>
 	</div>
@@ -1613,7 +1658,7 @@ Node <span style="color:#900;font-weight:bold">delete</span>(Node t, key key)
         		<footer>
 			
 			<span>
-			&copy; <time datetime="2021-10-28 21:45:05.74274 &#43;0800 CST m=&#43;0.115283986">2021</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
+			&copy; <time datetime="2021-11-22 21:11:11.134669 &#43;0800 CST m=&#43;0.129806777">2021</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
 			</span>
 		</footer>
 
