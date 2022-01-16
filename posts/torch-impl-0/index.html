@@ -207,7 +207,6 @@ MathJax.Hub.Config({
 <h2 id="extending-pytorch">Extending Pytorch</h2>
 <p>主要参考：<a href="https://pytorch.org/docs/stable/notes/extending.html#extending-torch-autograd">Extending Pytorch</a></p>
 <h3 id="extending-autograd">Extending Autograd</h3>
-<p>TODO</p>
 <h2 id="optimizer">Optimizer</h2>
 <p>实现自己的 Optimizer 的时候，需要继承<code>torch.optim.Optimizer</code>类。需要实现<code>__init__、__setstate__、step</code>等函数；然后将新 Optimizer 的参数，比如lr, eps, betas等参数保存到<code>defaults</code>字典中，并跟parameters一起传给Base类的<code>__init__</code>函数。<code>__setstate__</code>函数主要是为了比如在pickle等序列化中使用，并做必要的更新，比如<code>self.param_groups</code>里的成员。在 <code>step()</code>函数里，会更新<code>self.state</code>成员变量，然后后面更新的时候就可以直接从 <code>state</code> 里面取出来进行更新就可以了。</p>
 <p>此外，defaults 字典里面的信息在<code>add_param_group()</code>函数里面被放入<code>self.param_groups</code>里面了，如lr, eps, betas等；特定Optimizer的相关数据放在<code>self.states</code>里面了，如Adam里面的 m / v 等。</p>
@@ -228,7 +227,7 @@ MathJax.Hub.Config({
         		<footer>
 			
 			<span>
-			&copy; <time datetime="2021-11-23 14:13:18.399788 &#43;0800 CST m=&#43;0.076294182">2021</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
+			&copy; <time datetime="2022-01-16 19:07:47.274336 &#43;0800 CST m=&#43;0.069429142">2022</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
 			</span>
 		</footer>
 

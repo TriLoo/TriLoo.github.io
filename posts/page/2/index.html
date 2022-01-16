@@ -63,6 +63,19 @@
 <main>
 	<div class="catalogue">
 		
+			<a href="https://triloon.space/posts/img-transform-ssl/" class="catalogue-item">
+    <div>
+        <time datetime="2021-09-28 14:07:50 &#43;0800 CST" class="catalogue-time">September 28, 2021</time>
+        <h2 class="catalogue-title">基于Transformer结构的图像自监督模型及训练</h2>
+        <div class="catalogue-line"></div>
+
+        <p>
+            <p>一些基于Transformer结构的图像自监督模型以及训练过程中遇到的问题。</p>
+        </p>
+    </div>
+</a>
+
+		
 			<a href="https://triloon.space/posts/torch-impl-0/" class="catalogue-item">
     <div>
         <time datetime="2021-09-18 11:08:11 &#43;0800 CST" class="catalogue-time">September 18, 2021</time>
@@ -110,19 +123,6 @@
 
         <p>
             <p>VOLO论文。</p>
-        </p>
-    </div>
-</a>
-
-		
-			<a href="https://triloon.space/posts/efficient-transformer-reformer/" class="catalogue-item">
-    <div>
-        <time datetime="2021-09-06 10:50:19 &#43;0800 CST" class="catalogue-time">September 6, 2021</time>
-        <h2 class="catalogue-title">Efficient Transformer 系列之 Reformer</h2>
-        <div class="catalogue-line"></div>
-
-        <p>
-            <p>Reformer论文。</p>
         </p>
     </div>
 </a>
@@ -180,14 +180,14 @@
 </a>
 
 		
-			<a href="https://triloon.space/posts/big-batchsize-train/" class="catalogue-item">
+			<a href="https://triloon.space/posts/efficient-transformer/" class="catalogue-item">
     <div>
-        <time datetime="2021-08-31 14:09:48 &#43;0800 CST" class="catalogue-time">August 31, 2021</time>
-        <h2 class="catalogue-title">大Batchsize训练用到的优化器</h2>
+        <time datetime="2021-08-31 14:02:36 &#43;0800 CST" class="catalogue-time">August 31, 2021</time>
+        <h2 class="catalogue-title">Efficient Transformer系列</h2>
         <div class="catalogue-line"></div>
 
         <p>
-            <p>一些为了适应大的Batch Size训练的优化算法。</p>
+            <p>一些以提高 Transformer 计算性能为目的的 Xformer 方案整理。</p>
         </p>
     </div>
 </a>
@@ -202,6 +202,659 @@
 		
 			<a href="/posts/page/3/" class="right arrow">&#8594;</a>
 		
+        
+            <p>一些基于Transformer结构的图像自监督模型以及训练过程中遇到的问题。</p>
+<p>这篇文章里除了给出 DINO / MoCoV3 的具体结构以及对应的自监督训练思想，还给出了两种position embedding的具体实现。</p>
+<h2 id="概览">概览</h2>
+<p>目前出现了一系列的图像表征模型，包括 MoCo 系列、SimCLR系列以及BYOL/SwAV/SimSiam等，本文主要关注基于 Transformer 结构的一些无监督训练模型的细节，主要包括 MoCo v3, DINO, MoBY等。</p>
+<p>性能对比主要分为：Linear Acc 以及 End-2-End Fine Tuning Acc 两种方式。前者是无监督预训练之后，仅对最有一层分类输出层进行微调，后者是微调整个网络。</p>
+<p>几个模型的主要指标对比如下，ViT-S 与 ResNet50 参数量（21M vs 23M(resnet50)）以及吞吐率（1007 vs 1237 img/sec）还有有监督训练精度（79.8(v) VS 79.3(r)）都类似。</p>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Pretrain Epochs</th>
+<th>Linear Acc</th>
+<th>E2E Acc</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SimSiam, ResNet-50</td>
+<td>100</td>
+<td>68.1</td>
+<td>-</td>
+<td></td>
+</tr>
+<tr>
+<td>SimSiam, ResNet-50</td>
+<td>200</td>
+<td>70.0</td>
+<td>-</td>
+<td></td>
+</tr>
+<tr>
+<td>SimSiam, ResNet-50</td>
+<td>400</td>
+<td>70.8</td>
+<td>-</td>
+<td></td>
+</tr>
+<tr>
+<td>SimSiam, ResNet-50</td>
+<td>800</td>
+<td>71.3</td>
+<td>-</td>
+<td>与 SimCLR/MoCoV2/SwAV 几乎差不多</td>
+</tr>
+<tr>
+<td>MoCo V3, ResNet-50</td>
+<td>100</td>
+<td>68.9</td>
+<td>-</td>
+<td></td>
+</tr>
+<tr>
+<td>MoCo V3, ResNet-50</td>
+<td>300</td>
+<td>72.8</td>
+<td>-</td>
+<td></td>
+</tr>
+<tr>
+<td>MoCo V3, ViT Small</td>
+<td>300</td>
+<td>73.2</td>
+<td>81.4</td>
+<td></td>
+</tr>
+<tr>
+<td>MoCo V3, ViT Base</td>
+<td>300</td>
+<td>76.7</td>
+<td>83.2</td>
+<td></td>
+</tr>
+<tr>
+<td>MoCo V3, ViT Large</td>
+<td>300</td>
+<td>77.6</td>
+<td>84.1</td>
+<td></td>
+</tr>
+<tr>
+<td>DINO, ResNet-50</td>
+<td>300</td>
+<td>74.5</td>
+<td>-</td>
+<td></td>
+</tr>
+<tr>
+<td>DINO, ResNet-50</td>
+<td>-</td>
+<td>75.3</td>
+<td>-</td>
+<td></td>
+</tr>
+<tr>
+<td>DINO, ViT Small</td>
+<td>300</td>
+<td>76.1</td>
+<td>-</td>
+<td></td>
+</tr>
+<tr>
+<td>DINO, ViT Small</td>
+<td>-</td>
+<td>77.0</td>
+<td>-</td>
+<td></td>
+</tr>
+<tr>
+<td>DINO, ViT Base/16</td>
+<td>-</td>
+<td>78.2</td>
+<td>-</td>
+<td></td>
+</tr>
+<tr>
+<td>DINO, ViT Base/8</td>
+<td>-</td>
+<td>80.1</td>
+<td>-</td>
+<td></td>
+</tr>
+<tr>
+<td>MoBY, DEIT-S</td>
+<td>300</td>
+<td>72.8</td>
+<td>-</td>
+<td></td>
+</tr>
+<tr>
+<td>MoBY, DEIT-S(multi crop)</td>
+<td>300</td>
+<td>75.9</td>
+<td>-</td>
+<td></td>
+</tr>
+<tr>
+<td>MoBY, Swin-T</td>
+<td>100</td>
+<td>70.9</td>
+<td>-</td>
+<td></td>
+</tr>
+<tr>
+<td>MoBY, Swin-T</td>
+<td>300</td>
+<td>75.0</td>
+<td>-</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>所以，在 epoch = 300 这个门槛上，最好的模型以及对应无监督训练策略应该是 DINO + ViT Base/8。在 ResNet50 / 300 epochs 上，最好的无监督训练模型也是DINO的74.5；在 ViT-S / 300 epochs 上，最好的当属 DINO 的76.1。而且 ViT B/8 比 ViT B/16 效果更好。</p>
+<p>MoCo V3 以及 DINO 以及 MoBY 都借助了 Momentum Update 的技巧来防治模型坍塌。</p>
+<h2 id="moco-v3">MoCo v3</h2>
+<p>主要思想是基于 Contrastive Loss 进行训练。</p>
+<p>数据增广方式由两种Augmentation List构成(采取BYOL论文的做法)，第一种与 SimSiam 类似，第二种Aug List 里新增了BYOL中的 Solarization 增广方式。效果体现在对输入图片的两个Crop分别进行增广，因为<code>RandomResizedCrop()</code>函数的实现会先 Crop，然后在Resize 到指定大小。具体的增广参考<a href="https://github.com/facebookresearch/moco-v3">moco-v3</a>里的代码。</p>
+<p>MoCo V3 丢弃了 MoCo V1/V2 里采用的 Memory Queue 来构造负样本，与 SimCLR 的观察类似，也是通过大的 Batch Size 来保证负样本的数量；另一方面，模型采用了EMA思路，也就是有两个 Encoder 网络$f_q, f_k$，其中 $f_k = m * f_k + (1 - m) * f_q$。采用的 Loss 是 InfoNCE，即：</p>
+<p>$$\mathcal{L}_q = - \log \frac{\exp(q \cdot k^+ / \tau)}{\exp(q \cdot k^+ / \tau) + \sum_k \exp(q \cdot k^- / \tau) }$$</p>
+<p>完整的算法实现见图-1。</p>
+<p><figure>
+    <center>
+    <img src="/imgs/img-transform-ssl/mocov3-0.png" alt="图 - 1 MoCo v3 Algorithm">
+    <figcaption>图 - 1 MoCo v3 Algorithm</figcaption>
+    </center>
+</figure></p>
+<p>值得注意的地方在于，Predictior 仅用与计算 Q，K 是直接 $f_k$ 模型的输出结果；Loss的最终计算会乘上一个因子 $2 * \tau$，默认的$\tau=0.2$；在训练过程中，算法中的$m$也随着 epoch 的增加而 cosine 下降；类似 SimCLR 新增了 3 层的 Mlp 层，具体维度的变化可以参考代码；其它具体实现可以参考上面链接中的代码。两个细节，首先是计算 K 的时候使用的更新后的 $f_k$，其次是没有像 SimSiam 中那样使用 fix lr 技巧。</p>
+<p>对于参数 $m$ 的选取，作者对比了 0, 0.9, 0.99, 0.999 等值，发现 m = 0.99 时效果最好，但是实际实现是按照下面一行代码进行更新，并且初始值是0.99。</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">0
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">adjust_moco_momentum</span>(epoch, args):
+    <span style="color:#d14">&#34;&#34;&#34;Adjust moco momentum based on current epoch&#34;&#34;&#34;</span>
+    m <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">1.</span> <span style="color:#000;font-weight:bold">-</span> <span style="color:#099">0.5</span> <span style="color:#000;font-weight:bold">*</span> (<span style="color:#099">1.</span> <span style="color:#000;font-weight:bold">+</span> math<span style="color:#000;font-weight:bold">.</span>cos(math<span style="color:#000;font-weight:bold">.</span>pi <span style="color:#000;font-weight:bold">*</span> epoch <span style="color:#000;font-weight:bold">/</span> args<span style="color:#000;font-weight:bold">.</span>epochs)) 
+                        <span style="color:#000;font-weight:bold">*</span> (<span style="color:#099">1.</span> <span style="color:#000;font-weight:bold">-</span> args<span style="color:#000;font-weight:bold">.</span>moco_m)
+    <span style="color:#000;font-weight:bold">return</span> m
+</code></pre></td></tr></table>
+</div>
+</div><p>对应的曲线如图-2，其中横轴为epoch的取值，纵轴是对应 epoch 的 momentum 参数。</p>
+<p><figure>
+    <center>
+    <img src="/imgs/img-transform-ssl/mocov3-3.png" alt="图 - 2 MoCo V3 中 Momentum 参数的变化趋势">
+    <figcaption>图 - 2 MoCo V3 中 Momentum 参数的变化趋势</figcaption>
+    </center>
+</figure></p>
+<p>与参数量差不多的 ResNet 模型相比，ViT 占有优势！</p>
+<p><figure>
+    <center>
+    <img src="/imgs/img-transform-ssl/mocov3-2.png" alt="图 - 3 不同 Backbone 在 MoCo V3 上的性能表现">
+    <figcaption>图 - 3 不同 Backbone 在 MoCo V3 上的性能表现</figcaption>
+    </center>
+</figure></p>
+<h3 id="sin-cos位置编码">Sin-Cos位置编码</h3>
+<p>Sin-Cos位置编码基于下面的公式计算每个位置上的 position embedding。</p>
+<p>$$PE(pos, 2i) = \sin \left( \frac{pos}{10000^{2i / d_{model}}} \right)$$
+$$PE(pos, 2i + 1) = \cos \left( \frac{pos}{10000^{2i / d_{model}}} \right)$$</p>
+<h3 id="使用-vit-时的训练稳定性">使用 ViT 时的训练稳定性</h3>
+<p>一般来说，可以直接将 ResNet50 替换成 ViT 模型进行训练，但是作者发现 Transformer 网络不太稳定。论文里作者给出了几个导致训练不稳定的原因以及可能的改正方法。</p>
+<p>首先是不稳定因素。</p>
+<ul>
+<li>
+<p>Batch Size</p>
+<p>实验发现，Batch Size 由 1K -&gt; 2K 的时候，Linear Acc 是有提高的（71.5 -&gt; 72.6）。但是当 Batch Size 继续增加到 4K 的时候，按理说可用负样本更多了，效果应该更好，但是实际是 Acc 下降到了 72.2，而且Trainging Curve 上也出现了很多的 Dips。当 Batch Size = 6K 的时候，现象更严重。可能的原因在于大Batch Size 训练时模型会跳出当前局部最优解，然后重新进行优化。</p>
+<p><figure>
+    <center>
+    <img src="/imgs/img-transform-ssl/mocov3-1.png" alt="图 - 4 训练稳定性与Batch Size的关系">
+    <figcaption>图 - 4 训练稳定性与Batch Size的关系</figcaption>
+    </center>
+</figure></p>
+</li>
+<li>
+<p>Learning Rate</p>
+<p>学习率也是一个因素，当学习率太小的时候，模型没法学到最优导致ACC降低，当学习率太大的时候，也会出现 Dip，从而训练不稳定导致ACC下降。文章里使用的 learning rate scale 规则是：$lr * \mathrm{BatchSize} / 256$，其中基础的 lr = 1.5e-4。</p>
+</li>
+<li>
+<p>Optimizer</p>
+<p>一般来说，大 Batch Size 训练需要使用专门的优化器，比如 LARS，以及 LAMB等。作者对比了 LAMB，发现效果与 AdamW 效果类似，但是对 lr 会更敏感，导致不好调参，所以还是使用 AdamW。</p>
+</li>
+</ul>
+<p>然后作者给出了一种解决办法：</p>
+<ul>
+<li>Random Patch Projection
+也就是将 Patch Embedding 层固定为随机初始化权重；并且发现使用 BN / Weight Norm 等方法也不如使用 Random Patch Projection训练更好。</li>
+<li>Long Warm-Up
+使用 40 epochs 的Warm Up，也有助于增加训练稳定性。</li>
+</ul>
+<h2 id="dino">DINO</h2>
+<p>主要思路是基于 Self Distillation 来实现。既然是类似于 Knowledge Distillation 的实现，那就必须要有一个 Teacher 模型、一个 Student 模型，如图-5所示。</p>
+<p><figure>
+    <center>
+    <img src="/imgs/img-transform-ssl/dino-0.png" alt="图 - 5 DINO网络结构示意图">
+    <figcaption>图 - 5 DINO网络结构示意图</figcaption>
+    </center>
+</figure></p>
+<p>在SSL中，Teacher模型的实现包含两个方面，首先是输入数据，然后是模型参数怎么更新。输入数据涉及到了同一幅图片的 Multi-Crops(Views)的实现。在 DINO 中，给定一幅图片 x，产生一个 view 集合，集合中包含两个 global view 以及多个（如6个）Local Views，Local View 具有更小的分辨率。所有的 Views 都会进行 student 网络的前向计算，但是只有两个 Global Views 才会进行 Teacher 网络的前向计算，所以在基于上述 Student / Teancher 模型进行知识蒸馏的时候可以获得 &ldquo;Local-to-Global&rdquo; 的对应。然后用下式对 Student 网络参数进行更新。</p>
+<p>$$\min_{\theta_s} \sum_{x \in { x_1^g, x_2^g }} \sum_{x'\in V, x' \neq x} H(P_t(x), P_s(x'))$$</p>
+<p>其中，$H(a, b) = -a \log b$。Teacher / Student 两个网络具有相同的结构但是不同的参数。为了处理不同的输入分辨率（这里为224，96两种），代码中借助 XCiT 的思路进行实现。</p>
+<p>与 Knowledge Distillation 不同的是，SSL 中没有Label 来训练 Teacher 模型，那么Teacher 模型的权重怎么更新呢？直观的方案有以下两种方案。</p>
+<ul>
+<li>
+<p>直接拷贝Student网络的参数</p>
+<ul>
+<li>直接将最新的Student网络的权重拷贝过来 - 不收敛</li>
+<li>拷贝上一次 Iteration 的权重 - 不收敛</li>
+<li>拷贝上一次 Epoch 的权重 - 66.6</li>
+</ul>
+</li>
+<li>
+<p>利用 EMA 机制来更新 Teacher 模型的权重，也就是 Momentum Encoder - 72.8</p>
+<p>$$\theta_t \leftarrow \lambda \theta_t + (1 - \lambda)\theta_s$$</p>
+<p>其中，权重$\lambda$ 会按照 Cosine 的方式从0.996 上升到 1.0。这种方式的 Teacher 实现原理类似于model ensembling中的Polyak-Ruppert Averaging算法。</p>
+</li>
+</ul>
+<p>实际实验发现，直接拷贝最新的Student权重或者上一次 Iteration 的权重，都会导致模型坍塌；相比之下，拷贝上一Epoch 的 Student 的权重 或者基于 EMA 进行更新的方式得到的 Teacher 模型不会导致坍塌。</p>
+<p>接下来就是具体的网络结构了。</p>
+<p>DINO 框架下的模型包含两部分，一个是backbone $f$，一个是 projection head $h$，所以得到的特征提取函数是$g = h \circ f$，没有使用BYOL中的 Prediction Head，因为加上之后效果会下降(76.1 vs 75.6)。Projection Head 部分包含3 层的MLP，hidden size为2048 + l2 normalization，最后 3-layer MLP 的输出在接一个<strong>weight normalized fully connected layer</strong>，如图-6所示，最终输出维度是 K，如果backbone 是 ViT，那么MLP中也会去掉 BN，毕竟ViT中没有使用 BN。实验表明，如果不实用 l2 normalization 的话，MLP 中层数大于 2 层后就会出现模型坍塌，但是 层数为1、2层时不会出现这个问题，但是1 - 4 层来看，层数越多效果越好；对于输出维度 K 来说，小于等于65536时，越大模型效果越好；MLP中使用的激活函数GELU效果比 ReLU更好。</p>
+<p>对应的 Projection Head 的实现示意图如图-6。</p>
+<p><figure>
+    <center>
+    <img src="/imgs/img-transform-ssl/dino-2.png" alt="图 - 6 DINO Projection Head 实现示意图">
+    <figcaption>图 - 6 DINO Projection Head 实现示意图</figcaption>
+    </center>
+</figure></p>
+<p>DINO模型使用Centering &amp; Sharping 两种操作相互配合来防止模型坍塌。Sharping 的实现就是类似 Knowledge Distillation 中计算 Softmax 时，激活数值除以$\tau_s$（student），或者 Teacher 模型的 $\tau_t$，一般来说，这个参数越小，Softmax 的输出就越 sharp，但是这里只针对Teacher模型而言。即：</p>
+<p>$$P_t(x) = \frac{\exp (g_{\theta_t} (x)^{(i)}/ \tau_t)}{\sum_{k=1}^K \exp (g_{\theta_t} (x)^{(k)} / \tau_t)}$$</p>
+<p>其中$K$就是Student / Teacher Projection Head 部分的输出维度。对应的 Centering 的实现是引入了新的偏置项用于Teacher 模型的输出：</p>
+<p>$$g_t (x) \leftarrow g_t(x) + c$$</p>
+<p>然后这个偏置项会根据Teacher模型的输出进行移动平均更新。</p>
+<p>$$c \leftarrow m * c + (1 - m) \frac{1}{B} \sum_{i=1}^B g_{\theta_t} (x_i)$$</p>
+<p>对应的伪代码实现如下。</p>
+<p><figure>
+    <center>
+    <img src="/imgs/img-transform-ssl/dino-1.png" alt="图 - 7 DINO伪代码实现">
+    <figcaption>图 - 7 DINO伪代码实现</figcaption>
+    </center>
+</figure></p>
+<h3 id="position-embedding-的生成">Position Embedding 的生成</h3>
+<p>与 MoCoV3 中使用 sin-cos 的位置编码不同，DINO 针对不同的分辨率采用的是对 position embedding 利用 bicubic 的方式进行上/下采样。</p>
+<p>具体实现代码如下，可以看出主要是将 Patch 恢复成 $(B, C, H, W)$ 格式，然后借助<code>torch.nn.functional.interpolate()</code>函数进行下采样。</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 0
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">interpolate_pos_encoding</span>(<span style="color:#999">self</span>, x, w, h):
+    npatch <span style="color:#000;font-weight:bold">=</span> x<span style="color:#000;font-weight:bold">.</span>shape[<span style="color:#099">1</span>] <span style="color:#000;font-weight:bold">-</span> <span style="color:#099">1</span>
+    N <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>pos_embed<span style="color:#000;font-weight:bold">.</span>shape[<span style="color:#099">1</span>] <span style="color:#000;font-weight:bold">-</span> <span style="color:#099">1</span>
+    <span style="color:#000;font-weight:bold">if</span> npatch <span style="color:#000;font-weight:bold">==</span> N <span style="color:#000;font-weight:bold">and</span> w <span style="color:#000;font-weight:bold">==</span> h:
+        <span style="color:#000;font-weight:bold">return</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>pos_embed
+    class_pos_embed <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>pos_embed[:, <span style="color:#099">0</span>]
+    patch_pos_embed <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>pos_embed[:, <span style="color:#099">1</span>:]
+    dim <span style="color:#000;font-weight:bold">=</span> x<span style="color:#000;font-weight:bold">.</span>shape[<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>]
+    w0 <span style="color:#000;font-weight:bold">=</span> w <span style="color:#000;font-weight:bold">//</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>patch_embed<span style="color:#000;font-weight:bold">.</span>patch_size
+    h0 <span style="color:#000;font-weight:bold">=</span> h <span style="color:#000;font-weight:bold">//</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>patch_embed<span style="color:#000;font-weight:bold">.</span>patch_size
+    <span style="color:#998;font-style:italic"># we add a small number to avoid floating point error in the interpolation</span>
+    <span style="color:#998;font-style:italic"># see discussion at https://github.com/facebookresearch/dino/issues/8</span>
+    w0, h0 <span style="color:#000;font-weight:bold">=</span> w0 <span style="color:#000;font-weight:bold">+</span> <span style="color:#099">0.1</span>, h0 <span style="color:#000;font-weight:bold">+</span> <span style="color:#099">0.1</span>
+    patch_pos_embed <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>functional<span style="color:#000;font-weight:bold">.</span>interpolate(
+        patch_pos_embed<span style="color:#000;font-weight:bold">.</span>reshape(<span style="color:#099">1</span>, <span style="color:#0086b3">int</span>(math<span style="color:#000;font-weight:bold">.</span>sqrt(N)), <span style="color:#0086b3">int</span>(math<span style="color:#000;font-weight:bold">.</span>sqrt(N)), dim)<span style="color:#000;font-weight:bold">.</span>permute(<span style="color:#099">0</span>, <span style="color:#099">3</span>, <span style="color:#099">1</span>, <span style="color:#099">2</span>),
+        scale_factor<span style="color:#000;font-weight:bold">=</span>(w0 <span style="color:#000;font-weight:bold">/</span> math<span style="color:#000;font-weight:bold">.</span>sqrt(N), h0 <span style="color:#000;font-weight:bold">/</span> math<span style="color:#000;font-weight:bold">.</span>sqrt(N)),
+        mode<span style="color:#000;font-weight:bold">=</span><span style="color:#d14">&#39;bicubic&#39;</span>,
+    )
+    <span style="color:#000;font-weight:bold">assert</span> <span style="color:#0086b3">int</span>(w0) <span style="color:#000;font-weight:bold">==</span> patch_pos_embed<span style="color:#000;font-weight:bold">.</span>shape[<span style="color:#000;font-weight:bold">-</span><span style="color:#099">2</span>] <span style="color:#000;font-weight:bold">and</span> <span style="color:#0086b3">int</span>(h0) <span style="color:#000;font-weight:bold">==</span> patch_pos_embed<span style="color:#000;font-weight:bold">.</span>shape[<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>]
+    patch_pos_embed <span style="color:#000;font-weight:bold">=</span> patch_pos_embed<span style="color:#000;font-weight:bold">.</span>permute(<span style="color:#099">0</span>, <span style="color:#099">2</span>, <span style="color:#099">3</span>, <span style="color:#099">1</span>)<span style="color:#000;font-weight:bold">.</span>view(<span style="color:#099">1</span>, <span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>, dim)
+    <span style="color:#000;font-weight:bold">return</span> torch<span style="color:#000;font-weight:bold">.</span>cat((class_pos_embed<span style="color:#000;font-weight:bold">.</span>unsqueeze(<span style="color:#099">0</span>), patch_pos_embed), dim<span style="color:#000;font-weight:bold">=</span><span style="color:#099">1</span>)
+</code></pre></td></tr></table>
+</div>
+</div><p>其中，$-1$是为了去掉增加的 <code>[CLS]</code> 这个 Token，然后将 <code>patch_pos_embed</code> 恢复空间维度，利用<code>interpolate()</code>函数进行下采样，最后恢复成$(B, SeqLen, Dim)$的格式与CLS的embedding拼接起来做为返回。</p>
+<h3 id="最后一层的处理">最后一层的处理</h3>
+<p>DINO模型对最后一层全连接的处理，包括两个方面，首先是使用了 weighted normalized 的全连阶层，其次是在第一个 epoch 的时候，会固定 last layer 的参数，不进行更新。</p>
+<p>Weighted Normalized的全连接的实现。对应的函数是<code>torch.nn.utils.weight_norm()</code>，对应的论文是<a href="https://arxiv.org/abs/1602.07868">Weight Normalization</a>，中文博客可以参考：<a href="https://zhuanlan.zhihu.com/p/55102378">模型优化之Weight Normalization - 知乎</a>。</p>
+<p>主要是思想是将全连阶层的权重分离为大小、方向两个部分，然后使用 SGD 分别优化这两个部分。</p>
+<p>$$w = g \frac{\mathbf{v}}{\parallel \mathbf{v} \parallel}$$</p>
+<p>其中$\mathbf{v}$为表示方向的向量。然后SGD优化的时候，分别优化$g$与$\mathbf{v}$。</p>
+<p>另一个处理是第一个 epoch 内取消最后一层的梯度更新，实现代码其实就是设置<code>grad=None</code>，即。</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">0
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">cancel_gradients_last_layer</span>(epoch, model, freeze_last_layer<span style="color:#000;font-weight:bold">=</span><span style="color:#099">1</span>):
+    <span style="color:#000;font-weight:bold">if</span> epoch <span style="color:#000;font-weight:bold">&gt;=</span> freeze_last_layer:
+        <span style="color:#000;font-weight:bold">return</span>
+    <span style="color:#000;font-weight:bold">for</span> n, p <span style="color:#000;font-weight:bold">in</span> model<span style="color:#000;font-weight:bold">.</span>named_parameters():
+        <span style="color:#000;font-weight:bold">if</span> <span style="color:#d14">&#34;last_layer&#34;</span> <span style="color:#000;font-weight:bold">in</span> n:
+            p<span style="color:#000;font-weight:bold">.</span>grad <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">None</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="dinoloss的实现">DINOLoss的实现</h3>
+<p>论文中提到的 Centering &amp; Sharping 两个做法都体现在这个类里；而且包括对应 Sharping 的参数的调整（前30个epoch由0.04 -&gt; 0.07，即<code>warmup_teacher_temp_epochs=30</code>）提高训练稳定性。</p>
+<p>对应的实现代码如下。</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 0
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">23
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">24
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">25
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">26
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">27
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">28
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">29
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">30
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">31
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">32
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">33
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">34
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">35
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">36
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">37
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">38
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">39
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">40
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">41
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">42
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">43
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">44
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">45
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">46
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">47
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">48
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">49
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">50
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">51
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">52
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">53
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">54
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">55
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">56
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">57
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">58
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">DINOLoss</span>(nn<span style="color:#000;font-weight:bold">.</span>Module):
+    <span style="color:#000;font-weight:bold">def</span> __init__(<span style="color:#999">self</span>, out_dim, ncrops, warmup_teacher_temp, teacher_temp,
+                 warmup_teacher_temp_epochs, nepochs, student_temp<span style="color:#000;font-weight:bold">=</span><span style="color:#099">0.1</span>,
+                 center_momentum<span style="color:#000;font-weight:bold">=</span><span style="color:#099">0.9</span>):
+        <span style="color:#0086b3">super</span>()<span style="color:#000;font-weight:bold">.</span>__init__()
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>student_temp <span style="color:#000;font-weight:bold">=</span> student_temp
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>center_momentum <span style="color:#000;font-weight:bold">=</span> center_momentum
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>ncrops <span style="color:#000;font-weight:bold">=</span> ncrops        <span style="color:#998;font-style:italic"># 2 (global crops) + local crop nums</span>
+        <span style="color:#998;font-style:italic"># 注意 Center 尺寸，用于Centering</span>
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>register_buffer(<span style="color:#d14">&#34;center&#34;</span>, torch<span style="color:#000;font-weight:bold">.</span>zeros(<span style="color:#099">1</span>, out_dim))
+        <span style="color:#998;font-style:italic"># we apply a warm up for the teacher temperature because</span>
+        <span style="color:#998;font-style:italic"># a too high temperature makes the training instable at the beginning</span>
+        <span style="color:#998;font-style:italic"># Teacher 模型的 Sharping 参数的更新</span>
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>teacher_temp_schedule <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>concatenate((
+            np<span style="color:#000;font-weight:bold">.</span>linspace(warmup_teacher_temp,
+                        teacher_temp, warmup_teacher_temp_epochs),
+            np<span style="color:#000;font-weight:bold">.</span>ones(nepochs <span style="color:#000;font-weight:bold">-</span> warmup_teacher_temp_epochs) <span style="color:#000;font-weight:bold">*</span> teacher_temp
+        ))
+
+    <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">forward</span>(<span style="color:#999">self</span>, student_output, teacher_output, epoch):
+        <span style="color:#d14">&#34;&#34;&#34;
+</span><span style="color:#d14">        Cross-entropy between softmax outputs of the teacher and student networks.
+</span><span style="color:#d14">        &#34;&#34;&#34;</span>
+        student_out <span style="color:#000;font-weight:bold">=</span> student_output <span style="color:#000;font-weight:bold">/</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>student_temp
+        <span style="color:#998;font-style:italic"># 分成不同的chunk，一共 ncrops 份，每份对应一个 crops</span>
+        student_out <span style="color:#000;font-weight:bold">=</span> student_out<span style="color:#000;font-weight:bold">.</span>chunk(<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>ncrops)
+
+        <span style="color:#998;font-style:italic"># teacher centering and sharpening</span>
+        <span style="color:#998;font-style:italic">## 论文里提到的思路在这里</span>
+        temp <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>teacher_temp_schedule[epoch]
+        teacher_out <span style="color:#000;font-weight:bold">=</span> F<span style="color:#000;font-weight:bold">.</span>softmax((teacher_output <span style="color:#000;font-weight:bold">-</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>center) <span style="color:#000;font-weight:bold">/</span> temp, dim<span style="color:#000;font-weight:bold">=-</span><span style="color:#099">1</span>)
+        teacher_out <span style="color:#000;font-weight:bold">=</span> teacher_out<span style="color:#000;font-weight:bold">.</span>detach()<span style="color:#000;font-weight:bold">.</span>chunk(<span style="color:#099">2</span>)
+
+        total_loss <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">0</span>
+        n_loss_terms <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">0</span>
+        <span style="color:#000;font-weight:bold">for</span> iq, q <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">enumerate</span>(teacher_out):
+            <span style="color:#000;font-weight:bold">for</span> v <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(<span style="color:#0086b3">len</span>(student_out)):
+                <span style="color:#000;font-weight:bold">if</span> v <span style="color:#000;font-weight:bold">==</span> iq:
+                    <span style="color:#998;font-style:italic"># we skip cases where student and teacher operate on the same view</span>
+                    <span style="color:#000;font-weight:bold">continue</span>
+                loss <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>sum(<span style="color:#000;font-weight:bold">-</span>q <span style="color:#000;font-weight:bold">*</span> F<span style="color:#000;font-weight:bold">.</span>log_softmax(student_out[v], dim<span style="color:#000;font-weight:bold">=-</span><span style="color:#099">1</span>), dim<span style="color:#000;font-weight:bold">=-</span><span style="color:#099">1</span>)
+                total_loss <span style="color:#000;font-weight:bold">+=</span> loss<span style="color:#000;font-weight:bold">.</span>mean()
+                n_loss_terms <span style="color:#000;font-weight:bold">+=</span> <span style="color:#099">1</span>
+        total_loss <span style="color:#000;font-weight:bold">/=</span> n_loss_terms
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>update_center(teacher_output)
+        <span style="color:#000;font-weight:bold">return</span> total_loss
+
+    <span style="color:#3c5d5d;font-weight:bold">@torch.no_grad</span>()
+    <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">update_center</span>(<span style="color:#999">self</span>, teacher_output):
+        <span style="color:#d14">&#34;&#34;&#34;
+</span><span style="color:#d14">        Update center used for teacher output.
+</span><span style="color:#d14">        &#34;&#34;&#34;</span>
+        batch_center <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>sum(teacher_output, dim<span style="color:#000;font-weight:bold">=</span><span style="color:#099">0</span>, keepdim<span style="color:#000;font-weight:bold">=</span><span style="color:#999">True</span>)
+        <span style="color:#998;font-style:italic">## 收集teacher 模型的输出并计算平均值</span>
+        dist<span style="color:#000;font-weight:bold">.</span>all_reduce(batch_center)
+        batch_center <span style="color:#000;font-weight:bold">=</span> batch_center <span style="color:#000;font-weight:bold">/</span> (<span style="color:#0086b3">len</span>(teacher_output) <span style="color:#000;font-weight:bold">*</span> dist<span style="color:#000;font-weight:bold">.</span>get_world_size())
+
+        <span style="color:#998;font-style:italic"># ema update</span>
+        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>center <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>center <span style="color:#000;font-weight:bold">*</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>center_momentum <span style="color:#000;font-weight:bold">+</span> batch_center <span style="color:#000;font-weight:bold">*</span> (<span style="color:#099">1</span> <span style="color:#000;font-weight:bold">-</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>center_momentum)
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="dino实现中的其它一些细节">DINO实现中的其它一些细节</h3>
+<ul>
+<li>
+<p>使用Pre-norm的实现。由于输入的 Crops 之间尺寸不一致（224 与 96），所以需要注意<code>MultiCropWrapper</code>类的实现以及<code>DINOLoss</code>损失函数的实现</p>
+</li>
+<li>
+<p>learning rate scaling rule: $lr = 0.0005 * batchsize / 256$；然后前10 epoch 进行线性warmup，之后按照 cosine annealing进行下降</p>
+</li>
+<li>
+<p>wd参数会按照 cosine 过程从0.04 增加到0.4</p>
+</li>
+<li>
+<p>Centering 中的$m=0.9$时效果最好，太大如0.999的话就会坍塌</p>
+</li>
+<li>
+<p>$\tau_s=0.1$，但是Sharping中的$\tau_t$在前30个epoch 会由0.04线性增加到0.07；这个设置时对比了几种$\tau_t$取值的结果得到的</p>
+</li>
+<li>
+<p>数据增广方式与 BYOL 相同，也就是 Asymmetric Data Augmentation的方式</p>
+</li>
+<li>
+<p>随着 patch 大小的下降，模型效果会上升，如5 * 5 &gt; 8 * 8 &gt; 16 * 16，但是模型计算耗时会增加</p>
+</li>
+<li>
+<p>对Batch Size不是非常敏感，1024时效果最好(59.9)，512时为59.6，256时为59.1，128时为57.9</p>
+</li>
+<li>
+<p>作者对 Teacher 模型的输出对比了三种输出处理方式</p>
+<ul>
+<li>Centering（本文默认做法）</li>
+<li>Sinkhorn-Knopp</li>
+<li>Softmax</li>
+<li>发现，当使用 Centering 配合 Momentum Teacher Update from Student 时效果最好；Momentum 的效果都大幅优于不使用 Momentum 的训练效果</li>
+</ul>
+</li>
+<li>
+<p>Multi-Crop的数据增广方式对DINO模型的帮助最大</p>
+</li>
+<li>
+<p>作者尝试了集中 <code>[CLS]</code> 的使用方式</p>
+<ul>
+<li>取后面$l$层的<code>[CLS]</code>拼接起来，ViT-S模型取最后4层的<code>[CLS]</code>时效果最好(77.0 VS 76.1)；但是对 ViT-B模型而言，这种拼接方式没有帮助，而取<code>[CLS]</code>的输出与其它Tokens的平均拼接起来效果最好（78.2 vs 78.0）</li>
+</ul>
+</li>
+<li>
+<p>在第一个 Epoch 训练过程中，固定 Last Layer 的参数，具体参考<code>cancel_gradients_last_layer()</code>函数</p>
+</li>
+<li>
+<p>BYOL中基于Predictor &amp; BN来对抗模型坍塌，但是 DINO 使用的是Teacher Output Centering来实现，而且与 Sharping 结合起来效果才是最好。这里采用Momentum的方式来更新 Teacher 模型，如果不采用这种方式，另一种常见的方式是拷贝 Student 的权重 + Stop Gradient来避免模型坍塌。</p>
+</li>
+<li>
+<p>与 MoCo V3中的发现类似，ViT-S 相比于 ResNet50 具有更大的潜力，尤其是 k-NN 指标下，两者差距达到 14%。</p>
+</li>
+<li>
+<p>类似于 Mean Teacher，不论是 ViT / ResNet50，在训练过程中，Teacher 模型的效果都优于 Student 模型的效果。</p>
+</li>
+<li>
+<p>论文里贴出来了一些 Attention Map，具体实现是取出最后一层的 Attention 矩阵，尺寸是 $(B, HeadNum, 1 + SeqLen, 1 + SeqLen)$，其中 1 表示新增加的<code>[CLS]</code> Token，然后就是</p>
+</li>
+</ul>
+<h3 id="与-moco-v3-的异同">与 MoCo V3 的异同</h3>
+<p>相同点。</p>
+<ul>
+<li>都包含两个Encoder，MoCo V3中称为Base/Target Encoder，DINO中称为 Student / Teacher 模型</li>
+<li>两个 Encoder 之间都是通过 Momentum 的方式由一个 Encoder 的权重来更新另一个Encoder 的权重，并且这个 m 参数都按照 cosine 的方式增加到 1.0</li>
+</ul>
+<p>不同点。</p>
+<ul>
+<li>MoCo V3中，两个 Encoder 结构不一样，主要在于 Base Encoder 多了一个 Prediction Head；而DINO中两个模型的结构是完全相同的，都不包含 Prediction Head</li>
+<li>DINO 计算 Softmax 的$\tau$在两个 Encoder 中是不同的，使用的Loss也不同</li>
+<li>DINO 使用了 Multi Crop 的数据增广方式实现 local-to-global 内容的学习，也就是 DINO 不仅要学习对 Transformers 的不变性，还要学习到 local-to-global 的一致性!</li>
+<li>其它实现细节上的不同，如 $\tau_t$ 的调整等</li>
+</ul>
+<h2 id="moby">MoBY</h2>
+<p>本文没啥新的技巧，主要就是将 MoCo V2 与 BYOL 进行了组合创新，然后 Backbone 替换为 Swin Transformer 模型，以及验证预训练对下游如 Object Detection &amp; Semantic Segmentation等任务的收益。</p>
+<p>BYOL 的Asymmetric Encoder 结构是指模型包含两个 Encoder，分别是online encoder 以及 target encoding，两个 Encoder 都包含一个Backbone 以及一个 Projection Head，但是 Online Encoder 会多包含一个 Prediction Head，这也就是 Asymmetric Encoder 名字的来源。Online Encoder的参数基于梯度进行更新；Target Encoder 的参数基于 Online Encoder 的参数基于momentum的方式进行更新，并且momentum的参数会从0.99逐步更新到1.0。</p>
+<p>Loss的实现与MoCo V3 的实现类似，不赘述。</p>
+<p>作者新引入了Aynmmetric Drop Path 来提高性能。Drop Path 在基于 Transformer 的有监督训练过程中已经被证明是一个非常有用的正则化手段。这里非对称 Drop Path 的意思是，Drop Path 仅应用在 Online Encoder 上，如果也用在 Target Encoder 上会导致性能下降（70.9 vs 69.0）。这一技巧其实在 DINO 的代码里也有被使用的体现。</p>
+<p>其它的结果对比以及数据细节可参考论文。</p>
+<h2 id="消融实验">消融实验</h2>
+<h3 id="position-embedding">Position Embedding</h3>
+<p>MoCo V3 里基于 Linear Acc 对Position Embedding进行了对比，发现 Sin-Cos 方式略好于 Learned 的方式，Sin-Cos 的实现可以参考下 MoCo V3 的源码；另一方面，与不使用 Pos Embedding 相比的结果来说，目前的 Position Embedding 的使用还有待进一步挖掘。</p>
+<table>
+<thead>
+<tr>
+<th>ViT-B, 300 ep</th>
+<th>sin-cos</th>
+<th>learned</th>
+<th>None</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>linear acc.</td>
+<td>76.5</td>
+<td>76.1</td>
+<td>74.9</td>
+</tr>
+</tbody>
+</table>
+<h3 id="class-token">Class Token</h3>
+<p>MoCo v3 的作者测试了使用 Global Avg Pooling 代替 <code>[CLS]</code> Token的特征，发现Acc没有明显变化(76.5 VS 76.3)；其中 LN + Pool 表示在 Pooling 层之前先计算一次 LN。</p>
+<table>
+<thead>
+<tr>
+<th>ViT-B, 300 ep -</th>
+<th>- w / CLS -</th>
+<th>- w/o CLS; LN + Pool -</th>
+<th>- w/o CLS; Pool</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>lienar acc.</td>
+<td>76.5</td>
+<td>69.7</td>
+<td>76.3</td>
+</tr>
+</tbody>
+</table>
+<h3 id="traning-length">Traning Length</h3>
+<p>MoCo V3 作者发现，模型越小(ViT/S, ResNet50)，训练越长的增益越大。</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>300 ep</th>
+<th>600 ep</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ViT-S/16</td>
+<td>72.5</td>
+<td>73.4 (+0.9)</td>
+</tr>
+<tr>
+<td>ViT-B/16</td>
+<td>76.5</td>
+<td>76.7 (+0.2)</td>
+</tr>
+</tbody>
+</table>
+<p>对于 DINO也有同样的发现。</p>
+<table>
+<thead>
+<tr>
+<th>DINO ViT-S</th>
+<th>100 ep</th>
+<th>300 ep</th>
+<th>800 ep</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>k-NN top1</td>
+<td>70.9</td>
+<td>72.8</td>
+<td>74.5</td>
+</tr>
+</tbody>
+</table>
+<h2 id="其它">其它</h2>
+<p>实际实验中，按照 SimSiam 的方式， Backbone 换成 VOLO，优化器使用 AdamW，然后模型就很容易塌缩了，表现在 Loss 数值快速到达 -1.0（SimSiam 使用的 Loss），表明已经达到最优了，无法继续优化。更换成 SGD 优化器之后，情况有所缓解，但是收敛速度还是非常快，Epoch 1 之后也开始坍塌。模型替换为 ResNet50 之后，模型就可以训练。所以暂定原因为 Transformer 模型不适用于 SimSiam 无监督训练框架。</p>
+<p>将自监督训练框架切换为 MoCo V3 的方式，可以正常训练。针对参数$T$，当取值为1.0时收敛变慢，取值为默认的0.2之后收敛变快。然后使用预训练后的参数初始化Transformer模型，可以让模型收敛的更好，达到与使用RandomAug等数据增广训练的模型非常接近的精度水平，而且前30个epoch的结果就基本稳定了；但是如果也加上这些数据增广，那么精度怎么变化呢？基于有限的实验，前60epoch的结果来看，使用自监督训练模型进行初始化时，精度比从头训练的情况增加了不到1个百分点（0.8左右）最终的精度对比时：80.63 vs 80.58，这里有一个因素是模型结构发生了变化，也就是 CNN Stem 的结构由(conv7x2 -&gt; conv3x1 -&gt; conv3x1 -&gt; conv4x4)变为(conv7x2 -&gt; conv3x2 -&gt; conv3x2 -&gt; conv3x1)。主要问题在于前者训练过程非常不稳定，精度增加非常缓慢，后者的精度则稳步上升。经过进一步验证，同一种架构同一个模型，不同初始化方式，精度对比是：80.63 vs 80.52，只有0.1个百分点的提高而已。至于温度参数的作用，可以参考<a href="https://arxiv.org/abs/2012.09740">Understanding the Behaviour of Contrastive Loss</a>这篇论文。</p>
+<p>将自监督训练框架切换为 DINO 的方式，也可以正常训练，但是训练速度会变慢比较多，毕竟 crop 的个数增加了。warmup epochs 占总的 epoch 的比例由 40% -&gt; 10% 之后，收敛速度变快。</p>
         
             <p>Pytorch 实现学习积累。</p>
 <h2 id="基础">基础</h2>
@@ -311,7 +964,6 @@
 <h2 id="extending-pytorch">Extending Pytorch</h2>
 <p>主要参考：<a href="https://pytorch.org/docs/stable/notes/extending.html#extending-torch-autograd">Extending Pytorch</a></p>
 <h3 id="extending-autograd">Extending Autograd</h3>
-<p>TODO</p>
 <h2 id="optimizer">Optimizer</h2>
 <p>实现自己的 Optimizer 的时候，需要继承<code>torch.optim.Optimizer</code>类。需要实现<code>__init__、__setstate__、step</code>等函数；然后将新 Optimizer 的参数，比如lr, eps, betas等参数保存到<code>defaults</code>字典中，并跟parameters一起传给Base类的<code>__init__</code>函数。<code>__setstate__</code>函数主要是为了比如在pickle等序列化中使用，并做必要的更新，比如<code>self.param_groups</code>里的成员。在 <code>step()</code>函数里，会更新<code>self.state</code>成员变量，然后后面更新的时候就可以直接从 <code>state</code> 里面取出来进行更新就可以了。</p>
 <p>此外，defaults 字典里面的信息在<code>add_param_group()</code>函数里面被放入<code>self.param_groups</code>里面了，如lr, eps, betas等；特定Optimizer的相关数据放在<code>self.states</code>里面了，如Adam里面的 m / v 等。</p>
@@ -1134,23 +1786,6 @@ fras <span style="color:#000;font-weight:bold">=</span> [<span style="color:#d14
 <h2 id="模型精度">模型精度</h2>
 <p>论文中采用了 Token Labeling，是 LV-ViT 论文中提出来的。基于 VOLO-D1，在不使用 Token Labeling 计算 Loss，同时引入 Random Augmentation 等增广方式后，自己训练精读是 82.2，使用论文里面的配置，确实可以达到 84.19 的准确率，总体来说效果还是不错的。</p>
         
-            <p>Reformer论文。</p>
-<h2 id="概览">概览</h2>
-<p>Reformer论文的信息量还是有点大，主要创新点在于下面几个：</p>
-<ul>
-<li>引入了新的 LSH Attention</li>
-</ul>
-<h2 id="ann">ANN</h2>
-<p>ANN (Aproximate Nearest Neighbor, 近似最近邻搜索)。常见的ANN算法可以分为三类：</p>
-<ul>
-<li>LSH(Locality Sensitive Hashing)</li>
-<li>树方法（如HNSW）</li>
-<li>Product Quantization</li>
-</ul>
-<h2 id="lsh-attention">LSH Attention</h2>
-<p>对比普通的 Self-Attention (如下式)，新的LSH Attention改动如下。</p>
-<p>$$Attention(Q, K, V) = Softmax(\frac{QK^T}{\sqrt{d_k}}) \times V$$</p>
-        
             <p>Adam算法的实现以及一个主要改进AdamW的原理与实现。</p>
 <p>突然觉着NCHW尺寸的张量比 NHWC Layout 的张量更容易理解，因为后者来看，就是N个样本，每个样本 H * W 的空间维度，然后每个空间元素点是一个 C 维的特征向量。NCHW Layout 的话就需要从后向前理解了&hellip;</p>
 <h2 id="adam">Adam</h2>
@@ -1740,13 +2375,20 @@ Node <span style="color:#900;font-weight:bold">delete</span>(Node t, key key)
 </li>
 </ul>
         
-            <p>一些为了适应大的Batch Size训练的优化算法。</p>
-<p>偶尔就有时间看到有标题：训练 XX 模型只用 ** 秒 / 分钟，当然除了钱多卡多，在算法实现方面也看看有什么不同。</p>
-<p>有个概念是 cross-view prediction (Hinto92年的一篇论文)，现在很多自监督模型都是在 representation space 完成这个预测任务，但是这容易导致模型坍塌，所以 BYOL 增加了一个 Prediction Layer，这也是相对于 Mean Teacher 这篇论文最大的改进了。对比学习的做法相当于学习当前图片的一个augmentation与其他图片的augmentation之间的区分。</p>
-<p>主要包括：LARS, LAMB 等。</p>
-<h2 id="基础adam">基础：Adam</h2>
-<h2 id="lars算法">LARS算法</h2>
-<h2 id="lamb算法">LAMB算法</h2>
+            <p>一些以提高 Transformer 计算性能为目的的 Xformer 方案整理。</p>
+<p>主要包含以下几篇论文：</p>
+<ul>
+<li><a href="https://arxiv.org/abs/2009.06732">Efficient Transformers: A Survey</a></li>
+<li><a href="https://arxiv.org/abs/2001.04451">Reformer</a></li>
+<li><a href="https://arxiv.org/abs/2006.04768">Linformer</a></li>
+<li><a href="https://arxiv.org/abs/2009.14794">Performers</a></li>
+<li><a href="https://arxiv.org/abs/2004.05150">Longformer</a></li>
+</ul>
+<h2 id="reformer">Reformer</h2>
+<h2 id="linformer">Linformer</h2>
+<h2 id="performers">Performers</h2>
+<h2 id="longformer">Longformer</h2>
+<h2 id="a-survey">A Survey</h2>
         
 	
 		<span>2</span>
@@ -1757,7 +2399,7 @@ Node <span style="color:#900;font-weight:bold">delete</span>(Node t, key key)
         		<footer>
 			
 			<span>
-			&copy; <time datetime="2021-11-23 14:13:18.43961 &#43;0800 CST m=&#43;0.116114880">2021</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
+			&copy; <time datetime="2022-01-16 19:07:47.311964 &#43;0800 CST m=&#43;0.107056687">2022</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
 			</span>
 		</footer>
 

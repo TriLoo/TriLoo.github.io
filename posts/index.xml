@@ -6,7 +6,16 @@
     <description>Recent content in Posts on Triloon</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Tue, 23 Nov 2021 12:07:18 +0800</lastBuildDate><atom:link href="https://triloon.space/posts/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 16 Jan 2022 18:43:13 +0800</lastBuildDate><atom:link href="https://triloon.space/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Torch all_gather 的梯度问题</title>
+      <link>https://triloon.space/posts/torch-allgather/</link>
+      <pubDate>Sun, 16 Jan 2022 18:43:13 +0800</pubDate>
+      
+      <guid>https://triloon.space/posts/torch-allgather/</guid>
+      <description>&lt;p&gt;pytorch all_gather 计算结果是叶子节点，也就是不会继续向后传递梯度了。&lt;/p&gt;</description>
+    </item>
+    
     <item>
       <title>Swin Transformer V2</title>
       <link>https://triloon.space/posts/swin-transformer-v2/</link>
@@ -134,15 +143,6 @@
     </item>
     
     <item>
-      <title>Efficient Transformer 系列之 Reformer</title>
-      <link>https://triloon.space/posts/efficient-transformer-reformer/</link>
-      <pubDate>Mon, 06 Sep 2021 10:50:19 +0800</pubDate>
-      
-      <guid>https://triloon.space/posts/efficient-transformer-reformer/</guid>
-      <description>&lt;p&gt;Reformer论文。&lt;/p&gt;</description>
-    </item>
-    
-    <item>
       <title>从Adam到AdamW</title>
       <link>https://triloon.space/posts/adam-adamw/</link>
       <pubDate>Fri, 03 Sep 2021 20:30:59 +0800</pubDate>
@@ -176,15 +176,6 @@
       
       <guid>https://triloon.space/posts/ssl-image-representation/</guid>
       <description>&lt;p&gt;经典自监督模型，包括MoCo / SimCLR / SwAV / BYOL / SimSiam 等。&lt;/p&gt;</description>
-    </item>
-    
-    <item>
-      <title>大Batchsize训练用到的优化器</title>
-      <link>https://triloon.space/posts/big-batchsize-train/</link>
-      <pubDate>Tue, 31 Aug 2021 14:09:48 +0800</pubDate>
-      
-      <guid>https://triloon.space/posts/big-batchsize-train/</guid>
-      <description>&lt;p&gt;一些为了适应大的Batch Size训练的优化算法。&lt;/p&gt;</description>
     </item>
     
     <item>

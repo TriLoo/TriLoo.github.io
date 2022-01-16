@@ -218,7 +218,53 @@
     <span style="color:#998;font-style:italic"># ...</span>
 </code></pre></td></tr></table>
 </div>
+</div><h2 id="使用checkpoint功能">使用checkpoint功能</h2>
+<p>gradient checkpointing的意思是说，在反向传播时，重新计算对应代码段的前向计算，这样就可以不用在前向计算时保存临时中间激活输出值以及对应的梯度等。</p>
+<p>但是有一点需要注意就是需要保证那些具有随机属性的计算的两次前向输出应该是一致的，比如 Dropout，因此需要将<code>preserve_rng_state=True</code>传入到<code>torch.utils.checkpoint.checkpint()</code>函数中，但是这样做会导致性能下降较大，所以如果没有涉及到RNG 类的操作，那么需要将<code>preserve_rng_state=False</code>。另一点是，即使设置了<code>preserve_rng_state=True</code>，但是在<code>run_fn</code>函数里面将变量移动到一个新的device上的话，那么 RNG 状态的一致性也还是无法保证，所谓的新的device，就是当前device + 传入到 <code>run_fn</code> 的参数的device 的合集。</p>
+<p>对应实现 <code>checkpinting</code> 的函数是：<code>torch.utils.checkpoint.checkpoint(function, *args, **kwargs)</code>函数。</p>
+<p>checkpointing的工作原理是：<code>trading compute for memory</code>，也就是不会保存计算过程中的中间激活值，而是在反向传播时重新计算这些数值。可以应用到任意部分的模型计算。</p>
+<p>具体来说，<code>function</code>表示的计算前向计算时是在<code>torch.no_grad()</code>里面执行的，但是<code>checkpoint()</code>函数会保存输入的tuple以及function parameters等。<code>function</code>计算可以输出非Tensor的参数，但是gradient recording 只会作用于那些Tensor的输出。注意，如果输出包含在<code>list, dict, custom objects</code>等结构体里，即使是Tensor，也不会被计算gradients。</p>
+<p>一个具体的使用例子是 Albef 仓库里 <code>xbert</code> 的实现:</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">    <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">create_custom_forward</span>(module):
+        <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">custom_forward</span>(<span style="color:#000;font-weight:bold">*</span>inputs):
+            <span style="color:#000;font-weight:bold">return</span> module(<span style="color:#000;font-weight:bold">*</span>inputs, past_key_value, output_attentions)
+        <span style="color:#000;font-weight:bold">return</span> custom_forward
+
+    layer_outputs <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>utils<span style="color:#000;font-weight:bold">.</span>checkpoint<span style="color:#000;font-weight:bold">.</span>checkpoint(
+        create_custom_forward(layer_module),
+        hidden_states,
+        attention_mask,
+        layer_head_mask,
+        encoder_hidden_states,
+        encoder_attention_mask,
+    )
+</code></pre></td></tr></table>
 </div>
+</div><p>这里使用了python的闭包方式进行实现function。</p>
+<p>另一个API<code>torch.utils.checkpoint.checkpoint_sequential(functions, segments, input, **kwargs)</code>可以实现对sequential models进行checkpoints。</p>
+<blockquote>
+<p>Sequential models execute a list of modules/functions in order (sequentially). Therefore, we can divide such a model in various segments and checkpoint each segment. All segments except the last will run in torch.no_grad() manner, i.e., not storing the intermediate activations. The inputs of each checkpointed segment will be saved for re-running the segment in the backward pass.</p>
+</blockquote>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">    model <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Sequential(<span style="color:#000;font-weight:bold">...</span>)
+    input_var <span style="color:#000;font-weight:bold">=</span> checkpoint_sequential(model, chunks, input_var)
+</code></pre></div>
 
 		
 	</div>
@@ -235,7 +281,7 @@
         		<footer>
 			
 			<span>
-			&copy; <time datetime="2021-11-23 14:13:18.405421 &#43;0800 CST m=&#43;0.081927419">2021</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
+			&copy; <time datetime="2022-01-16 19:07:47.28677 &#43;0800 CST m=&#43;0.081863366">2022</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
 			</span>
 		</footer>
 
