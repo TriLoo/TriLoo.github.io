@@ -11,6 +11,7 @@
 		
 		<link rel="stylesheet" href="/css/style.css">
 		<link rel="stylesheet" href="/css/fonts.css">
+        <link rel="stylesheet" href="/css/custom.css">
 		
 		<link rel="icon" href="favicon.ico" />
 		<link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
@@ -207,6 +208,135 @@ MathJax.Hub.Config({
 <h2 id="extending-pytorch">Extending Pytorch</h2>
 <p>主要参考：<a href="https://pytorch.org/docs/stable/notes/extending.html#extending-torch-autograd">Extending Pytorch</a></p>
 <h3 id="extending-autograd">Extending Autograd</h3>
+<p>这里是新增一个支持前向、后向计算的方法，也就是说，当前 Torch 内所有支持训练的计算（支持后向传播梯度）本质上都是来自<code>torch.autograd</code>命名空间下的<code>Function</code>。所以新增一个计算方法，需要作为派生自<code>torch.autograd.Function</code>类的子类来完成。</p>
+<p>存在这种extending方法的主要原因是，希望新增一个自定义操作，可以用在模型训练中，而这个新增的操作要么不可求导、要么是一个非Torch的变量（比如Numpy Array），但是还是希望模型中新增了这个计算之后，梯度仍然可以沿着模型传递，从而支持 autograd engine 的模型参数更新。换句话说，新增的 Function 子类，可以隐藏不支持求导的计算，将断开的梯度传播链路 chain 起来。另一种情况是，新增自定义 Function 可以Wrap C++实现的操作，或者进行一些类似Op融合的操作来提高运算效率。</p>
+<p>新增 Autograd Function 的步骤主要分为四步，具体写代码是实现两个Function子类的静态函数。下面是四个实现步骤:</p>
+<ol>
+<li>派生<code>torch.autograd.Function</code>子类并且实现两个静态函数</li>
+</ol>
+<ul>
+<li>
+<p>forward 函数</p>
+<p>用于前向计算的函数，可以接收任意数目的参数，如果有默认值，则对应的参数是可选的。输出参数的类型可以是单个 Tensor 输出，或者 Tuple 形式的多个输出。</p>
+</li>
+<li>
+<p>backward 函数</p>
+<p>定义梯度计算函数。输入的参数是对应 <code>forward()</code> 函数输出参数的梯度，也就是前向过程中有几个输出，这里就有几个输入，然后就可以根据这些输入的梯度参数计算输出梯度了，而返回变量个的个数与<code>forward()</code>函数的输入参数的个数一致。当<code>foward()</code>有可选参数的时候，这些参数对应的返回的梯度应该是None。</p>
+</li>
+</ul>
+<ol start="2">
+<li>使用<code>ctx</code>参数提供的一些操作来保证新增的Function可以适应autograd engine中的计算</li>
+</ol>
+<p>ctx 提供了一些有用的参数可以帮助新 Function 的实现，并且支持 autograd engine 的计算。</p>
+<ul>
+<li>
+<p><code>save_for_backward()</code>函数</p>
+<p>前面提到，<code>backward()</code>函数的输入参数都是梯度值，有些计算过程还需要模型对应计算的状态参数，比如 CNN 中的权重/偏置项等。这个函数的作用就是为了在前向计算函数中保存这些参数的，然后在后向过程中取出来用于计算梯度。</p>
+</li>
+<li>
+<p><code>make_dirty()</code>函数</p>
+<p>前向计算中，如果参数使用了in-place操作，那么就需要用这个函数来指示。</p>
+</li>
+<li>
+<p><code>mark_non_differentiable()</code>函数</p>
+<p>告诉 autograd engine，对应的输出不可求导。</p>
+</li>
+<li>
+<p><code>set_materialize_grad()</code>函数</p>
+<p>我的理解是，如果有些参数的梯度是None，但是如果设置了<code>set_materialize_grad(True)</code>，那么这些梯度会用合适大小的全零的 Tensor 代替；如如果设置为 False，则这些参数传入 <code>backward()</code> 函数中对应的梯度就会保持 None。</p>
+</li>
+</ul>
+<ol start="3">
+<li>必要的时候使新增的<code>Function</code>支持高阶求导</li>
+</ol>
+<p>为了支持高阶求导，需要在 <code>backward()</code> 的修饰器中使用 <code>once_differentiable()</code> 来设置该后向传播函数只能求导一次。</p>
+<ol start="4">
+<li>建议使用<code>torch.autograd.gradcheck()</code>函数对结果进行验证</li>
+</ol>
+<p>使用<code>torch.autograd.gradcheck()</code>函数来验证实现的后向传播函数是否正确。</p>
+<p>一个具体的例子如下。</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 0
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">23
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">24
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">25
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">26
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">27
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">28
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">29
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">30
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">31
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">32
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">33
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">34
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">35
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#998;font-style:italic"># Inherit from Function</span>
+<span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">LinearFunction</span>(Function):
+
+    <span style="color:#998;font-style:italic"># Note that both forward and backward are @staticmethods</span>
+    <span style="color:#3c5d5d;font-weight:bold">@staticmethod</span>
+    <span style="color:#998;font-style:italic"># bias is an optional argument</span>
+    <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">forward</span>(ctx, <span style="color:#0086b3">input</span>, weight, bias<span style="color:#000;font-weight:bold">=</span><span style="color:#999">None</span>):
+        ctx<span style="color:#000;font-weight:bold">.</span>save_for_backward(<span style="color:#0086b3">input</span>, weight, bias)
+        output <span style="color:#000;font-weight:bold">=</span> <span style="color:#0086b3">input</span><span style="color:#000;font-weight:bold">.</span>mm(weight<span style="color:#000;font-weight:bold">.</span>t())
+        <span style="color:#000;font-weight:bold">if</span> bias <span style="color:#000;font-weight:bold">is</span> <span style="color:#000;font-weight:bold">not</span> <span style="color:#999">None</span>:
+            output <span style="color:#000;font-weight:bold">+=</span> bias<span style="color:#000;font-weight:bold">.</span>unsqueeze(<span style="color:#099">0</span>)<span style="color:#000;font-weight:bold">.</span>expand_as(output)
+        <span style="color:#000;font-weight:bold">return</span> output
+
+    <span style="color:#998;font-style:italic"># This function has only a single output, so it gets only one gradient</span>
+    <span style="color:#3c5d5d;font-weight:bold">@staticmethod</span>
+    <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">backward</span>(ctx, grad_output):
+        <span style="color:#998;font-style:italic"># This is a pattern that is very convenient - at the top of backward</span>
+        <span style="color:#998;font-style:italic"># unpack saved_tensors and initialize all gradients w.r.t. inputs to</span>
+        <span style="color:#998;font-style:italic"># None. Thanks to the fact that additional trailing Nones are</span>
+        <span style="color:#998;font-style:italic"># ignored, the return statement is simple even when the function has</span>
+        <span style="color:#998;font-style:italic"># optional inputs.</span>
+        <span style="color:#0086b3">input</span>, weight, bias <span style="color:#000;font-weight:bold">=</span> ctx<span style="color:#000;font-weight:bold">.</span>saved_tensors
+        grad_input <span style="color:#000;font-weight:bold">=</span> grad_weight <span style="color:#000;font-weight:bold">=</span> grad_bias <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">None</span>
+
+        <span style="color:#998;font-style:italic"># These needs_input_grad checks are optional and there only to</span>
+        <span style="color:#998;font-style:italic"># improve efficiency. If you want to make your code simpler, you can</span>
+        <span style="color:#998;font-style:italic"># skip them. Returning gradients for inputs that don&#39;t require it is</span>
+        <span style="color:#998;font-style:italic"># not an error.</span>
+        <span style="color:#000;font-weight:bold">if</span> ctx<span style="color:#000;font-weight:bold">.</span>needs_input_grad[<span style="color:#099">0</span>]:
+            grad_input <span style="color:#000;font-weight:bold">=</span> grad_output<span style="color:#000;font-weight:bold">.</span>mm(weight)
+        <span style="color:#000;font-weight:bold">if</span> ctx<span style="color:#000;font-weight:bold">.</span>needs_input_grad[<span style="color:#099">1</span>]:
+            grad_weight <span style="color:#000;font-weight:bold">=</span> grad_output<span style="color:#000;font-weight:bold">.</span>t()<span style="color:#000;font-weight:bold">.</span>mm(<span style="color:#0086b3">input</span>)
+        <span style="color:#000;font-weight:bold">if</span> bias <span style="color:#000;font-weight:bold">is</span> <span style="color:#000;font-weight:bold">not</span> <span style="color:#999">None</span> <span style="color:#000;font-weight:bold">and</span> ctx<span style="color:#000;font-weight:bold">.</span>needs_input_grad[<span style="color:#099">2</span>]:
+            grad_bias <span style="color:#000;font-weight:bold">=</span> grad_output<span style="color:#000;font-weight:bold">.</span>sum(<span style="color:#099">0</span>)
+
+        <span style="color:#000;font-weight:bold">return</span> grad_input, grad_weight, grad_bias
+</code></pre></td></tr></table>
+</div>
+</div><p>在实际使用时，为了方便，一般会有下面的一条赋值：</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">linear <span style="color:#000;font-weight:bold">=</span> LinearFunction<span style="color:#000;font-weight:bold">.</span>apply
+</code></pre></div><h3 id="extending-nn">Extending nn</h3>
+<p>一般来说，扩展 nn 有两种方式，一种是上面提到的 Function 方式，一般适用于那些没有自身计算状态参数（如卷积权重）的操作，另一种是定义 Module 子类的方式，后者需要自定义<code>__init__()</code>以及<code>forward()</code>两个成员函数，<code>forward()</code>成员函数内一般就会调用上面提到的 Function 来实现操作。</p>
 <h2 id="optimizer">Optimizer</h2>
 <p>实现自己的 Optimizer 的时候，需要继承<code>torch.optim.Optimizer</code>类。需要实现<code>__init__、__setstate__、step</code>等函数；然后将新 Optimizer 的参数，比如lr, eps, betas等参数保存到<code>defaults</code>字典中，并跟parameters一起传给Base类的<code>__init__</code>函数。<code>__setstate__</code>函数主要是为了比如在pickle等序列化中使用，并做必要的更新，比如<code>self.param_groups</code>里的成员。在 <code>step()</code>函数里，会更新<code>self.state</code>成员变量，然后后面更新的时候就可以直接从 <code>state</code> 里面取出来进行更新就可以了。</p>
 <p>此外，defaults 字典里面的信息在<code>add_param_group()</code>函数里面被放入<code>self.param_groups</code>里面了，如lr, eps, betas等；特定Optimizer的相关数据放在<code>self.states</code>里面了，如Adam里面的 m / v 等。</p>
@@ -227,7 +357,7 @@ MathJax.Hub.Config({
         		<footer>
 			
 			<span>
-			&copy; <time datetime="2022-01-16 19:10:03.501897 &#43;0800 CST m=&#43;0.073340092">2022</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
+			&copy; <time datetime="2022-01-16 21:38:36.499289 &#43;0800 CST m=&#43;0.100219331">2022</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
 			</span>
 		</footer>
 
