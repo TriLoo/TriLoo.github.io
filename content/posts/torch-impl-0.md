@@ -104,7 +104,100 @@ Module 在调用的时候实际会调用`Module._call_impl()`函数，这个函�
 
 ### Extending Autograd
 
+这里是新增一个支持前向、后向计算的方法，也就是说，当前 Torch 内所有支持训练的计算（支持后向传播梯度）本质上都是来自`torch.autograd`命名空间下的`Function`。所以新增一个计算方法，需要作为派生自`torch.autograd.Function`类的子类来完成。
 
+存在这种extending方法的主要原因是，希望新增一个自定义操作，可以用在模型训练中，而这个新增的操作要么不可求导、要么是一个非Torch的变量（比如Numpy Array），但是还是希望模型中新增了这个计算之后，梯度仍然可以沿着模型传递，从而支持 autograd engine 的模型参数更新。换句话说，新增的 Function 子类，可以隐藏不支持求导的计算，将断开的梯度传播链路 chain 起来。另一种情况是，新增自定义 Function 可以Wrap C++实现的操作，或者进行一些类似Op融合的操作来提高运算效率。
+
+新增 Autograd Function 的步骤主要分为四步，具体写代码是实现两个Function子类的静态函数。下面是四个实现步骤:
+
+1. 派生`torch.autograd.Function`子类并且实现两个静态函数
+
+  * forward 函数
+
+    用于前向计算的函数，可以接收任意数目的参数，如果有默认值，则对应的参数是可选的。输出参数的类型可以是单个 Tensor 输出，或者 Tuple 形式的多个输出。
+
+  * backward 函数
+
+    定义梯度计算函数。输入的参数是对应 `forward()` 函数输出参数的梯度，也就是前向过程中有几个输出，这里就有几个输入，然后就可以根据这些输入的梯度参数计算输出梯度了，而返回变量个的个数与`forward()`函数的输入参数的个数一致。当`foward()`有可选参数的时候，这些参数对应的返回的梯度应该是None。
+
+2. 使用`ctx`参数提供的一些操作来保证新增的Function可以适应autograd engine中的计算
+
+  ctx 提供了一些有用的参数可以帮助新 Function 的实现，并且支持 autograd engine 的计算。
+
+  * `save_for_backward()`函数
+
+    前面提到，`backward()`函数的输入参数都是梯度值，有些计算过程还需要模型对应计算的状态参数，比如 CNN 中的权重/偏置项等。这个函数的作用就是为了在前向计算函数中保存这些参数的，然后在后向过程中取出来用于计算梯度。
+
+  * `make_dirty()`函数
+
+    前向计算中，如果参数使用了in-place操作，那么就需要用这个函数来指示。
+
+  * `mark_non_differentiable()`函数
+
+    告诉 autograd engine，对应的输出不可求导。
+
+  * `set_materialize_grad()`函数
+
+    我的理解是，如果有些参数的梯度是None，但是如果设置了`set_materialize_grad(True)`，那么这些梯度会用合适大小的全零的 Tensor 代替；如如果设置为 False，则这些参数传入 `backward()` 函数中对应的梯度就会保持 None。
+
+3. 必要的时候使新增的`Function`支持高阶求导
+
+  为了支持高阶求导，需要在 `backward()` 的修饰器中使用 `once_differentiable()` 来设置该后向传播函数只能求导一次。
+
+4. 建议使用`torch.autograd.gradcheck()`函数对结果进行验证
+
+  使用`torch.autograd.gradcheck()`函数来验证实现的后向传播函数是否正确。
+
+一个具体的例子如下。
+
+``` python {linenos=table linenostart=0}
+# Inherit from Function
+class LinearFunction(Function):
+
+    # Note that both forward and backward are @staticmethods
+    @staticmethod
+    # bias is an optional argument
+    def forward(ctx, input, weight, bias=None):
+        ctx.save_for_backward(input, weight, bias)
+        output = input.mm(weight.t())
+        if bias is not None:
+            output += bias.unsqueeze(0).expand_as(output)
+        return output
+
+    # This function has only a single output, so it gets only one gradient
+    @staticmethod
+    def backward(ctx, grad_output):
+        # This is a pattern that is very convenient - at the top of backward
+        # unpack saved_tensors and initialize all gradients w.r.t. inputs to
+        # None. Thanks to the fact that additional trailing Nones are
+        # ignored, the return statement is simple even when the function has
+        # optional inputs.
+        input, weight, bias = ctx.saved_tensors
+        grad_input = grad_weight = grad_bias = None
+
+        # These needs_input_grad checks are optional and there only to
+        # improve efficiency. If you want to make your code simpler, you can
+        # skip them. Returning gradients for inputs that don't require it is
+        # not an error.
+        if ctx.needs_input_grad[0]:
+            grad_input = grad_output.mm(weight)
+        if ctx.needs_input_grad[1]:
+            grad_weight = grad_output.t().mm(input)
+        if bias is not None and ctx.needs_input_grad[2]:
+            grad_bias = grad_output.sum(0)
+
+        return grad_input, grad_weight, grad_bias
+```
+
+在实际使用时，为了方便，一般会有下面的一条赋值：
+
+``` python
+linear = LinearFunction.apply
+```
+
+### Extending nn
+
+一般来说，扩展 nn 有两种方式，一种是上面提到的 Function 方式，一般适用于那些没有自身计算状态参数（如卷积权重）的操作，另一种是定义 Module 子类的方式，后者需要自定义`__init__()`以及`forward()`两个成员函数，`forward()`成员函数内一般就会调用上面提到的 Function 来实现操作。
 
 ## Optimizer
 

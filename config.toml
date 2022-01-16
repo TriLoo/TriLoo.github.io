@@ -113,10 +113,11 @@ summaryLength = 10
 #     url = "https://github.com"
 # 
 # ## theme ����, not suit for tale
-# [params]
-#     # site author 
-#     author = "triloon"
-#     # homepage description
-#     description = "my blog site"
+[params]
+    # site author 
+    author = "triloon"
+    # homepage description
+    description = "my blog site"
+    css = ["css/custom.css"]
 
 
