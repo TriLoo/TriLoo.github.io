@@ -4,17 +4,40 @@ date: 2029-11-01T10:31:35+08:00
 draft: false
 ---
 
+## 2021.11.29 - 2021.12.05
+
+看论文
+
+* [MapReducer]()
+* [PeCo]()
+
+博客
+
+* MIM
+* Map Reducer
+
+看书
+
+* 这就是搜索引擎 - 第三章
+
+写代码
+
+* 用户行为分析 & 策略开发
+* 测试单模态 VOLO + Albert MINI
+* 引入实体信息
+
 ## 2021.11.22 - 2021.11.28
 
 看论文
 
 * [SwinT v2](https://arxiv.org/abs/2111.09883)
 * [iBOT](https://arxiv.org/abs/2111.07832)
+* [SimMIM](https://arxiv.org/pdf/2111.09886v1.pdf)
 
 博客
 
 * SwinT v2
-* MIM: BEiT、MAE、iBOT
+* MIM: BEiT、MAE、iBOT、SimMIM
 * DALI
 
 看书

@@ -93,3 +93,44 @@ excerpt_separator: <!--more-->
         print(param.data.grad)      # None
     # ...
 ```
+
+## 使用checkpoint功能
+
+gradient checkpointing的意思是说，在反向传播时，重新计算对应代码段的前向计算，这样就可以不用在前向计算时保存临时中间激活输出值以及对应的梯度等。
+
+但是有一点需要注意就是需要保证那些具有随机属性的计算的两次前向输出应该是一致的，比如 Dropout，因此需要将`preserve_rng_state=True`传入到`torch.utils.checkpoint.checkpint()`函数中，但是这样做会导致性能下降较大，所以如果没有涉及到RNG 类的操作，那么需要将`preserve_rng_state=False`。另一点是，即使设置了`preserve_rng_state=True`，但是在`run_fn`函数里面将变量移动到一个新的device上的话，那么 RNG 状态的一致性也还是无法保证，所谓的新的device，就是当前device + 传入到 `run_fn` 的参数的device 的合集。
+
+对应实现 `checkpinting` 的函数是：`torch.utils.checkpoint.checkpoint(function, *args, **kwargs)`函数。
+
+checkpointing的工作原理是：`trading compute for memory`，也就是不会保存计算过程中的中间激活值，而是在反向传播时重新计算这些数值。可以应用到任意部分的模型计算。
+
+具体来说，`function`表示的计算前向计算时是在`torch.no_grad()`里面执行的，但是`checkpoint()`函数会保存输入的tuple以及function parameters等。`function`计算可以输出非Tensor的参数，但是gradient recording 只会作用于那些Tensor的输出。注意，如果输出包含在`list, dict, custom objects`等结构体里，即使是Tensor，也不会被计算gradients。
+
+一个具体的使用例子是 Albef 仓库里 `xbert` 的实现:
+
+``` python {linenos=table}
+    def create_custom_forward(module):
+        def custom_forward(*inputs):
+            return module(*inputs, past_key_value, output_attentions)
+        return custom_forward
+
+    layer_outputs = torch.utils.checkpoint.checkpoint(
+        create_custom_forward(layer_module),
+        hidden_states,
+        attention_mask,
+        layer_head_mask,
+        encoder_hidden_states,
+        encoder_attention_mask,
+    )
+```
+
+这里使用了python的闭包方式进行实现function。
+
+另一个API`torch.utils.checkpoint.checkpoint_sequential(functions, segments, input, **kwargs)`可以实现对sequential models进行checkpoints。
+
+> Sequential models execute a list of modules/functions in order (sequentially). Therefore, we can divide such a model in various segments and checkpoint each segment. All segments except the last will run in torch.no_grad() manner, i.e., not storing the intermediate activations. The inputs of each checkpointed segment will be saved for re-running the segment in the backward pass.
+
+``` python
+    model = nn.Sequential(...)
+    input_var = checkpoint_sequential(model, chunks, input_var)
+```

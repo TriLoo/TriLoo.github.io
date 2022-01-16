@@ -1,7 +1,7 @@
 ---
 title: "大Batchsize训练用到的优化器"
 date: 2021-08-31T14:09:48+08:00
-draft: false
+draft: true
 
 tags : [
     "Big Batch Size",
