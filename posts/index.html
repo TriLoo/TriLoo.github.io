@@ -64,6 +64,19 @@
 <main>
 	<div class="catalogue">
 		
+			<a href="https://triloon.space/posts/triplet-loss-0/" class="catalogue-item">
+    <div>
+        <time datetime="2022-01-18 19:07:51 &#43;0800 CST" class="catalogue-time">January 18, 2022</time>
+        <h2 class="catalogue-title">Triplet Loss 与在线难例挖掘（译）</h2>
+        <div class="catalogue-line"></div>
+
+        <p>
+            <p>虽然 triplet loss 实现非常简单，但是简单的 loss 要想用好也是需要更细致的分析与调试。</p>
+        </p>
+    </div>
+</a>
+
+		
 			<a href="https://triloon.space/posts/torch-allgather/" class="catalogue-item">
     <div>
         <time datetime="2022-01-16 18:43:13 &#43;0800 CST" class="catalogue-time">January 16, 2022</time>
@@ -181,19 +194,6 @@
 </a>
 
 		
-			<a href="https://triloon.space/posts/torch-usage/" class="catalogue-item">
-    <div>
-        <time datetime="2021-10-01 16:06:21 &#43;0800 CST" class="catalogue-time">October 1, 2021</time>
-        <h2 class="catalogue-title">Torch的一些使用方法记录</h2>
-        <div class="catalogue-line"></div>
-
-        <p>
-            <p>记录一些Torch使用过程中会用到的小知识点。</p>
-        </p>
-    </div>
-</a>
-
-		
 	</div>
 	
 	<div class="pagination">
@@ -201,6 +201,66 @@
 		
 			<a href="/posts/page/2/" class="right arrow">&#8594;</a>
 		
+        
+            <p>虽然 triplet loss 实现非常简单，但是简单的 loss 要想用好也是需要更细致的分析与调试。</p>
+<p>本文主要是对博客<a href="https://omoindrot.github.io/triplet-loss">Triplet Loss and Online Triplet Mining in TensorFlow</a>的简要翻译。文章中以人脸识别为背景，且基于 Tensorflow 的实现。</p>
+<h2 id="triplet-loss">Triplet Loss</h2>
+<ul>
+<li>
+<p>与Softmax比较</p>
+<p>对于分类任务，直接的做法就是使用 Softmax 获取每个类别的概率，然后与 Label 一起计算Loss，Label 可以是soft label 也可以是 one-hot label。但是，这里有个限制是，使用Softmax的情况，类别数必须固定，也就是没法将样本分类成一个没有见过的类别。</p>
+<p>但是在人脸识别中，类别数并不是固定的，总是会需要判断两个不在训练集中的人物是否是同一个人。Triplet Loss 就可以训练模型，得到输入人脸的 Embedding，然后在 Embedding 空间中，同一个人的高维点之间的距离小于与另一个人之间的距离。</p>
+</li>
+<li>
+<p>Tripet Loss 定义</p>
+<p>首先，triplet loss由三个数据构成，分别是 anchor, positive, negative样本；然后定义也可以分为距离的形式、相似度的形式两种形式，本质上肯定是一致的。</p>
+<p>以距离的形式为例，定义非常直接，假设 $ap, an$ 分别表示anchor与positive, negative样本之间的距离，这个距离可以是 cosine 距离，也可以是欧式距离，这两个距离本质是一样的，可以互相转换。那么 triplet loss 的计算过程是：</p>
+<p>$$triplet loss = \max(ap - an + margin, 0.0)$$</p>
+<p>以相似度的形式，$ap, an$分别表示 anchor 与 positive, negative 之间的相似度，那么triplet loss定义：</p>
+<p>$$triplet loss = \max(an - ap + margin, 0.0)$$</p>
+<p>基于这个Loss训练的目的就是，让类内样本之间的距离小于类间样本距离，并且差值还要大于一个 margin。</p>
+</li>
+</ul>
+<h2 id="triplet-loss-mining">Triplet Loss Mining</h2>
+<p>根据 triplet loss 的计算过程，可以将负样本分为三个类别(以距离形式为例)：</p>
+<ul>
+<li>
+<p>easy triplet</p>
+<p>损失函数为0，此时有：$ap + margin &lt; an$</p>
+</li>
+<li>
+<p>hard triplet</p>
+<p>此时负样本比正样本更接近Anchor样本，即$an &lt; ap$</p>
+</li>
+<li>
+<p>semi-hard triplet</p>
+<p>此时负样本距离Anchor的距离比正样本到 Anchor 的距离更远，但是差别小于 Margin，即$ap &lt; an &lt; ap + margin$</p>
+</li>
+</ul>
+<p>上面三种负样本的示例如下：</p>
+<p><figure>
+    <center>
+    <img src="/imgs/triplet-loss-0/negatives0.png" alt="图 - 0 负样本分类">
+    <figcaption>图 - 0 负样本分类</figcaption>
+    </center>
+</figure></p>
+<p>首先需要说明的是，上述三种负样本对于模型训练的贡献肯定是不一样的，最常见的做法就是生成随机的 semi-hard 负样本进行训练；但是更有用的做法是，挖掘出那些更有用的三元组进行训练。</p>
+<p>怎么挖掘这种三元组呢？一种方法是离线难例挖掘，另一种方法是在线难例挖掘。</p>
+<h3 id="离线难例挖掘">离线难例挖掘</h3>
+<p>离线难例挖掘这种方法就是在每个 Epoch 开始的地方，首先计算所有样本的 Embedding，然后从其中挑选组合出 hard triplet &amp; semi-hard triplet 三元组进行训练。这种方法最明显的缺点就是效率太低了。</p>
+<h3 id="在线难例挖掘">在线难例挖掘</h3>
+<p>这种方法是从 Batch 内在线的找出有用的hard triplet三元组，也有两种方案。</p>
+<ul>
+<li>
+<p>使用 Batch 内所有可用的负样本</p>
+<p>此时就是在 Batch 内其他类别的所有样本作为当前样本（类别）的负样本，进行训练。</p>
+</li>
+<li>
+<p>使用 Batch 内最难的负样本三元组</p>
+<p>这种方法就是对于每个 Anchor，计算出距离最远的同类别的样本（正样本），然后选出距离最近的其他类别的样本（负样本）构成triplet 三元组进行训练。这里又个需要注意的地方在于，选取样本时，正样本需要保证同类别，负样本需要保证不同类别，选取负样本时，对于那些同类别的样本需要 mask 掉（也就是赋值给一个最大值，这个最大值可以是对应类型的最大值，也可以是一个超过取值范围的值，比如 cosine 距离的时候，可以将最大值设置为 2.0，因为 cosine 距离最大不会超过2.0)；选取正样本的过程比较容易，直接对不同类别的样本赋值给一个很小的数就行了。</p>
+</li>
+</ul>
+<p>文章中，作者说后者（最难三元组）的效果超过第一个，但是实际测试中发现第一中效果更好一点，所以这一点也在此说明了，简单的 triplet loss 要想用好也是需要一些心思的。至于是否有其它更好的使用方法，实际使用中一个小的改动或许可以更好的利用 triplet loss函数的方法就留作下一篇博客里探讨一下吧。</p>
         
             <p>pytorch all_gather 计算结果是叶子节点，也就是不会继续向后传递梯度了。</p>
 <h2 id="背景">背景</h2>
@@ -2627,198 +2687,6 @@ K <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">3<
 </div>
 </div>
         
-            <p>记录一些Torch使用过程中会用到的小知识点。</p>
-<h2 id="求解中间变量的梯度">求解中间变量的梯度</h2>
-<p>前面提到，<code>backward()</code>函数只会保存Leaf Node的梯度，如果要想保留中间计算结果的梯度，可以使用<code>Tensor.retain_grad()</code>来实现。是不是Leaf Node可以使用 <code>Tensor.is_leaf</code>来判断，简单来说Leaf Node有两类：</p>
-<ul>
-<li><code>Tensor.requires_grad=False</code> 的Tensor属于Leaf Node</li>
-<li><code>Tesnor.requires_grad=True</code>并且是由用户创建的Tensor也属于Leaf Node；用户创建意味着不是其它Op产生的Tensor.</li>
-</ul>
-<p>实际要获取中间变量的梯度，有以下方法：</p>
-<ol>
-<li>使用<code>retain_grad()</code></li>
-</ol>
-<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
-<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
-<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
-</span></code></pre></td>
-<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
-<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">get_inter_grad</span>():
-  x <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>ones((<span style="color:#099">2</span>, <span style="color:#099">2</span>), requires_grad<span style="color:#000;font-weight:bold">=</span><span style="color:#999">True</span>) 
-  <span style="color:#000;font-weight:bold">print</span>(x<span style="color:#000;font-weight:bold">.</span>is_leaf)
-
-  y <span style="color:#000;font-weight:bold">=</span> x <span style="color:#000;font-weight:bold">*</span> <span style="color:#099">2</span>
-  y<span style="color:#000;font-weight:bold">.</span>retain_grad()
-  z <span style="color:#000;font-weight:bold">=</span> y <span style="color:#000;font-weight:bold">**</span> <span style="color:#099">2</span>
-
-  z<span style="color:#000;font-weight:bold">.</span>backward(torch<span style="color:#000;font-weight:bold">.</span>ones_like(z))
-  <span style="color:#000;font-weight:bold">print</span>(x<span style="color:#000;font-weight:bold">.</span>grad)
-  <span style="color:#000;font-weight:bold">print</span>(y<span style="color:#000;font-weight:bold">.</span>grad)       <span style="color:#998;font-style:italic"># not None</span>
-</code></pre></td></tr></table>
-</div>
-</div><ol start="2">
-<li>使用<code>torch.autograd.grad(outputs, inputs)</code></li>
-</ol>
-<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
-<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
-<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
-</span></code></pre></td>
-<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
-<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">get_inter_grad</span>():
-  x <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>ones((<span style="color:#099">2</span>, <span style="color:#099">2</span>), requires_grad<span style="color:#000;font-weight:bold">=</span><span style="color:#999">True</span>) 
-  <span style="color:#000;font-weight:bold">print</span>(x<span style="color:#000;font-weight:bold">.</span>is_leaf)
-
-  z <span style="color:#000;font-weight:bold">=</span> y <span style="color:#000;font-weight:bold">**</span> <span style="color:#099">2</span>
-  t <span style="color:#000;font-weight:bold">=</span> z<span style="color:#000;font-weight:bold">.</span>mean()
-  x_res <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>autograd<span style="color:#000;font-weight:bold">.</span>grad(t, x, create_graph<span style="color:#000;font-weight:bold">=</span><span style="color:#999">True</span>)[<span style="color:#099">0</span>]
-  <span style="color:#000;font-weight:bold">print</span>(x_res)
-  y_res <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>autograd<span style="color:#000;font-weight:bold">.</span>grad(t, y, create_graph<span style="color:#000;font-weight:bold">=</span><span style="color:#999">True</span>)[<span style="color:#099">0</span>]
-  <span style="color:#000;font-weight:bold">print</span>(y_res)
-</code></pre></td></tr></table>
-</div>
-</div><p>注意，<code>torch.autograd.grad()</code>只能对Scalar output计算梯度，所以才用了<code>t = z.mean()</code>进行反向传播。</p>
-<ol start="3">
-<li>使用<code>torch.Tensor.register_hook()</code></li>
-</ol>
-<p><code>register_hook()</code>函数会注册一个backward hook，每次计算该Tensor的梯度时，都会调用这个<code>hook</code>函数。函数签名是<code>hook(grad) -&gt; Tensor or None</code>，一般来说，这里的 hook 函数不应该对输入的 grad 进行修改，而是返回一个新的梯度来代替 grad。<code>register_hook()</code>函数会返回一个 handle，可以调用<code>handle.remove()</code>来从当前的Tensor中去掉这个 hook 函数。</p>
-<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
-<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
-<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
-</span></code></pre></td>
-<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
-<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">  global_grad <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">0.0</span>
-  <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">extract_grad</span>(grad):
-      <span style="color:#000;font-weight:bold">print</span>(<span style="color:#d14">&#39;current grad: &#39;</span>, grad)
-      <span style="color:#000;font-weight:bold">global</span> global_feat
-      global_grad <span style="color:#000;font-weight:bold">=</span> grad
-      <span style="color:#000;font-weight:bold">return</span> grad
-
-  <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">get_inter_grad</span>():
-      <span style="color:#000;font-weight:bold">global</span> global_grad
-      x <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>ones((<span style="color:#099">2</span>, <span style="color:#099">2</span>), requires_grad<span style="color:#000;font-weight:bold">=</span><span style="color:#999">True</span>) 
-      <span style="color:#000;font-weight:bold">print</span>(x<span style="color:#000;font-weight:bold">.</span>is_leaf)
-
-      y <span style="color:#000;font-weight:bold">=</span> x <span style="color:#000;font-weight:bold">*</span> <span style="color:#099">2</span>
-      z <span style="color:#000;font-weight:bold">=</span> y <span style="color:#000;font-weight:bold">**</span> <span style="color:#099">2</span>
-      t <span style="color:#000;font-weight:bold">=</span> z<span style="color:#000;font-weight:bold">.</span>mean()
-
-      y_hook <span style="color:#000;font-weight:bold">=</span> y<span style="color:#000;font-weight:bold">.</span>register_hook(extract_grad)
-      t<span style="color:#000;font-weight:bold">.</span>backward()
-      <span style="color:#000;font-weight:bold">print</span>(<span style="color:#d14">&#39;y grad: &#39;</span>, global_grad)
-      <span style="color:#000;font-weight:bold">print</span>(<span style="color:#d14">&#39;x grad: &#39;</span>, x<span style="color:#000;font-weight:bold">.</span>grad)
-
-      y_hook<span style="color:#000;font-weight:bold">.</span>remove()
-</code></pre></td></tr></table>
-</div>
-</div><p>但是实际使用下来，第三种方法获取到的还是 <code>global_grad</code> 原始的数值，有待进一步查原因。</p>
-<h2 id="获取模型权重的梯度">获取模型权重的梯度</h2>
-<p>获取权重的梯度代码非常简单：</p>
-<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
-<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
-<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">6
-</span></code></pre></td>
-<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
-<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">    <span style="color:#998;font-style:italic"># ...</span>
-    <span style="color:#000;font-weight:bold">for</span> name, param <span style="color:#000;font-weight:bold">in</span> model<span style="color:#000;font-weight:bold">.</span>named_parameters():
-        <span style="color:#000;font-weight:bold">print</span>(name)
-        <span style="color:#000;font-weight:bold">print</span>(param<span style="color:#000;font-weight:bold">.</span>grad)           <span style="color:#998;font-style:italic"># 真实梯度，param.grad 是一个 Tensor</span>
-        <span style="color:#000;font-weight:bold">print</span>(param<span style="color:#000;font-weight:bold">.</span>data<span style="color:#000;font-weight:bold">.</span>grad)      <span style="color:#998;font-style:italic"># None</span>
-    <span style="color:#998;font-style:italic"># ...</span>
-</code></pre></td></tr></table>
-</div>
-</div><h2 id="使用checkpoint功能">使用checkpoint功能</h2>
-<p>gradient checkpointing的意思是说，在反向传播时，重新计算对应代码段的前向计算，这样就可以不用在前向计算时保存临时中间激活输出值以及对应的梯度等。</p>
-<p>但是有一点需要注意就是需要保证那些具有随机属性的计算的两次前向输出应该是一致的，比如 Dropout，因此需要将<code>preserve_rng_state=True</code>传入到<code>torch.utils.checkpoint.checkpint()</code>函数中，但是这样做会导致性能下降较大，所以如果没有涉及到RNG 类的操作，那么需要将<code>preserve_rng_state=False</code>。另一点是，即使设置了<code>preserve_rng_state=True</code>，但是在<code>run_fn</code>函数里面将变量移动到一个新的device上的话，那么 RNG 状态的一致性也还是无法保证，所谓的新的device，就是当前device + 传入到 <code>run_fn</code> 的参数的device 的合集。</p>
-<p>对应实现 <code>checkpinting</code> 的函数是：<code>torch.utils.checkpoint.checkpoint(function, *args, **kwargs)</code>函数。</p>
-<p>checkpointing的工作原理是：<code>trading compute for memory</code>，也就是不会保存计算过程中的中间激活值，而是在反向传播时重新计算这些数值。可以应用到任意部分的模型计算。</p>
-<p>具体来说，<code>function</code>表示的计算前向计算时是在<code>torch.no_grad()</code>里面执行的，但是<code>checkpoint()</code>函数会保存输入的tuple以及function parameters等。<code>function</code>计算可以输出非Tensor的参数，但是gradient recording 只会作用于那些Tensor的输出。注意，如果输出包含在<code>list, dict, custom objects</code>等结构体里，即使是Tensor，也不会被计算gradients。</p>
-<p>一个具体的使用例子是 Albef 仓库里 <code>xbert</code> 的实现:</p>
-<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
-<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
-<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
-</span></code></pre></td>
-<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
-<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">    <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">create_custom_forward</span>(module):
-        <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">custom_forward</span>(<span style="color:#000;font-weight:bold">*</span>inputs):
-            <span style="color:#000;font-weight:bold">return</span> module(<span style="color:#000;font-weight:bold">*</span>inputs, past_key_value, output_attentions)
-        <span style="color:#000;font-weight:bold">return</span> custom_forward
-
-    layer_outputs <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>utils<span style="color:#000;font-weight:bold">.</span>checkpoint<span style="color:#000;font-weight:bold">.</span>checkpoint(
-        create_custom_forward(layer_module),
-        hidden_states,
-        attention_mask,
-        layer_head_mask,
-        encoder_hidden_states,
-        encoder_attention_mask,
-    )
-</code></pre></td></tr></table>
-</div>
-</div><p>这里使用了python的闭包方式进行实现function。</p>
-<p>另一个API<code>torch.utils.checkpoint.checkpoint_sequential(functions, segments, input, **kwargs)</code>可以实现对sequential models进行checkpoints。</p>
-<blockquote>
-<p>Sequential models execute a list of modules/functions in order (sequentially). Therefore, we can divide such a model in various segments and checkpoint each segment. All segments except the last will run in torch.no_grad() manner, i.e., not storing the intermediate activations. The inputs of each checkpointed segment will be saved for re-running the segment in the backward pass.</p>
-</blockquote>
-<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">    model <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Sequential(<span style="color:#000;font-weight:bold">...</span>)
-    input_var <span style="color:#000;font-weight:bold">=</span> checkpoint_sequential(model, chunks, input_var)
-</code></pre></div>
-        
 	
 		<span>1</span>
 	</div>
@@ -2828,7 +2696,7 @@ K <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">3<
         		<footer>
 			
 			<span>
-			&copy; <time datetime="2022-01-16 21:40:04.897191 &#43;0800 CST m=&#43;0.294697271">2022</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
+			&copy; <time datetime="2022-01-19 22:39:52.929151 &#43;0800 CST m=&#43;0.111844534">2022</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
 			</span>
 		</footer>
 

@@ -6,7 +6,16 @@
     <description>Recent content on Triloon</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 16 Jan 2022 18:43:13 +0800</lastBuildDate><atom:link href="https://triloon.space/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Tue, 18 Jan 2022 19:07:51 +0800</lastBuildDate><atom:link href="https://triloon.space/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Triplet Loss 与在线难例挖掘（译）</title>
+      <link>https://triloon.space/posts/triplet-loss-0/</link>
+      <pubDate>Tue, 18 Jan 2022 19:07:51 +0800</pubDate>
+      
+      <guid>https://triloon.space/posts/triplet-loss-0/</guid>
+      <description>&lt;p&gt;虽然 triplet loss 实现非常简单，但是简单的 loss 要想用好也是需要更细致的分析与调试。&lt;/p&gt;</description>
+    </item>
+    
     <item>
       <title>Torch all_gather 的梯度问题</title>
       <link>https://triloon.space/posts/torch-allgather/</link>

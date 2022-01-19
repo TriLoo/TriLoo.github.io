@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en-us">
+    <head>
+		
+		
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+		<title>Triplet Loss 与在线难例挖掘（译） &middot; Triloon</title>
+
+		
+		<link rel="stylesheet" href="/css/style.css">
+		<link rel="stylesheet" href="/css/fonts.css">
+        <link rel="stylesheet" href="/css/custom.css">
+		
+		<link rel="icon" href="favicon.ico" />
+		<link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+		<link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+		<link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+
+		
+		<link href="" rel="alternate" type="application/rss+xml" title="Triloon" />
+	</head>
+
+    <body>
+        <script type="text/javascript" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@2.7.4/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {
+    inlineMath: [['$','$'], ['\\(','\\)']],
+    displayMath: [['$$','$$'], ['\[','\]']],
+    processEscapes: true,
+    processEnvironments: true,
+    skipTags: ['script', 'noscript', 'style', 'textarea', 'pre','code'],
+    TeX: { equationNumbers: { autoNumber: "AMS" },
+         extensions: ["AMSmath.js", "AMSsymbols.js"] }
+  }
+});
+</script>
+
+<style>
+    code.has-jax {
+        font: inherit;
+        font-size: 100%;
+        background: inherit;
+        border: inherit;
+        color: #515151;
+    }
+</style>
+		<nav class="nav">
+			<div class="nav-container">
+				<a href="/">
+					
+						<h2 class="nav-title">Triloon</h2>
+					
+				</a>
+				<ul>
+    
+    
+        <li>
+            <a href="/about/about">
+                
+                <span>About</span>
+                
+            </a>
+        </li>
+    
+        <li>
+            <a href="/posts/">
+                
+                <span>Posts</span>
+                
+            </a>
+        </li>
+    
+</ul>
+			</div>
+		</nav>
+
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+        <link rel="manifest" href="/site.webmanifest">
+
+        
+
+<main>
+	<div class="post">
+		<div class="post-info">
+    <span>Written by</span>
+        triloon
+        <br>
+        <span>on&nbsp;</span><time datetime="2022-01-18 19:07:51 &#43;0800 CST">January 18, 2022</time>
+</div>
+
+		<h1 class="post-title">Triplet Loss 与在线难例挖掘（译）</h1>
+<div class="post-line"></div>
+
+		
+
+		<p>虽然 triplet loss 实现非常简单，但是简单的 loss 要想用好也是需要更细致的分析与调试。</p>
+<p>本文主要是对博客<a href="https://omoindrot.github.io/triplet-loss">Triplet Loss and Online Triplet Mining in TensorFlow</a>的简要翻译。文章中以人脸识别为背景，且基于 Tensorflow 的实现。</p>
+<h2 id="triplet-loss">Triplet Loss</h2>
+<ul>
+<li>
+<p>与Softmax比较</p>
+<p>对于分类任务，直接的做法就是使用 Softmax 获取每个类别的概率，然后与 Label 一起计算Loss，Label 可以是soft label 也可以是 one-hot label。但是，这里有个限制是，使用Softmax的情况，类别数必须固定，也就是没法将样本分类成一个没有见过的类别。</p>
+<p>但是在人脸识别中，类别数并不是固定的，总是会需要判断两个不在训练集中的人物是否是同一个人。Triplet Loss 就可以训练模型，得到输入人脸的 Embedding，然后在 Embedding 空间中，同一个人的高维点之间的距离小于与另一个人之间的距离。</p>
+</li>
+<li>
+<p>Tripet Loss 定义</p>
+<p>首先，triplet loss由三个数据构成，分别是 anchor, positive, negative样本；然后定义也可以分为距离的形式、相似度的形式两种形式，本质上肯定是一致的。</p>
+<p>以距离的形式为例，定义非常直接，假设 $ap, an$ 分别表示anchor与positive, negative样本之间的距离，这个距离可以是 cosine 距离，也可以是欧式距离，这两个距离本质是一样的，可以互相转换。那么 triplet loss 的计算过程是：</p>
+<p>$$triplet loss = \max(ap - an + margin, 0.0)$$</p>
+<p>以相似度的形式，$ap, an$分别表示 anchor 与 positive, negative 之间的相似度，那么triplet loss定义：</p>
+<p>$$triplet loss = \max(an - ap + margin, 0.0)$$</p>
+<p>基于这个Loss训练的目的就是，让类内样本之间的距离小于类间样本距离，并且差值还要大于一个 margin。</p>
+</li>
+</ul>
+<h2 id="triplet-loss-mining">Triplet Loss Mining</h2>
+<p>根据 triplet loss 的计算过程，可以将负样本分为三个类别(以距离形式为例)：</p>
+<ul>
+<li>
+<p>easy triplet</p>
+<p>损失函数为0，此时有：$ap + margin &lt; an$</p>
+</li>
+<li>
+<p>hard triplet</p>
+<p>此时负样本比正样本更接近Anchor样本，即$an &lt; ap$</p>
+</li>
+<li>
+<p>semi-hard triplet</p>
+<p>此时负样本距离Anchor的距离比正样本到 Anchor 的距离更远，但是差别小于 Margin，即$ap &lt; an &lt; ap + margin$</p>
+</li>
+</ul>
+<p>上面三种负样本的示例如下：</p>
+<p><figure>
+    <center>
+    <img src="/imgs/triplet-loss-0/negatives0.png" alt="图 - 0 负样本分类">
+    <figcaption>图 - 0 负样本分类</figcaption>
+    </center>
+</figure></p>
+<p>首先需要说明的是，上述三种负样本对于模型训练的贡献肯定是不一样的，最常见的做法就是生成随机的 semi-hard 负样本进行训练；但是更有用的做法是，挖掘出那些更有用的三元组进行训练。</p>
+<p>怎么挖掘这种三元组呢？一种方法是离线难例挖掘，另一种方法是在线难例挖掘。</p>
+<h3 id="离线难例挖掘">离线难例挖掘</h3>
+<p>离线难例挖掘这种方法就是在每个 Epoch 开始的地方，首先计算所有样本的 Embedding，然后从其中挑选组合出 hard triplet &amp; semi-hard triplet 三元组进行训练。这种方法最明显的缺点就是效率太低了。</p>
+<h3 id="在线难例挖掘">在线难例挖掘</h3>
+<p>这种方法是从 Batch 内在线的找出有用的hard triplet三元组，也有两种方案。</p>
+<ul>
+<li>
+<p>使用 Batch 内所有可用的负样本</p>
+<p>此时就是在 Batch 内其他类别的所有样本作为当前样本（类别）的负样本，进行训练。</p>
+</li>
+<li>
+<p>使用 Batch 内最难的负样本三元组</p>
+<p>这种方法就是对于每个 Anchor，计算出距离最远的同类别的样本（正样本），然后选出距离最近的其他类别的样本（负样本）构成triplet 三元组进行训练。这里又个需要注意的地方在于，选取样本时，正样本需要保证同类别，负样本需要保证不同类别，选取负样本时，对于那些同类别的样本需要 mask 掉（也就是赋值给一个最大值，这个最大值可以是对应类型的最大值，也可以是一个超过取值范围的值，比如 cosine 距离的时候，可以将最大值设置为 2.0，因为 cosine 距离最大不会超过2.0)；选取正样本的过程比较容易，直接对不同类别的样本赋值给一个很小的数就行了。</p>
+</li>
+</ul>
+<p>文章中，作者说后者（最难三元组）的效果超过第一个，但是实际测试中发现第一中效果更好一点，所以这一点也在此说明了，简单的 triplet loss 要想用好也是需要一些心思的。至于是否有其它更好的使用方法，实际使用中一个小的改动或许可以更好的利用 triplet loss函数的方法就留作下一篇博客里探讨一下吧。</p>
+
+		
+	</div>
+
+	<div class="pagination">
+		<a href="/posts/torch-allgather/" class="left arrow">&#8592;</a>
+
+		<a href="#" class="top">Top</a>
+	</div>
+</main>
+
+
+        		<footer>
+			
+			<span>
+			&copy; <time datetime="2022-01-19 22:39:52.892129 &#43;0800 CST m=&#43;0.074824005">2022</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
+			</span>
+		</footer>
+
+    </body>
+</html>
