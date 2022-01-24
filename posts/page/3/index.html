@@ -64,6 +64,19 @@
 <main>
 	<div class="catalogue">
 		
+			<a href="https://triloon.space/posts/ssl-image-representation/" class="catalogue-item">
+    <div>
+        <time datetime="2021-08-31 14:15:48 &#43;0800 CST" class="catalogue-time">August 31, 2021</time>
+        <h2 class="catalogue-title">图像表征算法中的自监督学习方法</h2>
+        <div class="catalogue-line"></div>
+
+        <p>
+            <p>经典自监督模型，包括MoCo / SimCLR / SwAV / BYOL / SimSiam 等。</p>
+        </p>
+    </div>
+</a>
+
+		
 			<a href="https://triloon.space/posts/efficient-transformer/" class="catalogue-item">
     <div>
         <time datetime="2021-08-31 14:02:36 &#43;0800 CST" class="catalogue-time">August 31, 2021</time>
@@ -110,6 +123,52 @@
 			<a href="/posts/page/2/" class="left arrow">&#8592;</a>
 		
 		
+        
+            <p>经典自监督模型，包括MoCo / SimCLR / SwAV / BYOL / SimSiam 等。</p>
+<p>主要关注无监督策略的研究，模型结构不是本文重点，所以主要包括 MoCo 系列、SimCLR 系列、SwAV、BYOL 等几篇论文。无监督训练模型的一点在于要避免模型坍塌，通过 Contrastive Loss, Clustering Constraints, Predictor(Stop Gradient), Batch Normalization等。</p>
+<p>整体来说，图像自监督学习方法按照自监督实现思想可以分为下面几类。</p>
+<ul>
+<li>基于contrastive loss</li>
+<li>基于蒸馏的方式，一般设计 momentum</li>
+<li>基于聚类的方法</li>
+</ul>
+<p>关于预训练任务也存在多种选择。</p>
+<ul>
+<li>预测图像选装方向。图像经过 0/90/180/270 等几个角度的随机旋转，然后训练模型进行4分类</li>
+<li>预测图片不定位置相对关系。图像被分割成 3 * 3 的表格，然后选取中心小图与另外8个子图中的随机一个进行位置分类，分类类别为8（两个子图的输出拼接起来送入分类层），一些技巧是图像分割成子图时可以增加缝隙或者抖动等</li>
+<li>补丁拼图。将图片分割成 3 * 3 的子图，然后随机打乱，将子图的所有输出特征拼接起来送入分类层，正常来说，类别说应该是 9!，但是作者对这些排列类别做了合并，因为很多排列比较相似，合并过程基于汉明距离进行</li>
+<li>图片上色。灰度图片输入 Encoder，然后Decoder输出彩色图片，可以使用 L2 Loss，或者 LAB 颜色空间等</li>
+<li>自编码器系列。</li>
+<li>GAN系列。</li>
+<li>对比学习。需要构造丰富的负样本，比如大的 Batch Size 或者借助 Memory Bank等</li>
+</ul>
+<h2 id="moco-系列">MoCo 系列</h2>
+<h2 id="simclr-系列">SimCLR 系列</h2>
+<h2 id="swav">SwAV</h2>
+<h2 id="byol">BYOL</h2>
+<p>分析了怎么防止模型坍塌（也就是所有的输入的模型输出都是相同的），关键是要让模型的输出部分层学习到新的知识。在这里，一方面是借助 Mean Teacher，一方面是在 Student Network 上面增加了一层 Predictor，这两个因素可以让 Prediction 层不断学习新的知识，从而避免模型坍塌。BYOL包含两个模型，一个称为 Online，一个称为 Target。</p>
+<p>按理来说，没有负样本，那么优化损失函数的梯度$\nabla_{\theta}(\mathcal{L}_{\theta, \epsilon}^{\mathrm{BYOL}})$应该很快导致模型坍塌啊，也就是损失降为0，但实际没有发生，作者认为这是因为这个损失的梯度下降方向与 Target 模型参数的变化方向是不一致的，也就是梯度下降方向 与 Target 模型让 Online 模型参数更新的放向不一样，所以避免了模型坍塌。另一方面，这也就意味着不存在一个Loss可以同时优化 Target / Online 模型的权重，类似于 GAN 模型的G / D的参数无法同时优化一样。作者也用消融实验表明，保持 prediction 足够好貌似是防止坍塌的关键。</p>
+<p>为啥 SimCLR 依赖于 color jitter 这个变换，因为如果去掉这个变换的话，两次 crop 的图像的颜色直方图分布其实是非常接近的，导致模型非常容易学习。</p>
+<p>发现去掉 Weight Decay 后，模型发散，说明 WD 对自监督模型的重要性，但是增加模型初始化时的初始值范围对模型性能影响不大。</p>
+<h2 id="simsiam">SimSiam</h2>
+<p>SimSiam 的 Prediction Head 需要固定 Learning Rate，也就是不随 Scheduler 变化。</p>
+<h2 id="消融实验">消融实验</h2>
+<h2 id="一些-tricks">一些 Tricks</h2>
+<ul>
+<li>
+<p>Rethinking Image Mixture for Unsupervised Visual Representation Learning</p>
+<p>在无监督训练中引入了Image Mixture &amp; Label Smooth。</p>
+</li>
+<li>
+<p>Whitening for Self-Supervised Representation Learning</p>
+</li>
+<li>
+<p>Barlow Twins: Self-Supervised Learning via Redundancy Reduction</p>
+</li>
+<li>
+<p>Contrastive Multiview Coding</p>
+</li>
+</ul>
         
             <p>一些以提高 Transformer 计算性能为目的的 Xformer 方案整理。</p>
 <p>主要包含以下几篇论文：</p>
@@ -322,7 +381,7 @@
         		<footer>
 			
 			<span>
-			&copy; <time datetime="2022-01-19 22:42:15.828507 &#43;0800 CST m=&#43;0.122372927">2022</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
+			&copy; <time datetime="2022-01-24 16:56:29.520815 &#43;0800 CST m=&#43;0.118111064">2022</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
 			</span>
 		</footer>
 

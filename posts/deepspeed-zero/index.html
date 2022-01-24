@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en-us">
+    <head>
+		
+		
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+		<title>Deepspeed Zero论文 &middot; Triloon</title>
+
+		
+		<link rel="stylesheet" href="/css/style.css">
+		<link rel="stylesheet" href="/css/fonts.css">
+        <link rel="stylesheet" href="/css/custom.css">
+		
+		<link rel="icon" href="favicon.ico" />
+		<link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+		<link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+		<link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+
+		
+		<link href="" rel="alternate" type="application/rss+xml" title="Triloon" />
+	</head>
+
+    <body>
+        <script type="text/javascript" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@2.7.4/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {
+    inlineMath: [['$','$'], ['\\(','\\)']],
+    displayMath: [['$$','$$'], ['\[','\]']],
+    processEscapes: true,
+    processEnvironments: true,
+    skipTags: ['script', 'noscript', 'style', 'textarea', 'pre','code'],
+    TeX: { equationNumbers: { autoNumber: "AMS" },
+         extensions: ["AMSmath.js", "AMSsymbols.js"] }
+  }
+});
+</script>
+
+<style>
+    code.has-jax {
+        font: inherit;
+        font-size: 100%;
+        background: inherit;
+        border: inherit;
+        color: #515151;
+    }
+</style>
+		<nav class="nav">
+			<div class="nav-container">
+				<a href="/">
+					
+						<h2 class="nav-title">Triloon</h2>
+					
+				</a>
+				<ul>
+    
+    
+        <li>
+            <a href="/about/about">
+                
+                <span>About</span>
+                
+            </a>
+        </li>
+    
+        <li>
+            <a href="/posts/">
+                
+                <span>Posts</span>
+                
+            </a>
+        </li>
+    
+</ul>
+			</div>
+		</nav>
+
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+        <link rel="manifest" href="/site.webmanifest">
+
+        
+
+<main>
+	<div class="post">
+		<div class="post-info">
+    <span>Written by</span>
+        triloon
+        <br>
+        <span>on&nbsp;</span><time datetime="2021-11-25 10:41:35 &#43;0800 CST">November 25, 2021</time>
+</div>
+
+		<h1 class="post-title">Deepspeed Zero论文</h1>
+<div class="post-line"></div>
+
+		
+
+		<p>DeepSpeed的开山之作 - ZeRO: Memory Optimizations Toward Training Trillion Parameter Models.</p>
+<p>ZeRO 的意思是：Zero Redundancy Optimizer.</p>
+<h2 id="背景">背景</h2>
+<p>一方面是我们需要训练大模型，另一方面是GPU资源有限，目前最高端的GPU显存是80G（回想在学校做深度学习的时候，6G的显存就用的感觉很好了），但是对于价格么，那也是真的美丽。所以有必要针对当前模型训练中对现存使用的粗放管理进行优化，优化好了，那就是无本万利，既不会影响模型效果，又可以增加显存的利用效率，增大 batch size（当然增大了batch size，又需要注意其它东西了，比如优化器的选取）。</p>
+<p>回顾DeepSpeed的实现，主要还是在有限的GPU资源上训练更大的模型。为什么是有必要的呢？因为模型是真的大，比如7.5B参数量的模型，对应的仅模型权重参数就需要：7.5B * 4 -&gt; 30GB，然后训练过程中再加上训练过程中的其它参数，很容易就需要100G以上的显存容量，目前还没有这么大显存的显卡存在。所以优化模型的显存开销非常有必要。</p>
+<h2 id="显存开销分析">显存开销分析</h2>
+<p>论文中将显存开销分为了以下几个部分：</p>
+<ul>
+<li>模型参数</li>
+<li>训练过程中参数的梯度</li>
+<li>优化器的状态参数</li>
+<li>中间结果，比如Layer输出的计算结果</li>
+<li>临时显存开销</li>
+<li>显存碎片等</li>
+</ul>
+<p>模型参数 &amp; 参数的梯度这两点很容易理解，并且有多少模型参数，就会有多少对应的梯度，以上面7.5B模型为例，fp32 格式的参数就需要60GB的显存资源了。</p>
+<p>优化器的状态参数这一点下面稍微详细说明一下。上面这三个因素在论文中对应三个阶段的显存优化，优化器状态参数的优化最容易实现，其次是模型的梯度，最后是模型的参数。</p>
+<p>论文中，以混合精度训练过程为例进行分析显存开销。设模型参数量为 $\Psi$，那么 fp16 格式的权重则占用$2 \Psi$的空间(bytes)，加上梯度，则占用 $2\Psi + 2\Psi$的显存空间；考虑到优化器自身的一些状态参数，则占用 $2\Psi + 2\Psi + K\Psi$，这里用$K$表示优化器参数的乘积倍数。</p>
+<p>中间结果就是每一层计算后的输出的 feature map 的结果，这一步可以通过activation checkpointing (或recomputation)进行优化，优化后，这些中间结果的显存开销会降低到开方大小，但是会增加大约33%的计算量；临时显存开销是指，有一些算法会占用临时空间来换取更高的计算效率，比如allreduce、gradient norm等，如果通信的数据量比较小，将导致带宽利用率比较低，所以这一步可以将多个变量要进行 all-reduce 的梯度合并成一个整体然后再进行传输；显存碎片是因为一些生命周期较长的变量与那些较短的变量相互交叉分配显存导致的，也就是说，当临时变量被释放后，空余显存位于两个长生命周期的变量的中间，可能会导致分配显存算法失败。</p>
+<h3 id="优化器的状态参数">优化器的状态参数</h3>
+<p>论文中，对应Adam优化器的乘积倍数 $K$ 取 12。这是因为在混合精度训练的时候，优化器也会保存一份 fp32 版本的模型参数（非梯度），成为master weight，这其实就对应了 $4\Psi$的显存空间了；然后Adam自身参数一阶矩、二阶矩，各对应模型参数量的大小，并且是 fp32 格式，所以共 $4\Psi + 4\Psi$；综合起来，就得到$K=12$了。</p>
+<h2 id="显存优化">显存优化</h2>
+<p>显存优化主要分成两个部分：对优化器参数、参数梯度、模型参数进行优化的 ZeRO-DP，对中间结果、临时显存开销、显存碎片进行优化的ZeRO-R。</p>
+<h3 id="zero-dp">ZeRO-DP</h3>
+<p>即ZeRO powered data parallel。这一步主要是优化模型梯度、参数、优化器参数这些显存开销，主要的实现思路比较简单，就是将这些参数进行分割，分别放到不同的 GPU 上，这些参数在普通的DP实现中是复制到不同的 GPU 上。所以主要内容分为两部分，一部分是具体实现，另一部分是对通信效率的影响。</p>
+<h3 id="pos">Pos</h3>
+<p>对优化器参数进行显存开销优化。</p>
+<p>假设 DP 这里 GPU 并行度是 $N_d$，则通过参数分割之后，每个 DP 进程上则只需要保存 $\frac{1}{N_d}$ 的参数了。在训练过程中，通过all-gather来得到完整的优化器参数。经过这种优化，显存开销由 $4\Psi + K\Psi$ 下降到 $4\Psi + \frac{K}{N_d}\Psi \approx 4\Psi$，当 $N_d$比较大的时候，可以近似到 $4\Psi$。</p>
+<p>这一部分对通信其实没有影响，因为优化器参数的作用只是更新计算梯度，然后更新权重，所以真正影响通信的属于梯度、模型参数的分割。</p>
+<h3 id="pg">Pg</h3>
+<p>对参数梯度进行显存开销优化。</p>
+<p>将梯度占用的空间分配到不同的 GPU 上，每个 GPU 只占其中一部分，即显存开销由 $2\Psi$ 下降为 $\frac{2}{N_d}\Psi$。当需要完整的梯度时，DeepSpeed 采用了类似 AMP 的做法，即将多个计算的 gradient 合并成 bucket，然后一次性传输。完成这一优化，显存开销可以进一步近似降低一倍。</p>
+<p>接下来就是对数据通信的影响。原始的 DP 的实现中，每一次梯度更新之前，需要执行一次 AllReduce 来将其它 GPU 上的梯度进行求平均，然后更新当前 GPU 上的模型参数。在进行梯度的 AllReduce 时，真正的实现分为两步，首先是执行 ReduceScatter，也就是每台 GPU 先执行互不重叠一段数据的 Reduce 操作，结果是每个 GPU 上都有一段求平均后的梯度数值，如图 - 1 所示；然后所有的 GPU 执行 AllGather，也就是从其它 GPU 上获取、拼接更新后的梯度。</p>
+<p><figure>
+    <center>
+    <img src="/imgs/deep-speed/ds1.png" alt="图 - 1 ReduceScatter 操作示意图">
+    <figcaption>图 - 1 ReduceScatter 操作示意图</figcaption>
+    </center>
+</figure></p>
+<p><figure>
+    <center>
+    <img src="/imgs/deep-speed/ds2.png" alt="图 - 2 AllGather 操作示意图">
+    <figcaption>图 - 2 AllGather 操作示意图</figcaption>
+    </center>
+</figure></p>
+<p>上述两个普通 DP 中梯度通信的过程来看，每一步都需要 $\Psi$ 的参数量的通信，所以一共就有 $2\Psi$ 的通信开销。</p>
+<p>现在来看 $P_{g+os}$ 中涉及到的通信。现在是每个 GPU 上只有一小块参数的梯度，需要将其它 GPU 上对应这一块的参数的梯度 Reduce 过来即可，这一步通过 ScatterReduce 来完成（其实也是一个 ReduceScatter），然后同样是再执行一次 AllGather 即可。上述两个步骤一共的通信量也是 $2\Psi$。</p>
+<p>所以总的来看，通过 $P_{os+g}$优化之后，通信量没有增加，但是显存开销显著下降了。</p>
+<h3 id="pp">Pp</h3>
+<p>对模型参数进行显存开销优化。</p>
+<p>这时候也会将模型的参数分配到不同的 GPU 上，计算的时候从其它 GPU 上进行 gather 过来完成计算。对于通信开销，由于每个 GPU 上只有一部分的模型参数，在前向计算之前，该 GPU 利用 broadcast 通信将自己的参数广播到其它 GPU 上进行计算，这一步是利用broadcast来代替 allgather 操作，其它 GPU 上的计算完成后会丢弃接收到的这些参数，这一步的通信量是 $\Psi$；然后在后向传播时，需要在做一次 all gather 来收集模型参数，导致通信量为 $\Psi + \Psi + \Psi$，最后一个因子是因为梯度的 ReduceScatter，所以最终的通信量会变成原来通信量 $2\Psi$ 的1.5倍，即$3\Psi$。</p>
+<p>但是经过以上三步，单 GPU 上显存开销就从最开始的 $(2 + 2 + K)\Psi$ 下降到 $\frac{(2 + 2 + K)\Psi}{N_d}$，如图-1所示。</p>
+<p><figure>
+    <center>
+    <img src="/imgs/deep-speed/ds0.png" alt="图 - 3 DeepSpeed ZeRO-DP对显存开销优化效果">
+    <figcaption>图 - 3 DeepSpeed ZeRO-DP对显存开销优化效果</figcaption>
+    </center>
+</figure></p>
+<h3 id="zero-r">ZeRO-R</h3>
+<p>这一步主要是为了优化一些细节的显存开销，主要包括中间计算结果 Feature Map 的显存开销、临时变量的显存开销、显存碎片。Feature Map 需要被保存下来，用于向后计算/传播梯度，临时变量是一个 Op 计算过程中的变量，比如要做 Gradient norm，需要有一个变量保存 gradient norm 这个数值；显存碎片主要是这些临时变量的删除后形成碎片，使用了 activation checkpointing之后，这些 feature map 使用的原来的空间也成为碎片了。</p>
+<p>针对临时变量，DeepSpeed 采用预先分配固定大小的 Buffer，即$C_B$，在进行 Reduce 等通信的时候也是以这个 buffer 为单位进行，可以更好的利用贷款。针对显存碎片，采用$M_D$，即memory defragmentation来重新整理显存。</p>
+<h3 id="pa">Pa</h3>
+<p>这一步是对 Feature Map 进行分割优化，与 MP 的区别在于，MP 一般会在每个 GPU 上保存复制的 feature map。这一步还可以通过 $p_{a+cpu}$来将这些数据保存到 cpu 上，但是这一步会加重 cpu-gpu 之间的数据传输开销。</p>
+<h2 id="小结">小结</h2>
+<p>针对论文中的 170B 的模型，这里也不再赘述了；有了以上背景，对 DeepSpeed 的配置过程或许就可以有一个好的开始了。最后这一张图是DeepSpeed下可以训练的模型与 LM-Megatron 等框架的对比。</p>
+<p><figure>
+    <center>
+    <img src="/imgs/deep-speed/ds3.png" alt="图 - 4 DeepSpeed 性能对比">
+    <figcaption>图 - 4 DeepSpeed 性能对比</figcaption>
+    </center>
+</figure></p>
+
+		
+	</div>
+
+	<div class="pagination">
+		<a href="/posts/swin-transformer-v2/" class="left arrow">&#8592;</a>
+		<a href="/posts/torch-allgather/" class="right arrow">&#8594;</a>
+
+		<a href="#" class="top">Top</a>
+	</div>
+</main>
+
+
+        		<footer>
+			
+			<span>
+			&copy; <time datetime="2022-01-24 16:56:29.463583 &#43;0800 CST m=&#43;0.060878604">2022</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
+			</span>
+		</footer>
+
+    </body>
+</html>

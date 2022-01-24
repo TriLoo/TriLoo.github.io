@@ -26,6 +26,15 @@
     </item>
     
     <item>
+      <title>Deepspeed Zero论文</title>
+      <link>https://triloon.space/posts/deepspeed-zero/</link>
+      <pubDate>Thu, 25 Nov 2021 10:41:35 +0800</pubDate>
+      
+      <guid>https://triloon.space/posts/deepspeed-zero/</guid>
+      <description>&lt;p&gt;DeepSpeed的开山之作 - ZeRO: Memory Optimizations Toward Training Trillion Parameter Models.&lt;/p&gt;</description>
+    </item>
+    
+    <item>
       <title>Swin Transformer V2</title>
       <link>https://triloon.space/posts/swin-transformer-v2/</link>
       <pubDate>Tue, 23 Nov 2021 12:07:18 +0800</pubDate>
