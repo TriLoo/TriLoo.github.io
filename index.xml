@@ -62,6 +62,15 @@
     </item>
     
     <item>
+      <title>MoE 论文阅读：Sparsely-Gated MoE</title>
+      <link>https://triloon.space/posts/moe-original-paper/</link>
+      <pubDate>Wed, 27 Oct 2021 11:15:57 +0800</pubDate>
+      
+      <guid>https://triloon.space/posts/moe-original-paper/</guid>
+      <description>&lt;p&gt;本文主要是一点 Mixture of Experts (MoE) 网络结构的介绍。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
       <title>分词算法基础</title>
       <link>https://triloon.space/posts/tokenizers/</link>
       <pubDate>Fri, 22 Oct 2021 19:51:11 +0800</pubDate>

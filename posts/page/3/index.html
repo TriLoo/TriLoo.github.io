@@ -64,6 +64,19 @@
 <main>
 	<div class="catalogue">
 		
+			<a href="https://triloon.space/posts/binary-search-tree/" class="catalogue-item">
+    <div>
+        <time datetime="2021-08-31 15:00:22 &#43;0800 CST" class="catalogue-time">August 31, 2021</time>
+        <h2 class="catalogue-title">Binary Search Tree</h2>
+        <div class="catalogue-line"></div>
+
+        <p>
+            <p>二叉搜索树相关笔记</p>
+        </p>
+    </div>
+</a>
+
+		
 			<a href="https://triloon.space/posts/ssl-image-representation/" class="catalogue-item">
     <div>
         <time datetime="2021-08-31 14:15:48 &#43;0800 CST" class="catalogue-time">August 31, 2021</time>
@@ -123,6 +136,192 @@
 			<a href="/posts/page/2/" class="left arrow">&#8592;</a>
 		
 		
+        
+            <p>二叉搜索树相关笔记</p>
+<h2 id="定义">定义</h2>
+<p>每个节点有两个子节点：左节点、右节点，即是一个二叉树；同时有顺序关系：左子树小于父节点，右子树大于父节点。</p>
+<p><figure>
+    <center>
+    <img src="/imgs/binary-search-tree/BSTSearch01.png" alt="binary-search-image structure example">
+    <figcaption>binary-search-image structure example</figcaption>
+    </center>
+</figure></p>
+<p>查找复杂度：$\sim 2\ln(N)$，其中 N 是节点个数。查找未命中也是这个复杂度。</p>
+<p>作为一种数据结构，主要功能就是：增删查改。floor() 也可以认为是一种“查”操作。</p>
+<p>目前来看，相关应用可以分为两大类：遍历，排序。遍历就是包括前序、中序、后序进行遍历然后处理；排序一般就是按照中序进行处理。</p>
+<h2 id="floor-函数">floor() 函数</h2>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 0
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">23
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">24
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">Key <span style="color:#900;font-weight:bold">floor</span>(Key key)
+{
+    Node x <span style="color:#000;font-weight:bold">=</span> floor(root, key);
+    <span style="color:#000;font-weight:bold">if</span> (x <span style="color:#000;font-weight:bold">==</span> <span style="color:#000;font-weight:bold">nullptr</span>)
+        <span style="color:#000;font-weight:bold">return</span> <span style="color:#000;font-weight:bold">nullptr</span>;
+    <span style="color:#000;font-weight:bold">else</span>
+        <span style="color:#000;font-weight:bold">return</span> x;
+}
+
+Node <span style="color:#900;font-weight:bold">floor</span>(Node root, Key key)
+{
+    <span style="color:#000;font-weight:bold">if</span> (root <span style="color:#000;font-weight:bold">==</span> <span style="color:#000;font-weight:bold">nullptr</span>)
+        <span style="color:#000;font-weight:bold">return</span> <span style="color:#000;font-weight:bold">nullptr</span>;
+    
+    <span style="color:#000;font-weight:bold">if</span> (root<span style="color:#000;font-weight:bold">-&gt;</span>key <span style="color:#000;font-weight:bold">==</span> key)
+        <span style="color:#000;font-weight:bold">return</span> root;
+    <span style="color:#000;font-weight:bold">if</span> (root<span style="color:#000;font-weight:bold">-&gt;</span>key <span style="color:#000;font-weight:bold">&gt;</span> key)    <span style="color:#998;font-style:italic">// left branch
+</span><span style="color:#998;font-style:italic"></span>        <span style="color:#000;font-weight:bold">return</span> floor(root<span style="color:#000;font-weight:bold">-&gt;</span>left, key);
+    <span style="color:#998;font-style:italic">// right branch: key &gt; root-&gt;key
+</span><span style="color:#998;font-style:italic"></span>    Node t <span style="color:#000;font-weight:bold">=</span> floor(root<span style="color:#000;font-weight:bold">-&gt;</span>right, key);
+    <span style="color:#000;font-weight:bold">if</span> (t <span style="color:#000;font-weight:bold">==</span> <span style="color:#000;font-weight:bold">nullptr</span>)
+        <span style="color:#000;font-weight:bold">return</span> root;
+    <span style="color:#000;font-weight:bold">else</span>
+        <span style="color:#000;font-weight:bold">return</span> t;
+}
+</code></pre></td></tr></table>
+</div>
+</div><p>为什么这里相当于是一个前序排序，其实本质上需要的是 <code>root-&gt;left</code> 分支的递归要在 <code>root-&gt;right</code> 的前面，这样才能保证走右子树的时候，可以最先判断这个子树上最小的数值。</p>
+<p>这个函数关键是分清楚什么时候向左走，什么时候向右走，然后才能明白应该返回什么数值。向左走的时候，说明当前的 <code>root-&gt;key</code> 大于目标值，向右走的时候，说明当前的 <code>root-&gt;key</code> 小于目标值，而小于目标值则说明结果必定存在，因为大不了返回当前的 root 即可。因此，在递归过程向上走的时候，如果当前属于右子路的下一层(代码第19行)并且返回的是 nullptr，那么就返回当前的节点就行了(第20行)，否则返回递归返回的结果即可。总而言之，如果走上右分支，就必定有解；走上左分支，则原样返回即可。</p>
+<p><strong>递归过程可以看成两个步骤：首先是沿着左子树或者右子树向下走，然后就是沿着树向上爬。</strong> 向上爬的时候，需要注意返回结果，对树的状态进行更新，比如链接、具体成员变量等。另一方面，递归过程其实就是一个先进后出的过程，所以对应的非递归实现可以借助Stack来实现。向上走的时候基于向下走的时候的判断来保证正确。</p>
+<h2 id="delete函数">Delete()函数</h2>
+<p>首先是删除最小、最大值节点。</p>
+<p>主要在于递归返回结果，<strong>只需要将返回的链接赋给作为参数的链接</strong>。</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">0
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#998;font-style:italic">// ...
+</span><span style="color:#998;font-style:italic"></span>x.left <span style="color:#000;font-weight:bold">=</span> deleteMin(x.left);     <span style="color:#998;font-style:italic">// delete minimum
+</span><span style="color:#998;font-style:italic">// ...
+</span></code></pre></td></tr></table>
+</div>
+</div><p>其次是删除中间某个节点，与删除最小、最大节点的区别在于，这个节点包含两个字节点，而且还需要保持二叉搜索树之间的顺序。这个问题常用的解法是：<code>Hibbard算法</code>。该算法表示在删除节点 x 之后，用它的后继节点填充它的位置，并且这个后继节点就是右子树中的最小节点。</p>
+<p>对应的4个步骤如下：</p>
+<ol>
+<li>找到需要被删除的节点，用 t 表示</li>
+<li>然后找到被删除节点右（左，随机选择）分支的最小（大）值，表示为 x，即 <code>x = min(t.right)</code></li>
+<li>然后更新 x 节点的左右分支，<code>x.right</code> 更新为 <code>deleteMin(t.right)</code>，保证右子树都大于 <code>x</code></li>
+<li><code>x.left</code> 更新为 <code>t.left</code>，最后返回 x 作为原来 t 的父节点的子节点，即代替 t</li>
+</ol>
+<p>实现示例如下：</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 0
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">23
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">24
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">25
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">26
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">27
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">28
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">29
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">30
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">31
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">32
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">Node <span style="color:#900;font-weight:bold">delete</span>(Key key)
+{
+    <span style="color:#000;font-weight:bold">delete</span>(root, key);
+}
+
+Node <span style="color:#900;font-weight:bold">delete</span>(Node t, key key)
+{
+    <span style="color:#000;font-weight:bold">if</span> (t <span style="color:#000;font-weight:bold">==</span> <span style="color:#000;font-weight:bold">nullptr</span>)       <span style="color:#998;font-style:italic">// not exists
+</span><span style="color:#998;font-style:italic"></span>        <span style="color:#000;font-weight:bold">return</span> <span style="color:#000;font-weight:bold">nullptr</span>;
+    <span style="color:#000;font-weight:bold">if</span> (key <span style="color:#000;font-weight:bold">&lt;</span> t<span style="color:#000;font-weight:bold">-&gt;</span>key)       <span style="color:#998;font-style:italic">// go left
+</span><span style="color:#998;font-style:italic"></span>    {
+        t<span style="color:#000;font-weight:bold">-&gt;</span>left <span style="color:#000;font-weight:bold">=</span> <span style="color:#000;font-weight:bold">delete</span>(t<span style="color:#000;font-weight:bold">-&gt;</span>left, key);
+        <span style="color:#000;font-weight:bold">return</span> t;
+    }
+    elif (key <span style="color:#000;font-weight:bold">&gt;</span> t<span style="color:#000;font-weight:bold">-&gt;</span>key)
+    {
+        t<span style="color:#000;font-weight:bold">-&gt;</span>right <span style="color:#000;font-weight:bold">=</span> <span style="color:#000;font-weight:bold">delete</span>(t<span style="color:#000;font-weight:bold">-&gt;</span>right, key);
+        <span style="color:#000;font-weight:bold">return</span> t;
+    }
+    <span style="color:#000;font-weight:bold">else</span>                    <span style="color:#998;font-style:italic">// equal
+</span><span style="color:#998;font-style:italic"></span>    {
+        <span style="color:#000;font-weight:bold">if</span> (t.right <span style="color:#000;font-weight:bold">==</span> <span style="color:#000;font-weight:bold">nullptr</span>)
+            <span style="color:#000;font-weight:bold">return</span> t.left;
+        <span style="color:#000;font-weight:bold">if</span> (t.left <span style="color:#000;font-weight:bold">==</span> <span style="color:#000;font-weight:bold">nullptr</span>)
+            <span style="color:#000;font-weight:bold">return</span> t.right;
+        Node x <span style="color:#000;font-weight:bold">=</span> min(t.right);
+        x.right <span style="color:#000;font-weight:bold">=</span> deleteMin(t.right);
+        x.left <span style="color:#000;font-weight:bold">=</span> t.left;
+        <span style="color:#000;font-weight:bold">delete</span> t;
+        <span style="color:#000;font-weight:bold">return</span> x;
+    }
+    <span style="color:#998;font-style:italic">// other update
+</span><span style="color:#998;font-style:italic"></span>}
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="其他支持的函数">其他支持的函数</h2>
+<ul>
+<li>
+<p>Select()</p>
+<p>即返回第k小的节点。</p>
+<p>可以通过中序进行遍历，然后每次递归返回的时候，通过引用更新计数，当计数为0的时侯返回该节点即可。</p>
+</li>
+<li>
+<p>Rank()</p>
+<p>即给定一个key，返回该key在树中的位置。</p>
+<p>如果给定 key 小于当前节点，则正确的位置必定在右分支中，则最终的排序就是左分支的节点个数 + 1（当前节点） + 在右子树中的排序，而在右子树中的排序直接递归即可。</p>
+</li>
+<li>
+<p>范围查找</p>
+<p>典型的中序遍历思路，即判断当前节点是否在制定的范围内，如果在范围内，则保存当前节点到一个队列即可。</p>
+</li>
+</ul>
         
             <p>经典自监督模型，包括MoCo / SimCLR / SwAV / BYOL / SimSiam 等。</p>
 <p>主要关注无监督策略的研究，模型结构不是本文重点，所以主要包括 MoCo 系列、SimCLR 系列、SwAV、BYOL 等几篇论文。无监督训练模型的一点在于要避免模型坍塌，通过 Contrastive Loss, Clustering Constraints, Predictor(Stop Gradient), Batch Normalization等。</p>
@@ -381,7 +580,7 @@
         		<footer>
 			
 			<span>
-			&copy; <time datetime="2022-01-24 16:57:46.283787 &#43;0800 CST m=&#43;0.252338634">2022</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
+			&copy; <time datetime="2022-01-26 22:08:03.403438 &#43;0800 CST m=&#43;0.127977874">2022</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
 			</span>
 		</footer>
 
