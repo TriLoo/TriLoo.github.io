@@ -104,7 +104,13 @@
 <li>更新到 github master 分支： <code>cd public &amp;&amp; git add -A . &amp;&amp; git commit -m 'update commit info' &amp;&amp; git push</code></li>
 <li>期间使用 <code>hugo server -D</code>查看正在编写的blog的效果。</li>
 </ul>
-<p>参考这个知乎文章：<a href="https://zhuanlan.zhihu.com/p/422859066">Hugo 搭建个人博客教程</a></p>
+<p>参考这个知乎文章：<a href="https://zhuanlan.zhihu.com/p/422859066">Hugo 搭建个人博客教程</a> 以及 这一篇：<a href="https://www.zhihu.com/question/60496353/answer/2267926207">如何使用Hugo+Github搭建个人博客</a></p>
+<p>在新电脑上，在 deploy 到线上的时候可能会有点问题，可以参考下面的步骤：</p>
+<ol>
+<li><code>cd public &amp;&amp; git rm --cached . -rf</code></li>
+<li><code>git init . &amp;&amp; git remote add origin ... &amp;&amp; git branch -set-upsteam-to=origin/master master &amp;&amp; git pull --allow-unrelated-histories &amp;&amp; git pull</code></li>
+<li><code>git add -A . &amp;&amp; git commit -m 'some infos ...' &amp;&amp; git push</code></li>
+</ol>
 </li>
 </ul>
 </li>
@@ -175,7 +181,7 @@
         		<footer>
 			
 			<span>
-			&copy; <time datetime="2022-07-25 13:11:53.211020976 &#43;0800 CST m=&#43;0.090112933">2022</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
+			&copy; <time datetime="2022-07-25 13:53:49.339594688 &#43;0800 CST m=&#43;0.106011784">2022</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
 			</span>
 		</footer>
 
