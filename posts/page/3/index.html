@@ -11,21 +11,35 @@
 		
 		<link rel="stylesheet" href="/css/style.css">
 		<link rel="stylesheet" href="/css/fonts.css">
+<<<<<<< HEAD
 		<link rel="stylesheet" href="/css/custom.css">
 		
 		<link rel="icon" href="/favicon.ico"/>
+=======
+        <link rel="stylesheet" href="/css/custom.css">
+		
+		<link rel="icon" href="favicon.ico" />
+>>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 		<link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
 		<link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
 		<link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
 
 		
 		<link href="/posts/index.xml" rel="alternate" type="application/rss+xml" title="Triloon" />
+<<<<<<< HEAD
 
 		<script src="/js/darkmode.js"></script>
 	</head>
 
     <body>
         		<nav class="nav">
+=======
+	</head>
+
+    <body>
+        
+		<nav class="nav">
+>>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 			<div class="nav-container">
 				<a href="/">
 					
@@ -55,9 +69,16 @@
 			</div>
 		</nav>
 
+<<<<<<< HEAD
         <div id="darkModeToggle" onclick="toggleDarkMode()">
   &#9680; 
 </div>
+=======
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+        <link rel="manifest" href="/site.webmanifest">
+>>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 
         
 
@@ -136,6 +157,444 @@
 			<a href="/posts/page/2/" class="left arrow">&#8592;</a>
 		
 		
+<<<<<<< HEAD
+=======
+        
+            <p>二叉搜索树相关笔记</p>
+<h2 id="定义">定义</h2>
+<p>每个节点有两个子节点：左节点、右节点，即是一个二叉树；同时有顺序关系：左子树小于父节点，右子树大于父节点。</p>
+<p><figure>
+    <center>
+    <img src="/imgs/binary-search-tree/BSTSearch01.png" alt="binary-search-image structure example">
+    <figcaption>binary-search-image structure example</figcaption>
+    </center>
+</figure></p>
+<p>查找复杂度：$\sim 2\ln(N)$，其中 N 是节点个数。查找未命中也是这个复杂度。</p>
+<p>作为一种数据结构，主要功能就是：增删查改。floor() 也可以认为是一种“查”操作。</p>
+<p>目前来看，相关应用可以分为两大类：遍历，排序。遍历就是包括前序、中序、后序进行遍历然后处理；排序一般就是按照中序进行处理。</p>
+<h2 id="floor-函数">floor() 函数</h2>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 0
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">23
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">24
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">Key <span style="color:#900;font-weight:bold">floor</span>(Key key)
+{
+    Node x <span style="color:#000;font-weight:bold">=</span> floor(root, key);
+    <span style="color:#000;font-weight:bold">if</span> (x <span style="color:#000;font-weight:bold">==</span> <span style="color:#000;font-weight:bold">nullptr</span>)
+        <span style="color:#000;font-weight:bold">return</span> <span style="color:#000;font-weight:bold">nullptr</span>;
+    <span style="color:#000;font-weight:bold">else</span>
+        <span style="color:#000;font-weight:bold">return</span> x;
+}
+
+Node <span style="color:#900;font-weight:bold">floor</span>(Node root, Key key)
+{
+    <span style="color:#000;font-weight:bold">if</span> (root <span style="color:#000;font-weight:bold">==</span> <span style="color:#000;font-weight:bold">nullptr</span>)
+        <span style="color:#000;font-weight:bold">return</span> <span style="color:#000;font-weight:bold">nullptr</span>;
+    
+    <span style="color:#000;font-weight:bold">if</span> (root<span style="color:#000;font-weight:bold">-&gt;</span>key <span style="color:#000;font-weight:bold">==</span> key)
+        <span style="color:#000;font-weight:bold">return</span> root;
+    <span style="color:#000;font-weight:bold">if</span> (root<span style="color:#000;font-weight:bold">-&gt;</span>key <span style="color:#000;font-weight:bold">&gt;</span> key)    <span style="color:#998;font-style:italic">// left branch
+</span><span style="color:#998;font-style:italic"></span>        <span style="color:#000;font-weight:bold">return</span> floor(root<span style="color:#000;font-weight:bold">-&gt;</span>left, key);
+    <span style="color:#998;font-style:italic">// right branch: key &gt; root-&gt;key
+</span><span style="color:#998;font-style:italic"></span>    Node t <span style="color:#000;font-weight:bold">=</span> floor(root<span style="color:#000;font-weight:bold">-&gt;</span>right, key);
+    <span style="color:#000;font-weight:bold">if</span> (t <span style="color:#000;font-weight:bold">==</span> <span style="color:#000;font-weight:bold">nullptr</span>)
+        <span style="color:#000;font-weight:bold">return</span> root;
+    <span style="color:#000;font-weight:bold">else</span>
+        <span style="color:#000;font-weight:bold">return</span> t;
+}
+</code></pre></td></tr></table>
+</div>
+</div><p>为什么这里相当于是一个前序排序，其实本质上需要的是 <code>root-&gt;left</code> 分支的递归要在 <code>root-&gt;right</code> 的前面，这样才能保证走右子树的时候，可以最先判断这个子树上最小的数值。</p>
+<p>这个函数关键是分清楚什么时候向左走，什么时候向右走，然后才能明白应该返回什么数值。向左走的时候，说明当前的 <code>root-&gt;key</code> 大于目标值，向右走的时候，说明当前的 <code>root-&gt;key</code> 小于目标值，而小于目标值则说明结果必定存在，因为大不了返回当前的 root 即可。因此，在递归过程向上走的时候，如果当前属于右子路的下一层(代码第19行)并且返回的是 nullptr，那么就返回当前的节点就行了(第20行)，否则返回递归返回的结果即可。总而言之，如果走上右分支，就必定有解；走上左分支，则原样返回即可。</p>
+<p><strong>递归过程可以看成两个步骤：首先是沿着左子树或者右子树向下走，然后就是沿着树向上爬。</strong> 向上爬的时候，需要注意返回结果，对树的状态进行更新，比如链接、具体成员变量等。另一方面，递归过程其实就是一个先进后出的过程，所以对应的非递归实现可以借助Stack来实现。向上走的时候基于向下走的时候的判断来保证正确。</p>
+<h2 id="delete函数">Delete()函数</h2>
+<p>首先是删除最小、最大值节点。</p>
+<p>主要在于递归返回结果，<strong>只需要将返回的链接赋给作为参数的链接</strong>。</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">0
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#998;font-style:italic">// ...
+</span><span style="color:#998;font-style:italic"></span>x.left <span style="color:#000;font-weight:bold">=</span> deleteMin(x.left);     <span style="color:#998;font-style:italic">// delete minimum
+</span><span style="color:#998;font-style:italic">// ...
+</span></code></pre></td></tr></table>
+</div>
+</div><p>其次是删除中间某个节点，与删除最小、最大节点的区别在于，这个节点包含两个字节点，而且还需要保持二叉搜索树之间的顺序。这个问题常用的解法是：<code>Hibbard算法</code>。该算法表示在删除节点 x 之后，用它的后继节点填充它的位置，并且这个后继节点就是右子树中的最小节点。</p>
+<p>对应的4个步骤如下：</p>
+<ol>
+<li>找到需要被删除的节点，用 t 表示</li>
+<li>然后找到被删除节点右（左，随机选择）分支的最小（大）值，表示为 x，即 <code>x = min(t.right)</code></li>
+<li>然后更新 x 节点的左右分支，<code>x.right</code> 更新为 <code>deleteMin(t.right)</code>，保证右子树都大于 <code>x</code></li>
+<li><code>x.left</code> 更新为 <code>t.left</code>，最后返回 x 作为原来 t 的父节点的子节点，即代替 t</li>
+</ol>
+<p>实现示例如下：</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 0
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">23
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">24
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">25
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">26
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">27
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">28
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">29
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">30
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">31
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">32
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">Node <span style="color:#900;font-weight:bold">delete</span>(Key key)
+{
+    <span style="color:#000;font-weight:bold">delete</span>(root, key);
+}
+
+Node <span style="color:#900;font-weight:bold">delete</span>(Node t, key key)
+{
+    <span style="color:#000;font-weight:bold">if</span> (t <span style="color:#000;font-weight:bold">==</span> <span style="color:#000;font-weight:bold">nullptr</span>)       <span style="color:#998;font-style:italic">// not exists
+</span><span style="color:#998;font-style:italic"></span>        <span style="color:#000;font-weight:bold">return</span> <span style="color:#000;font-weight:bold">nullptr</span>;
+    <span style="color:#000;font-weight:bold">if</span> (key <span style="color:#000;font-weight:bold">&lt;</span> t<span style="color:#000;font-weight:bold">-&gt;</span>key)       <span style="color:#998;font-style:italic">// go left
+</span><span style="color:#998;font-style:italic"></span>    {
+        t<span style="color:#000;font-weight:bold">-&gt;</span>left <span style="color:#000;font-weight:bold">=</span> <span style="color:#000;font-weight:bold">delete</span>(t<span style="color:#000;font-weight:bold">-&gt;</span>left, key);
+        <span style="color:#000;font-weight:bold">return</span> t;
+    }
+    elif (key <span style="color:#000;font-weight:bold">&gt;</span> t<span style="color:#000;font-weight:bold">-&gt;</span>key)
+    {
+        t<span style="color:#000;font-weight:bold">-&gt;</span>right <span style="color:#000;font-weight:bold">=</span> <span style="color:#000;font-weight:bold">delete</span>(t<span style="color:#000;font-weight:bold">-&gt;</span>right, key);
+        <span style="color:#000;font-weight:bold">return</span> t;
+    }
+    <span style="color:#000;font-weight:bold">else</span>                    <span style="color:#998;font-style:italic">// equal
+</span><span style="color:#998;font-style:italic"></span>    {
+        <span style="color:#000;font-weight:bold">if</span> (t.right <span style="color:#000;font-weight:bold">==</span> <span style="color:#000;font-weight:bold">nullptr</span>)
+            <span style="color:#000;font-weight:bold">return</span> t.left;
+        <span style="color:#000;font-weight:bold">if</span> (t.left <span style="color:#000;font-weight:bold">==</span> <span style="color:#000;font-weight:bold">nullptr</span>)
+            <span style="color:#000;font-weight:bold">return</span> t.right;
+        Node x <span style="color:#000;font-weight:bold">=</span> min(t.right);
+        x.right <span style="color:#000;font-weight:bold">=</span> deleteMin(t.right);
+        x.left <span style="color:#000;font-weight:bold">=</span> t.left;
+        <span style="color:#000;font-weight:bold">delete</span> t;
+        <span style="color:#000;font-weight:bold">return</span> x;
+    }
+    <span style="color:#998;font-style:italic">// other update
+</span><span style="color:#998;font-style:italic"></span>}
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="其他支持的函数">其他支持的函数</h2>
+<ul>
+<li>
+<p>Select()</p>
+<p>即返回第k小的节点。</p>
+<p>可以通过中序进行遍历，然后每次递归返回的时候，通过引用更新计数，当计数为0的时侯返回该节点即可。</p>
+</li>
+<li>
+<p>Rank()</p>
+<p>即给定一个key，返回该key在树中的位置。</p>
+<p>如果给定 key 小于当前节点，则正确的位置必定在右分支中，则最终的排序就是左分支的节点个数 + 1（当前节点） + 在右子树中的排序，而在右子树中的排序直接递归即可。</p>
+</li>
+<li>
+<p>范围查找</p>
+<p>典型的中序遍历思路，即判断当前节点是否在制定的范围内，如果在范围内，则保存当前节点到一个队列即可。</p>
+</li>
+</ul>
+        
+            <p>经典自监督模型，包括MoCo / SimCLR / SwAV / BYOL / SimSiam 等。</p>
+<p>主要关注无监督策略的研究，模型结构不是本文重点，所以主要包括 MoCo 系列、SimCLR 系列、SwAV、BYOL 等几篇论文。无监督训练模型的一点在于要避免模型坍塌，通过 Contrastive Loss, Clustering Constraints, Predictor(Stop Gradient), Batch Normalization等。</p>
+<p>整体来说，图像自监督学习方法按照自监督实现思想可以分为下面几类。</p>
+<ul>
+<li>基于contrastive loss</li>
+<li>基于蒸馏的方式，一般设计 momentum</li>
+<li>基于聚类的方法</li>
+</ul>
+<p>关于预训练任务也存在多种选择。</p>
+<ul>
+<li>预测图像选装方向。图像经过 0/90/180/270 等几个角度的随机旋转，然后训练模型进行4分类</li>
+<li>预测图片不定位置相对关系。图像被分割成 3 * 3 的表格，然后选取中心小图与另外8个子图中的随机一个进行位置分类，分类类别为8（两个子图的输出拼接起来送入分类层），一些技巧是图像分割成子图时可以增加缝隙或者抖动等</li>
+<li>补丁拼图。将图片分割成 3 * 3 的子图，然后随机打乱，将子图的所有输出特征拼接起来送入分类层，正常来说，类别说应该是 9!，但是作者对这些排列类别做了合并，因为很多排列比较相似，合并过程基于汉明距离进行</li>
+<li>图片上色。灰度图片输入 Encoder，然后Decoder输出彩色图片，可以使用 L2 Loss，或者 LAB 颜色空间等</li>
+<li>自编码器系列。</li>
+<li>GAN系列。</li>
+<li>对比学习。需要构造丰富的负样本，比如大的 Batch Size 或者借助 Memory Bank等</li>
+</ul>
+<h2 id="moco-系列">MoCo 系列</h2>
+<h2 id="simclr-系列">SimCLR 系列</h2>
+<h2 id="swav">SwAV</h2>
+<h2 id="byol">BYOL</h2>
+<p>分析了怎么防止模型坍塌（也就是所有的输入的模型输出都是相同的），关键是要让模型的输出部分层学习到新的知识。在这里，一方面是借助 Mean Teacher，一方面是在 Student Network 上面增加了一层 Predictor，这两个因素可以让 Prediction 层不断学习新的知识，从而避免模型坍塌。BYOL包含两个模型，一个称为 Online，一个称为 Target。</p>
+<p>按理来说，没有负样本，那么优化损失函数的梯度$\nabla_{\theta}(\mathcal{L}_{\theta, \epsilon}^{\mathrm{BYOL}})$应该很快导致模型坍塌啊，也就是损失降为0，但实际没有发生，作者认为这是因为这个损失的梯度下降方向与 Target 模型参数的变化方向是不一致的，也就是梯度下降方向 与 Target 模型让 Online 模型参数更新的放向不一样，所以避免了模型坍塌。另一方面，这也就意味着不存在一个Loss可以同时优化 Target / Online 模型的权重，类似于 GAN 模型的G / D的参数无法同时优化一样。作者也用消融实验表明，保持 prediction 足够好貌似是防止坍塌的关键。</p>
+<p>为啥 SimCLR 依赖于 color jitter 这个变换，因为如果去掉这个变换的话，两次 crop 的图像的颜色直方图分布其实是非常接近的，导致模型非常容易学习。</p>
+<p>发现去掉 Weight Decay 后，模型发散，说明 WD 对自监督模型的重要性，但是增加模型初始化时的初始值范围对模型性能影响不大。</p>
+<h2 id="simsiam">SimSiam</h2>
+<p>SimSiam 的 Prediction Head 需要固定 Learning Rate，也就是不随 Scheduler 变化。</p>
+<h2 id="消融实验">消融实验</h2>
+<h2 id="一些-tricks">一些 Tricks</h2>
+<ul>
+<li>
+<p>Rethinking Image Mixture for Unsupervised Visual Representation Learning</p>
+<p>在无监督训练中引入了Image Mixture &amp; Label Smooth。</p>
+</li>
+<li>
+<p>Whitening for Self-Supervised Representation Learning</p>
+</li>
+<li>
+<p>Barlow Twins: Self-Supervised Learning via Redundancy Reduction</p>
+</li>
+<li>
+<p>Contrastive Multiview Coding</p>
+</li>
+</ul>
+        
+            <p>一些以提高 Transformer 计算性能为目的的 Xformer 方案整理。</p>
+<p>主要包含以下几篇论文：</p>
+<ul>
+<li><a href="https://arxiv.org/abs/2009.06732">Efficient Transformers: A Survey</a></li>
+<li><a href="https://arxiv.org/abs/2001.04451">Reformer</a></li>
+<li><a href="https://arxiv.org/abs/2006.04768">Linformer</a></li>
+<li><a href="https://arxiv.org/abs/2009.14794">Performers</a></li>
+<li><a href="https://arxiv.org/abs/2004.05150">Longformer</a></li>
+</ul>
+<h2 id="reformer">Reformer</h2>
+<h2 id="linformer">Linformer</h2>
+<h2 id="performers">Performers</h2>
+<h2 id="longformer">Longformer</h2>
+<h2 id="a-survey">A Survey</h2>
+        
+            <p>怕什么真理无穷，进一寸有一寸的欢喜。</p>
+<p>与开发人员的目标（架构 + 业务）不同，适合我的总目标：<strong>算法 + 业务</strong>，思路就是目标导向。</p>
+<p>算法以计算机视觉算法为主，不断积累；目标主要是系统全面了解算法 + 丰富的使用经验（创新点、效果调优tricks等）。涉及到的算法包括：图片（分类、检测、人脸、分割、GAN等）、文本NLP、图深度学习、传统机器学习。</p>
+<p>当前业务以搜索算法为主，其它比较主流的业务还包括推荐、风控等；此外可以了解一下以纯粹视觉算法为主题的业务，比如AR / VR / GAN / 人脸检测 / 内容理解等相关的业务！</p>
+<p>工程实现方面，可以以DDIA等书籍为基础 + 具体业务代码 + 目标性能优化进行学习。</p>
+<p>学习方式一方面是在对应的业务实践中学习，另一方面是先看书了解，但都需要理论 + 实践学习。</p>
+<div>
+    <h2>Table Of Contents</h2>
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#todo">TODO</a>
+      <ul>
+        <li><a href="#posts">Posts</a></li>
+        <li><a href="#pending">Pending</a></li>
+        <li><a href="#reading">Reading</a></li>
+        <li><a href="#reading-done">Reading Done</a></li>
+        <li><a href="#实践">实践</a></li>
+      </ul>
+    </li>
+    <li><a href="#基础">基础</a>
+      <ul>
+        <li><a href="#数学">数学</a></li>
+        <li><a href="#编程">编程</a></li>
+        <li><a href="#计算机图形学">计算机图形学</a></li>
+      </ul>
+    </li>
+    <li><a href="#算法">算法</a></li>
+    <li><a href="#工程">工程</a></li>
+    <li><a href="#阅读">阅读</a></li>
+  </ul>
+</nav>
+</div>
+<h2 id="todo">TODO</h2>
+<h3 id="posts">Posts</h3>
+<ul>
+<li>CNN + Transformer系列模型</li>
+<li>多模态训练相关论文</li>
+<li>etc.</li>
+</ul>
+<h3 id="pending">Pending</h3>
+<ul>
+<li>LightSeq / DeepSpeed</li>
+</ul>
+<h3 id="reading">Reading</h3>
+<ul>
+<li>图深度学习</li>
+<li>这就是搜索引擎</li>
+<li>Fundamentals of Computer Graphics</li>
+<li>DDIA</li>
+<li>SICP</li>
+<li>算法复习</li>
+<li>Go语言</li>
+</ul>
+<h3 id="reading-done">Reading Done</h3>
+<ul>
+<li>文明、现代化、价值投资与中国</li>
+<li>设计模式</li>
+<li>Labuladong 的算法小抄</li>
+</ul>
+<h3 id="实践">实践</h3>
+<ul>
+<li>Leetcode</li>
+<li>多模态预训练</li>
+<li>无监督图像表征</li>
+</ul>
+<h2 id="基础">基础</h2>
+<h3 id="数学">数学</h3>
+<h3 id="编程">编程</h3>
+<ul>
+<li>C++/C</li>
+<li>CUDA</li>
+<li>TensorRT</li>
+<li>Python</li>
+<li>Golang</li>
+<li>数据结构与算法</li>
+<li>计算机网络</li>
+<li>编译原理</li>
+<li>分布式计算</li>
+</ul>
+<h3 id="计算机图形学">计算机图形学</h3>
+<p>为什么要学习计算机图形学？因为需要增加产出能力，也是工程实现能力。</p>
+<h2 id="算法">算法</h2>
+<ul>
+<li>
+<p>机器学习</p>
+</li>
+<li>
+<p>图深度学习</p>
+</li>
+<li>
+<p>分类</p>
+</li>
+<li>
+<p>识别</p>
+</li>
+<li>
+<p>全景分割</p>
+</li>
+<li>
+<p>人脸</p>
+</li>
+<li>
+<p>GAN</p>
+</li>
+<li>
+<p>视频理解</p>
+</li>
+<li>
+<p>多模态</p>
+</li>
+<li>
+<p>AR / VR</p>
+</li>
+</ul>
+<h2 id="工程">工程</h2>
+<ul>
+<li>MXNet</li>
+<li>Pytorch</li>
+<li>DeepSpeed</li>
+<li>Lightseq</li>
+<li>Onnxruntime</li>
+<li>Tvm</li>
+</ul>
+<h2 id="阅读">阅读</h2>
+<ul>
+<li>博弈论</li>
+<li>经济学与金融</li>
+<li>投资</li>
+<li>理性</li>
+<li>公司治理</li>
+<li>哲学思想</li>
+</ul>
+        
+            <p>一些hugo blog搭建过程中的记录。</p>
+<ul>
+<li>
+<p>添加 table of contents</p>
+<p>参考博客：<a href="https://codingreflections.com/hugo-table-of-contents/">How to Add Table Of Contents to a Hugo Blog</a>。目前用到的是第一种方式。
+包含两个步骤：</p>
+<ul>
+<li>create shortcode</li>
+<li>call the shortcode inside markdown</li>
+</ul>
+</li>
+<li>
+<p>添加代码块并展示行号</p>
+<p>参考博客：<a href="https://gohugo.io/content-management/syntax-highlighting/">Syntax Highlighting</a>，以及官方文档：<a href="https://gohugo.io/getting-started/configuration-markup#highlight">Configure Markup - highlight</a></p>
+<p>文中还给出了不同配置参数的解释、可用的 style 展示等。</p>
+</li>
+<li>
+<p>添加Latex公式支持</p>
+<p>无用的博客，因为已经过时了，hugo不在支持 mmark 这种 content format 了。<a href="https://dawnarc.com/2019/09/hugokatex-intergration/">KaTex Intergration - 玄冬Wong</a>。而且目前 mathjax 比 katex 支持的更全。</p>
+<p>另一篇博客是: <a href="https://rulenuts.netlify.app/post/config-hugo-with-mathjax-or-katex/">Config Hugo with Mathjax or Katex</a></p>
+<p>最终有用的博客是：<a href="https://www.gohugo.org/doc/tutorials/mathjax/">MathJax Support</a> 以及 <a href="http://xuchengpeng.com/hexo-blog/2018/07/10/setting-mathjax-with-hugo/">Setting MathJax with Hugo</a> 以及 <a href="https://note.qidong.name/2018/03/hugo-mathjax/">在Hugo中使用MathJax</a> 以及<a href="https://blog.csdn.net/weixin_42109159/article/details/105099962">hugo使用katex</a></p>
+</li>
+<li>
+<p>插入图片</p>
+<p>两个可行的参考是：<a href="https://discourse.gohugo.io/t/solved-how-to-insert-image-in-my-post/1473">how-to-insert-image-in-my-post</a> 以及 <a href="https://gohugo.io/content-management/shortcodes/#figure">hugo-conent-management shortcodes</a></p>
+<p>具体使用：将下载的图片保存到 static 目录，比如按照 post tilte 命名的目录下面（例如，<code>/User/apple/myblogs/static/imgs/binary-search-tree/img00.png</code>，<code>/User/apple/myblogs</code>为项目根目录，即运行<code>hugo server</code>等命令的目录，<code>/User/apple/myblogs/public</code>为编译后的结果），然后在.md正文里指定图片地址（例如，<code>![image caption](/imgs/binary-search-tree/img00.png)</code>，注意下直接从<code>/imgs</code>开始）。</p>
+<p>第二个博客里给出了另外一种加载图片的方式，即使用shortcodes（Markdown语言的补充，方便建立网页。），而且也给出了其他多媒体信息的加载方式，比如vimeo, youtube, gist, tweet, instagram等信息。</p>
+<p>显示图片 Caption 过程，可以参考<a href="https://sebastiandedeyne.com/captioned-images-with-markdown-render-hooks-in-hugo/">Caption images with markdown render hooks in Hugo</a>，也就是在<code>myblogs/layouts/_default/_makeup</code>目录下面创建一个<code>render-image.html</code>文件，然后填上如下内容：</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">0
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-html" data-lang="html">&lt;<span style="color:#000080">figure</span>&gt;
+  &lt;<span style="color:#000080">center</span>&gt;
+  &lt;<span style="color:#000080">img</span> <span style="color:#008080">src</span><span style="color:#000;font-weight:bold">=</span><span style="color:#d14">&#34;{{ .Destination | safeURL }}&#34;</span> <span style="color:#008080">alt</span><span style="color:#000;font-weight:bold">=</span><span style="color:#d14">&#34;{{ .Text }}&#34;</span>&gt;
+  &lt;<span style="color:#000080">figcaption</span>&gt;{{ .Text }}&lt;/<span style="color:#000080">figcaption</span>&gt;
+  &lt;/<span style="color:#000080">center</span>&gt;
+&lt;/<span style="color:#000080">figure</span>&gt;
+</code></pre></td></tr></table>
+</div>
+</div><p>或者用 <code>.Title</code> 代替代码块第三行的 <code>.Text</code> 来使用 Title 作为 Caption。然后在Markdone里加载图片没有变化，注意 Title 的位置：<code>![alt text](path &quot;title&quot;)</code>，title可以是空。</p>
+</li>
+<li>
+<p>添加网页图标</p>
+<p>一个常见的博客是：<a href="https://www.enthuseandinspire.co.uk/blog/favicon/">Favicon</a>，但是目前来看还没有起作用。但是在 <code>triloon.space</code> 上起作用了，后续需要补充上 windows 的格式。</p>
+</li>
+</ul>
+        
+>>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 	
 		<span>3</span>
 	</div>
@@ -145,7 +604,11 @@
         		<footer>
 			
 			<span>
+<<<<<<< HEAD
 			&copy; <time datetime="2022-07-25 12:50:02.77466421 &#43;0800 CST m=&#43;0.181858273">2022</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
+=======
+			&copy; <time datetime="2022-01-26 22:10:54.771939 &#43;0800 CST m=&#43;0.116762340">2022</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
+>>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 			</span>
 		</footer>
 

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Optimization on Triloon</title>
+    <link>https://triloon.space/tags/optimization/</link>
+    <description>Recent content in Optimization on Triloon</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Tue, 31 Aug 2021 14:09:48 +0800</lastBuildDate><atom:link href="https://triloon.space/tags/optimization/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>大Batchsize训练用到的优化器</title>
+      <link>https://triloon.space/posts/big-batchsize-train/</link>
+      <pubDate>Tue, 31 Aug 2021 14:09:48 +0800</pubDate>
+      
+      <guid>https://triloon.space/posts/big-batchsize-train/</guid>
+      <description>&lt;p&gt;一些为了适应大的Batch Size训练的优化算法。&lt;/p&gt;</description>
+    </item>
+    
+  </channel>
+</rss>

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en-us">
+    <head>
+		
+		
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+		<title>Efficient Transformer 系列之 Reformer &middot; Triloon</title>
+
+		
+		<link rel="stylesheet" href="/css/style.css">
+		<link rel="stylesheet" href="/css/fonts.css">
+		
+		<link rel="icon" href="favicon.ico" />
+		<link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+		<link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+		<link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+
+		
+		<link href="" rel="alternate" type="application/rss+xml" title="Triloon" />
+	</head>
+
+    <body>
+        <script type="text/javascript" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@2.7.4/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {
+    inlineMath: [['$','$'], ['\\(','\\)']],
+    displayMath: [['$$','$$'], ['\[','\]']],
+    processEscapes: true,
+    processEnvironments: true,
+    skipTags: ['script', 'noscript', 'style', 'textarea', 'pre','code'],
+    TeX: { equationNumbers: { autoNumber: "AMS" },
+         extensions: ["AMSmath.js", "AMSsymbols.js"] }
+  }
+});
+</script>
+
+<style>
+    code.has-jax {
+        font: inherit;
+        font-size: 100%;
+        background: inherit;
+        border: inherit;
+        color: #515151;
+    }
+</style>
+		<nav class="nav">
+			<div class="nav-container">
+				<a href="/">
+					
+						<h2 class="nav-title">Triloon</h2>
+					
+				</a>
+				<ul>
+    
+    
+        <li>
+            <a href="/about/about">
+                
+                <span>About</span>
+                
+            </a>
+        </li>
+    
+        <li>
+            <a href="/posts/">
+                
+                <span>Posts</span>
+                
+            </a>
+        </li>
+    
+</ul>
+			</div>
+		</nav>
+
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+        <link rel="manifest" href="/site.webmanifest">
+
+        
+
+<main>
+	<div class="post">
+		<div class="post-info">
+    <span>Written by</span>
+        triloon
+        <br>
+        <span>on&nbsp;</span><time datetime="2021-09-06 10:50:19 &#43;0800 CST">September 6, 2021</time>
+</div>
+
+		<h1 class="post-title">Efficient Transformer 系列之 Reformer</h1>
+<div class="post-line"></div>
+
+		
+
+		<p>Reformer论文。</p>
+<h2 id="概览">概览</h2>
+<p>Reformer论文的信息量还是有点大，主要创新点在于下面几个：</p>
+<ul>
+<li>引入了新的 LSH Attention</li>
+</ul>
+<h2 id="ann">ANN</h2>
+<p>ANN (Aproximate Nearest Neighbor, 近似最近邻搜索)。常见的ANN算法可以分为三类：</p>
+<ul>
+<li>LSH(Locality Sensitive Hashing)</li>
+<li>树方法（如HNSW）</li>
+<li>Product Quantization</li>
+</ul>
+<h2 id="lsh-attention">LSH Attention</h2>
+<p>对比普通的 Self-Attention (如下式)，新的LSH Attention改动如下。</p>
+<p>$$Attention(Q, K, V) = Softmax(\frac{QK^T}{\sqrt{d_k}}) \times V$$</p>
+
+		
+	</div>
+
+	<div class="pagination">
+		<a href="/posts/adam-adamw/" class="left arrow">&#8592;</a>
+		<a href="/posts/cnn-transformer-volo/" class="right arrow">&#8594;</a>
+
+		<a href="#" class="top">Top</a>
+	</div>
+</main>
+
+
+        		<footer>
+			
+			<span>
+			&copy; <time datetime="2021-11-23 15:08:49.94632 &#43;0800 CST m=&#43;0.069299085">2021</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
+			</span>
+		</footer>
+
+    </body>
+</html>

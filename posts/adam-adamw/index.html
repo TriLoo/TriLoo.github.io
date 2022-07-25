@@ -11,21 +11,60 @@
 		
 		<link rel="stylesheet" href="/css/style.css">
 		<link rel="stylesheet" href="/css/fonts.css">
+<<<<<<< HEAD
 		<link rel="stylesheet" href="/css/custom.css">
 		
 		<link rel="icon" href="/favicon.ico"/>
+=======
+        <link rel="stylesheet" href="/css/custom.css">
+		
+		<link rel="icon" href="favicon.ico" />
+>>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 		<link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
 		<link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
 		<link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
 
 		
 		<link href="" rel="alternate" type="application/rss+xml" title="Triloon" />
+<<<<<<< HEAD
 
 		<script src="/js/darkmode.js"></script>
 	</head>
 
     <body>
         		<nav class="nav">
+=======
+	</head>
+
+    <body>
+        <script type="text/javascript" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@2.7.4/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {
+    inlineMath: [['$','$'], ['\\(','\\)']],
+    displayMath: [['$$','$$'], ['\[','\]']],
+    processEscapes: true,
+    processEnvironments: true,
+    skipTags: ['script', 'noscript', 'style', 'textarea', 'pre','code'],
+    TeX: { equationNumbers: { autoNumber: "AMS" },
+         extensions: ["AMSmath.js", "AMSsymbols.js"] }
+  }
+});
+</script>
+
+<style>
+    code.has-jax {
+        font: inherit;
+        font-size: 100%;
+        background: inherit;
+        border: inherit;
+        color: #515151;
+    }
+</style>
+		<nav class="nav">
+>>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 			<div class="nav-container">
 				<a href="/">
 					
@@ -55,17 +94,28 @@
 			</div>
 		</nav>
 
+<<<<<<< HEAD
         <div id="darkModeToggle" onclick="toggleDarkMode()">
   &#9680; 
 </div>
+=======
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+        <link rel="manifest" href="/site.webmanifest">
+>>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 
         
 
 <main>
+<<<<<<< HEAD
 	
 
 
         <div class="post">
+=======
+	<div class="post">
+>>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 		<div class="post-info">
     <span>Written by</span>
         triloon
@@ -97,8 +147,13 @@ $$\theta_t \leftarrow \theta_{t-1} - \frac{\alpha_t \cdot m_t}{\sqrt{v_t} + \hat
 <p>$$m_t = (1 - \beta_t) \sum_{i}^{t}\beta_1^{t-i}g_i$$</p>
 <p>我们的目标就是矫正$\mathbb{E}[m_t]$与$\mathbb{E}[g_t]$之间的差距。</p>
 <p>$$\begin{aligned}
+<<<<<<< HEAD
 \mathbb{E}[m_t] = (1 - \beta_1) \mathbb{E}\left[ \sum_i^t \beta_1^{t-i} \cdot g_i \right] \
 = &amp; \mathbb{E}[g_t] \cdot (1 - \beta_1) \sum_{i}^t\beta_1^{t-i} + \zeta \
+=======
+\mathbb{E}[m_t] = (1 - \beta_1) \mathbb{E}\left[ \sum_i^t \beta_1^{t-i} \cdot g_i \right] \<br>
+= &amp; \mathbb{E}[g_t] \cdot (1 - \beta_1) \sum_{i}^t\beta_1^{t-i} + \zeta \<br>
+>>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 = &amp; \mathbb{E}[g_t]\cdot (1 - \beta_1) + \zeta
 \end{aligned}$$</p>
 <p>其中，等比数列求和公式为：$\sum_i^t \beta_1^{t-i} = \frac{1 \cdot (1 - \beta_1^t)}{1 - \beta_1}$；另外一个地方是第一个等式，即$\mathbb{E}[g_i] = \mathbb{E}[g_t] + \zeta_i$，这里主要考虑使用等式右边近似表示等式左边的数值然后加上一个误差项，如果$g_i, g_t$属于独立同分布则这个误差项接近于0；论文里有提到，如果$\mathbb{E}[g_i]$比较稳定的时候，这里的误差项接近于0，或者当$\beta_1$比较小的时候，那么对于很久以前的梯度$g_i$赋予很小的权重。</p>
@@ -128,9 +183,15 @@ $$\theta_t \leftarrow \theta_{t-1} - \frac{\alpha_t \cdot m_t}{\sqrt{v_t} + \hat
     </center>
 </figure></p>
 <p>但是对于Adam的实现来说，带有weight decay的实现与 L2 Loss 计算梯度无法等价，这一点可以通过对 L2 loss 求导替换$\nabla f_t(\theta)$看出来，若需要两者等价，则L2的系数需要满足:</p>
+<<<<<<< HEAD
 <p>$$\lambda&rsquo; = \frac{\lambda}{\alpha \mathbf{M}_t}$$</p>
 <p>才行。在 SGD 中，L2 与 Weight Decay 的作用都是让权重接近于0，但是在 Adaptive gradient algorithms中，L2 却不会这样，下个式子给出了带有 L2 正则项的Loss函数求导然后更新权重的过程。</p>
 <p>$$\theta_{t+1} \leftarrow \theta_t - \alpha \mathbf{M}_t \nabla f_t(\theta_t) - \alpha \mathbf{M}_t\lambda&rsquo; \theta_t$$</p>
+=======
+<p>$$\lambda' = \frac{\lambda}{\alpha \mathbf{M}_t}$$</p>
+<p>才行。在 SGD 中，L2 与 Weight Decay 的作用都是让权重接近于0，但是在 Adaptive gradient algorithms中，L2 却不会这样，下个式子给出了带有 L2 正则项的Loss函数求导然后更新权重的过程。</p>
+<p>$$\theta_{t+1} \leftarrow \theta_t - \alpha \mathbf{M}_t \nabla f_t(\theta_t) - \alpha \mathbf{M}_t\lambda' \theta_t$$</p>
+>>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 <p>也就是说，L2 惩罚项也会被用于计算梯度，然后这个计算的梯度被用于 Adam 更新算法中，惩罚项并不会直接作用于权重上，而是参与到自适应一阶、二阶矩$\mathbf{M}_t$的调整中。而在 weight decay 的实现中，没有这个问题，因为$\mathbf{M}_t$只依赖于梯度，而weight decay起作用的方式在于$(1 - \lambda)g_t$，具体公式见论文的Proposition2部分以及对应的附录部分。</p>
 <p>为什么 L2 惩罚项这种使用方式不明显呢？首先明确一点是，weight decay / L2 都是为了获得更小的权重值，这样模型泛化会更好一些，为了实现这一点，就需要让权重较大的元素下降的更快一些，权重已经比较小的元素更新小一些。来看 L2 在 Adam 中的具体作用。</p>
 <p><a href="https://towardsdatascience.com/why-adamw-matters-736223f31b5d">Why AdamW matters</a> 博客里最后一个公式，相当于对权重的exponential moving更新过程是：</p>
@@ -171,12 +232,21 @@ $$\theta_t \leftarrow \theta_{t-1} - \frac{\alpha_t \cdot m_t}{\sqrt{v_t} + \hat
 <p>注意，L2 正则化项与 Weight Decay 在 SGD 中的使用是两个不同的公式，虽然两者之间存在一个基于学习率的系数差别。结论就是，在 Adaptive Gradient methods 中 L2 的正则化能力弱于weight decay。</p>
 <p>关于 weight decay，一般来说 CNN 模型会选取一个比较小的数值，如 10-4 / 10-5 这种量级，但是对于 transformer 模型来说，这个数值一般都会在10-2量级，直观的反映了模型容量对正则化强度的需求变化。</p>
 <p>下面来看具体的区别。首先是定义，L2正则化项的定义是修改 Loss 函数，即：</p>
+<<<<<<< HEAD
 <p>$$f_t^{reg}(\mathbf{\theta}) = f_t(\theta) + \frac{\lambda&rsquo;}{2}\parallel \theta \parallel^2$$</p>
 <p>其中$f_t(\theta)$为 Loss 函数，$\theta$为模型的权重。而SGD中 weight decay 对应的实现是在参数更新的时候起作用，即：</p>
 <p>$$\theta_{t+1} = (1 - \lambda) \theta_t + \alpha \nabla f_t(\theta_t) $$</p>
 <p>可以看出来是在原来的权重基础上做了一个 expontional decay 的类似计算，$\alpha$为学习率。对 L2 正则项的Loss函数求导并更新权重的公式如下：</p>
 <p>$$\theta_{t+1} = \theta - \alpha \nabla f_t(\theta_t) - \alpha \lambda&rsquo; \theta$$</p>
 <p>结合上面两个参数更新过程的式子，可以得出，当L2正则项的参数满足$\lambda&rsquo; = \frac{\lambda}{\alpha}$条件时，这两个正则方式是等价的。另一方面，在 SGD 中，L2 与 weight decay 的参数（$\lambda&rsquo;$与$\lambda$）是紧密关联的，前者是后者除以学习率得到。</p>
+=======
+<p>$$f_t^{reg}(\mathbf{\theta}) = f_t(\theta) + \frac{\lambda'}{2}\parallel \theta \parallel^2$$</p>
+<p>其中$f_t(\theta)$为 Loss 函数，$\theta$为模型的权重。而SGD中 weight decay 对应的实现是在参数更新的时候起作用，即：</p>
+<p>$$\theta_{t+1} = (1 - \lambda) \theta_t + \alpha \nabla f_t(\theta_t) $$</p>
+<p>可以看出来是在原来的权重基础上做了一个 expontional decay 的类似计算，$\alpha$为学习率。对 L2 正则项的Loss函数求导并更新权重的公式如下：</p>
+<p>$$\theta_{t+1} = \theta - \alpha \nabla f_t(\theta_t) - \alpha \lambda' \theta$$</p>
+<p>结合上面两个参数更新过程的式子，可以得出，当L2正则项的参数满足$\lambda' = \frac{\lambda}{\alpha}$条件时，这两个正则方式是等价的。另一方面，在 SGD 中，L2 与 weight decay 的参数（$\lambda'$与$\lambda$）是紧密关联的，前者是后者除以学习率得到。</p>
+>>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 <h2 id="其它">其它</h2>
 <ol>
 <li>
@@ -207,7 +277,11 @@ $$\theta_t \leftarrow \theta_{t-1} - \frac{\alpha_t \cdot m_t}{\sqrt{v_t} + \hat
         		<footer>
 			
 			<span>
+<<<<<<< HEAD
 			&copy; <time datetime="2022-07-25 12:50:02.675863384 &#43;0800 CST m=&#43;0.083057448">2022</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
+=======
+			&copy; <time datetime="2022-01-26 22:10:54.707752 &#43;0800 CST m=&#43;0.052576936">2022</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
+>>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 			</span>
 		</footer>
 
