@@ -206,3 +206,24 @@ linear = LinearFunction.apply
 此外，defaults 字典里面的信息在`add_param_group()`函数里面被放入`self.param_groups`里面了，如lr, eps, betas等；特定Optimizer的相关数据放在`self.states`里面了，如Adam里面的 m / v 等。
 
 具体例子可以参考 TIMM 库里的AdamW算法实现。
+
+## PyTorch 部署全流程
+
+一般来说，咱们使用 PyTorch Code (python) 完成模型的开发与训练，然后转换成 TorchScript IR 表示并序列化保存到文件中，接下来可以在不依赖 Python 的情况下进行部署与推理；另一方面，为了优化模型的计算效率，TorchScript IR 会进一步被转换成 ONNX IR 表示，再之后，可以选择直接利用 ONNX Runtime 进行优化部署推理，也可以进一步将 ONNX IR 转换成 TVM / TensorRT 等工具进行优化部署。
+
+实际使用中发现，针对 CPU 这一部署环境以及 Transformer 相关的模型而言，ONNX Runtime 的优化效果出人意料的好，实际耗时出人意料的低。所以这里就列一下整个部署过程中涉及到的步骤以及如果需要深入理解、开发所需要看的内容。
+
+* TorchScript 
+
+  首先是将 PyTorch Code 转换成 TorchScript Code，这是因为TorchScript Language 支持的语法以及操作，只对应 PyTorch Code中的一个子集，所以需要修改原始的代码以可以通过 TorchScript 的编译。获取TorchScript的两种方式：
+  * Tracing: 主要缺点是不支持动态 shape 的输入，而且也没法处理 if-else 等逻辑；只会记录当前输入所走过的计算路径
+  * Scripting (Annotation): 这种方法会分析PyTorch Code的构成，类似于一个编译过程，所以记录的是实现逻辑。缺点是，既然属于编译过程，那么就很容易出现一些语法错误，需要修改
+
+  其次就是 TorchScript 涉及到的具体实现原理了。这个以后单独在 blog 里贴出来。
+
+* ONNX 
+
+  属于 Protobuf 文件定义的一套 IR 规范，了解  Protobuf  的基本使用后在看源码会更舒服。
+
+* ONNX Runtime
+

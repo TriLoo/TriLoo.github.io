@@ -9,6 +9,22 @@ excerpt_separator: <!--more-->
 
 一些hugo blog搭建过程中的记录。<!--more-->
 
+* 基础命令
+
+  * Ubuntu 安装高版本的 hugo：[hugo release](https://github.com/gohugoio/hugo/releases)这里下载高版本的hugo deb 文件；ubuntu 默认安装的还是0.63版本，编译的时候会报错：goldmark parser error.
+  * 从 github 下载此仓库，然后切换到 src 分支上
+  * 使用命令下载 theme（在此之前可能需要删除已有的目录）: 
+
+    ```shell {linenos=table}
+    git clone https://github.com/EmielH/tale-hugo.git themes/tale
+    ```
+
+    * 使用 `hugo` 进行编译
+    * 更新到 github master 分支： `cd public && git add -A . && git commit -m 'update commit info' && git push`
+    * 期间使用 `hugo server -D`查看正在编写的blog的效果。
+
+    参考这个知乎文章：[Hugo 搭建个人博客教程](https://zhuanlan.zhihu.com/p/422859066)
+
 * 添加 table of contents
 
   参考博客：[How to Add Table Of Contents to a Hugo Blog](https://codingreflections.com/hugo-table-of-contents/)。目前用到的是第一种方式。
