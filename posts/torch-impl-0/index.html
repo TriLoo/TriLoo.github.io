@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en-us">
+    <head>
+		
+		
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+		<title>Torch实现原理分析积累 &middot; Triloon</title>
+
+		
+		<link rel="stylesheet" href="/css/style.css">
+		<link rel="stylesheet" href="/css/fonts.css">
+		<link rel="stylesheet" href="/css/custom.css">
+		
+		<link rel="icon" href="/favicon.ico"/>
+		<link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+		<link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+		<link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+
+		
+		<link href="" rel="alternate" type="application/rss+xml" title="Triloon" />
+
+		<script src="/js/darkmode.js"></script>
+	</head>
+
+    <body>
+        		<nav class="nav">
+			<div class="nav-container">
+				<a href="/">
+					
+						<h2 class="nav-title">Triloon</h2>
+					
+				</a>
+				<ul>
+    
+    
+        <li>
+            <a href="/about/about">
+                
+                <span>About</span>
+                
+            </a>
+        </li>
+    
+        <li>
+            <a href="/posts/">
+                
+                <span>Posts</span>
+                
+            </a>
+        </li>
+    
+</ul>
+			</div>
+		</nav>
+
+        <div id="darkModeToggle" onclick="toggleDarkMode()">
+  &#9680; 
+</div>
+
+        
+
+<main>
+	
+
+
+        <div class="post">
+		<div class="post-info">
+    <span>Written by</span>
+        triloon
+        <br>
+        <span>on&nbsp;</span><time datetime="2021-09-18 11:08:11 &#43;0800 CST">September 18, 2021</time>
+</div>
+
+		<h1 class="post-title">Torch实现原理分析积累</h1>
+<div class="post-line"></div>
+
+		
+
+		<p>Pytorch 实现学习积累。</p>
+<h2 id="基础">基础</h2>
+<ul>
+<li>All objects in pytorch are passed by reference in python. But doing <code>a=</code> does not try to change <code>a</code> in-place, it only give the name <code>a</code> to the object returned by the right hand side.</li>
+<li>矩阵乘：@， Matmul，mm（后两者的区别在于 mm 仅适用于二维Tensor，matmul适合高维Tensor）；*，mul 实现的是element-wise乘</li>
+<li><code>_</code> suffix ops 是in-place操作</li>
+<li>Tensor 与 Numpy 之间可以共享底层存储空间，所以修改一个也会导致另一个变量发生变化。如<code>.numpy()</code>操作，<code>from_numpy()</code>等</li>
+<li>自定义Dataset，需要自己实现<code>__init__</code>、<code>__len__</code>、<code>__getitem__</code>等函数；<code>ToTensor</code>会将PIL Image、NumPy ndarry转换成<code>FloatTensor</code>，并且将像素上的数值范围缩放到(0.0, 1.0)之间。</li>
+<li>继承<code>nn.Module</code>创建模型的时候，会自动收集定义在models内的fields，并且让所有的 parameters 都可以被<code>parameters()</code>以及<code>named_parameters()</code>等方法获取到</li>
+</ul>
+<h2 id="module">Module</h2>
+<p>Module 在调用的时候实际会调用<code>Module._call_impl()</code>函数，这个函数里调用顺序如下。</p>
+<ol>
+<li>调用<code>_global_forward_pre_hooks</code>或者<code>self._forward_pre_hooks</code>里面所有的hook，对当前的Module以及输入数据进行处理，hook 函数的格式是：<code>hook(module, input) -&gt; None or modified input</code>，如果 hook 函数会返回数据，那么这个返回的数据才是真正的输入 forward() 函数进行计算的数据</li>
+<li>调用<code>forward_call()</code>函数完成前向计算</li>
+<li>调用<code>_global_forward_hooks</code>或者<code>self._forward_hooks</code>里面的所有hook，hook函数签名是<code>hook(module, input, output) -&gt; None or modified output</code>，函数的输出是最终的输出</li>
+<li><code>full_backward_hooks</code>里的 hooks</li>
+</ol>
+<h2 id="autograd">Autograd</h2>
+<p>通过设置Tensor的<code>requires_grad</code>来决定是否需要计算 Loss 对该 Tensor 的梯度。</p>
+<ul>
+<li>
+<p>torch.autograd.Function</p>
+<p>记录对Tensor的操作，是一个类，包含<code>forward()</code>、<code>backward()</code>两个静态成员函数。每个Function完成对 Tensor 的一个操作，并记录发生的事情。所有的 Function 被组织成有向无环图（DAG），边表示数据依赖(input &lt;&ndash; output)。当反向传播时，按照拓扑顺序依次调用Function的<code>backward()</code>函数。</p>
+<p>实际使用的时候就是继承Function类并实现这两个静态成员函数。一个具体例子如下，所以都是静态成员函数进行操作，无需创建具体实例。</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 0
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">Exp</span>(Function):
+</span></span><span style="display:flex;"><span>    <span style="color:#3c5d5d;font-weight:bold">@staticmethod</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">forward</span>(ctx, i):
+</span></span><span style="display:flex;"><span>        result <span style="color:#000;font-weight:bold">=</span> i<span style="color:#000;font-weight:bold">.</span>exp()
+</span></span><span style="display:flex;"><span>        ctx<span style="color:#000;font-weight:bold">.</span>save_for_backward(result)
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">return</span> result
+</span></span><span style="display:flex;"><span>    <span style="color:#3c5d5d;font-weight:bold">@staticmethod</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">backward</span>(ctx, grad_output):
+</span></span><span style="display:flex;"><span>        result, <span style="color:#000;font-weight:bold">=</span> ctx<span style="color:#000;font-weight:bold">.</span>saved_tensors
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">return</span> grad_output <span style="color:#000;font-weight:bold">*</span> result
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  output <span style="color:#000;font-weight:bold">=</span> Exp<span style="color:#000;font-weight:bold">.</span>apply(<span style="color:#0086b3">input</span>)
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>注意，Function知道Tensor的前向计算，也支持后向传播，后向传播函数保存在<code>tensor.grad_fn</code>属性中。也就是说Function 是计算图中的节点，边才是 Tensor。</p>
+</li>
+<li>
+<p>is_leaf</p>
+<p>这个函数用来判断Tensor是否保存了grad。</p>
+<ul>
+<li>如果Tensor的<code>requires_grad=False</code>，则通常是 Leaf</li>
+<li>如果 Tensor 是用户创建的，那么即使<code>requires_grad=True</code>也是Leaf，意味着这些Tensor不是一个Op的结果，并且<code>grad_fn=None</code></li>
+<li>只有Leaf Tensor 才会在<code>backward()</code>过程中保存梯度结果；如果需要获取那些non-leaf节点的grad，可以使用<code>Tensor.retain_grad()</code>来修改</li>
+<li>第三条与第一条貌似冲突，其实不冲突，因为 <code>requires_grad=False</code>的含义是指这个 Tensor 的梯度不需要向后传播了，而不是不会计算该 Tensor 的梯度，也就是实际是指<code>grad_fn=None</code>。</li>
+<li>从CPU拷贝到 GPU 上也算是一个 Op 操作，具体例子可以查看：<a href="https://pytorch.org/docs/stable/generated/torch.Tensor.is_leaf.html?highlight=is_leaf#torch.Tensor.is_leaf">torch.tensor.is_leaf</a></li>
+</ul>
+</li>
+<li>
+<p>Disabling Gradient Tracking</p>
+<p>有时候需要停止一些 Tensor 的梯度后向传播，那些<code>requires_grad=True</code>的 Tensor 都会跟踪该Tensor 的计算历史，并支持梯度计算。所以要想阻止后向传播，有两种方式：</p>
+<ul>
+<li>使用 <code>torch.no_grad()</code> block 进行封装</li>
+<li>使用 <code>detach()</code>，相当于新建了一个Tensor返回的，所以计算梯度更新这个新的 Tensor，之前旧的 Tensor 数值也会保持不变。</li>
+</ul>
+<p>下面的方式适合单个 Parameter 的梯度更新。</p>
+<ul>
+<li>设置<code>parameter.requires_grad=False</code></li>
+<li>设置<code>parameter.grad=None</code>，优化器在根据梯度更新这个参数时，如果发现 <code>grad=None</code>，则略过当前参数，从而实现防止梯度反向传播的目的</li>
+</ul>
+<p>经过上述两种方式处理后的 Tensor 直接影响是，不会向后传播 Gradient，也不会发生数值变化。</p>
+</li>
+<li>
+<p>Tensor Gradients and Jacobian Products</p>
+<p>大部分情况下，Loss函数计算得到的是一个Scalar数值，计算梯度容易理解。但是当 Loss 是一个多维的Tensor时，反向传播计算的就是<code>Jacobian product</code>，而不是真正的梯度了。</p>
+<p>一般来说，输入、输出都是 Tensor 时，反向传播得到的是一个<code>Jacobian matrix</code>，但是 pytorch 支持<code>Jacobian product</code>的计算，此时需要一个与输出Loss同等尺寸的Tensor作为<code>backward()</code>函数的输入。</p>
+<p>下式中，<code>x, y</code>为输入输出，计算<code>y</code>对<code>x</code>的梯度时，引入的 <code>v</code> 就是上面提到的需要跟 <code>y</code> 尺寸相同的新引入的 Tensor，具体例子可参考<a href="https://pytorch.org/tutorials/beginner/basics/autogradqs_tutorial.html">Automatic Diff</a>下方。</p>
+<p>$$y=f(x), J = \frac{\partial y}{\partial x}, v^T \cdot J$$</p>
+</li>
+<li>
+<p>optimize steps</p>
+<ol>
+<li>call <code>optimizer.zero_grad()</code></li>
+<li>call <code>loss.backward()</code></li>
+<li>call <code>optimizer.step()</code></li>
+</ol>
+</li>
+<li>
+<p>其它</p>
+<ul>
+<li>每次<code>backward()</code>之后，创建的计算图都会被重置，从而支持每次 iter 之间修改数据的尺寸、条件判断修改计算图等，也就是对动态计算图的支持；如果想保留当前的计算图，可以在 <code>backward()</code>函数中设置<code>retain_graph=True</code></li>
+<li>但是连续两次<code>backward()</code>时，同一个 Tensor 的梯度会被累加。</li>
+</ul>
+</li>
+</ul>
+<h2 id="extending-pytorch">Extending Pytorch</h2>
+<p>主要参考：<a href="https://pytorch.org/docs/stable/notes/extending.html#extending-torch-autograd">Extending Pytorch</a></p>
+<h3 id="extending-autograd">Extending Autograd</h3>
+<p>这里是新增一个支持前向、后向计算的方法，也就是说，当前 Torch 内所有支持训练的计算（支持后向传播梯度）本质上都是来自<code>torch.autograd</code>命名空间下的<code>Function</code>。所以新增一个计算方法，需要作为派生自<code>torch.autograd.Function</code>类的子类来完成。</p>
+<p>存在这种extending方法的主要原因是，希望新增一个自定义操作，可以用在模型训练中，而这个新增的操作要么不可求导、要么是一个非Torch的变量（比如Numpy Array），但是还是希望模型中新增了这个计算之后，梯度仍然可以沿着模型传递，从而支持 autograd engine 的模型参数更新。换句话说，新增的 Function 子类，可以隐藏不支持求导的计算，将断开的梯度传播链路 chain 起来。另一种情况是，新增自定义 Function 可以Wrap C++实现的操作，或者进行一些类似Op融合的操作来提高运算效率。</p>
+<p>新增 Autograd Function 的步骤主要分为四步，具体写代码是实现两个Function子类的静态函数。下面是四个实现步骤:</p>
+<ol>
+<li>派生<code>torch.autograd.Function</code>子类并且实现两个静态函数</li>
+</ol>
+<ul>
+<li>
+<p>forward 函数</p>
+<p>用于前向计算的函数，可以接收任意数目的参数，如果有默认值，则对应的参数是可选的。输出参数的类型可以是单个 Tensor 输出，或者 Tuple 形式的多个输出。</p>
+</li>
+<li>
+<p>backward 函数</p>
+<p>定义梯度计算函数。输入的参数是对应 <code>forward()</code> 函数输出参数的梯度，也就是前向过程中有几个输出，这里就有几个输入，然后就可以根据这些输入的梯度参数计算输出梯度了，而返回变量个的个数与<code>forward()</code>函数的输入参数的个数一致。当<code>foward()</code>有可选参数的时候，这些参数对应的返回的梯度应该是None。</p>
+</li>
+</ul>
+<ol start="2">
+<li>使用<code>ctx</code>参数提供的一些操作来保证新增的Function可以适应autograd engine中的计算</li>
+</ol>
+<p>ctx 提供了一些有用的参数可以帮助新 Function 的实现，并且支持 autograd engine 的计算。</p>
+<ul>
+<li>
+<p><code>save_for_backward()</code>函数</p>
+<p>前面提到，<code>backward()</code>函数的输入参数都是梯度值，有些计算过程还需要模型对应计算的状态参数，比如 CNN 中的权重/偏置项等。这个函数的作用就是为了在前向计算函数中保存这些参数的，然后在后向过程中取出来用于计算梯度。</p>
+</li>
+<li>
+<p><code>make_dirty()</code>函数</p>
+<p>前向计算中，如果参数使用了in-place操作，那么就需要用这个函数来指示。</p>
+</li>
+<li>
+<p><code>mark_non_differentiable()</code>函数</p>
+<p>告诉 autograd engine，对应的输出不可求导。</p>
+</li>
+<li>
+<p><code>set_materialize_grad()</code>函数</p>
+<p>我的理解是，如果有些参数的梯度是None，但是如果设置了<code>set_materialize_grad(True)</code>，那么这些梯度会用合适大小的全零的 Tensor 代替；如如果设置为 False，则这些参数传入 <code>backward()</code> 函数中对应的梯度就会保持 None。</p>
+</li>
+</ul>
+<ol start="3">
+<li>必要的时候使新增的<code>Function</code>支持高阶求导</li>
+</ol>
+<p>为了支持高阶求导，需要在 <code>backward()</code> 的修饰器中使用 <code>once_differentiable()</code> 来设置该后向传播函数只能求导一次。</p>
+<ol start="4">
+<li>建议使用<code>torch.autograd.gradcheck()</code>函数对结果进行验证</li>
+</ol>
+<p>使用<code>torch.autograd.gradcheck()</code>函数来验证实现的后向传播函数是否正确。</p>
+<p>一个具体的例子如下。</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 0
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">23
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">24
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">25
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">26
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">27
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">28
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">29
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">30
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">31
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">32
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">33
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">34
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">35
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#998;font-style:italic"># Inherit from Function</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">LinearFunction</span>(Function):
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#998;font-style:italic"># Note that both forward and backward are @staticmethods</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#3c5d5d;font-weight:bold">@staticmethod</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#998;font-style:italic"># bias is an optional argument</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">forward</span>(ctx, <span style="color:#0086b3">input</span>, weight, bias<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">None</span>):
+</span></span><span style="display:flex;"><span>        ctx<span style="color:#000;font-weight:bold">.</span>save_for_backward(<span style="color:#0086b3">input</span>, weight, bias)
+</span></span><span style="display:flex;"><span>        output <span style="color:#000;font-weight:bold">=</span> <span style="color:#0086b3">input</span><span style="color:#000;font-weight:bold">.</span>mm(weight<span style="color:#000;font-weight:bold">.</span>t())
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">if</span> bias <span style="color:#000;font-weight:bold">is</span> <span style="color:#000;font-weight:bold">not</span> <span style="color:#000;font-weight:bold">None</span>:
+</span></span><span style="display:flex;"><span>            output <span style="color:#000;font-weight:bold">+=</span> bias<span style="color:#000;font-weight:bold">.</span>unsqueeze(<span style="color:#099">0</span>)<span style="color:#000;font-weight:bold">.</span>expand_as(output)
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">return</span> output
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#998;font-style:italic"># This function has only a single output, so it gets only one gradient</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#3c5d5d;font-weight:bold">@staticmethod</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">backward</span>(ctx, grad_output):
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># This is a pattern that is very convenient - at the top of backward</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># unpack saved_tensors and initialize all gradients w.r.t. inputs to</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># None. Thanks to the fact that additional trailing Nones are</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># ignored, the return statement is simple even when the function has</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># optional inputs.</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#0086b3">input</span>, weight, bias <span style="color:#000;font-weight:bold">=</span> ctx<span style="color:#000;font-weight:bold">.</span>saved_tensors
+</span></span><span style="display:flex;"><span>        grad_input <span style="color:#000;font-weight:bold">=</span> grad_weight <span style="color:#000;font-weight:bold">=</span> grad_bias <span style="color:#000;font-weight:bold">=</span> <span style="color:#000;font-weight:bold">None</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># These needs_input_grad checks are optional and there only to</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># improve efficiency. If you want to make your code simpler, you can</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># skip them. Returning gradients for inputs that don&#39;t require it is</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># not an error.</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">if</span> ctx<span style="color:#000;font-weight:bold">.</span>needs_input_grad[<span style="color:#099">0</span>]:
+</span></span><span style="display:flex;"><span>            grad_input <span style="color:#000;font-weight:bold">=</span> grad_output<span style="color:#000;font-weight:bold">.</span>mm(weight)
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">if</span> ctx<span style="color:#000;font-weight:bold">.</span>needs_input_grad[<span style="color:#099">1</span>]:
+</span></span><span style="display:flex;"><span>            grad_weight <span style="color:#000;font-weight:bold">=</span> grad_output<span style="color:#000;font-weight:bold">.</span>t()<span style="color:#000;font-weight:bold">.</span>mm(<span style="color:#0086b3">input</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">if</span> bias <span style="color:#000;font-weight:bold">is</span> <span style="color:#000;font-weight:bold">not</span> <span style="color:#000;font-weight:bold">None</span> <span style="color:#000;font-weight:bold">and</span> ctx<span style="color:#000;font-weight:bold">.</span>needs_input_grad[<span style="color:#099">2</span>]:
+</span></span><span style="display:flex;"><span>            grad_bias <span style="color:#000;font-weight:bold">=</span> grad_output<span style="color:#000;font-weight:bold">.</span>sum(<span style="color:#099">0</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">return</span> grad_input, grad_weight, grad_bias
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>在实际使用时，为了方便，一般会有下面的一条赋值：</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>linear <span style="color:#000;font-weight:bold">=</span> LinearFunction<span style="color:#000;font-weight:bold">.</span>apply
+</span></span></code></pre></div><h3 id="extending-nn">Extending nn</h3>
+<p>一般来说，扩展 nn 有两种方式，一种是上面提到的 Function 方式，一般适用于那些没有自身计算状态参数（如卷积权重）的操作，另一种是定义 Module 子类的方式，后者需要自定义<code>__init__()</code>以及<code>forward()</code>两个成员函数，<code>forward()</code>成员函数内一般就会调用上面提到的 Function 来实现操作。</p>
+<h2 id="optimizer">Optimizer</h2>
+<p>实现自己的 Optimizer 的时候，需要继承<code>torch.optim.Optimizer</code>类。需要实现<code>__init__、__setstate__、step</code>等函数；然后将新 Optimizer 的参数，比如lr, eps, betas等参数保存到<code>defaults</code>字典中，并跟parameters一起传给Base类的<code>__init__</code>函数。<code>__setstate__</code>函数主要是为了比如在pickle等序列化中使用，并做必要的更新，比如<code>self.param_groups</code>里的成员。在 <code>step()</code>函数里，会更新<code>self.state</code>成员变量，然后后面更新的时候就可以直接从 <code>state</code> 里面取出来进行更新就可以了。</p>
+<p>此外，defaults 字典里面的信息在<code>add_param_group()</code>函数里面被放入<code>self.param_groups</code>里面了，如lr, eps, betas等；特定Optimizer的相关数据放在<code>self.states</code>里面了，如Adam里面的 m / v 等。</p>
+<p>具体例子可以参考 TIMM 库里的AdamW算法实现。</p>
+<h2 id="pytorch-部署全流程">PyTorch 部署全流程</h2>
+<p>一般来说，咱们使用 PyTorch Code (python) 完成模型的开发与训练，然后转换成 TorchScript IR 表示并序列化保存到文件中，接下来可以在不依赖 Python 的情况下进行部署与推理；另一方面，为了优化模型的计算效率，TorchScript IR 会进一步被转换成 ONNX IR 表示，再之后，可以选择直接利用 ONNX Runtime 进行优化部署推理，也可以进一步将 ONNX IR 转换成 TVM / TensorRT 等工具进行优化部署。</p>
+<p>实际使用中发现，针对 CPU 这一部署环境以及 Transformer 相关的模型而言，ONNX Runtime 的优化效果出人意料的好，实际耗时出人意料的低。所以这里就列一下整个部署过程中涉及到的步骤以及如果需要深入理解、开发所需要看的内容。</p>
+<ul>
+<li>
+<p>TorchScript</p>
+<p>首先是将 PyTorch Code 转换成 TorchScript Code，这是因为TorchScript Language 支持的语法以及操作，只对应 PyTorch Code中的一个子集，所以需要修改原始的代码以可以通过 TorchScript 的编译。获取TorchScript的两种方式：</p>
+<ul>
+<li>Tracing: 主要缺点是不支持动态 shape 的输入，而且也没法处理 if-else 等逻辑；只会记录当前输入所走过的计算路径</li>
+<li>Scripting (Annotation): 这种方法会分析PyTorch Code的构成，类似于一个编译过程，所以记录的是实现逻辑。缺点是，既然属于编译过程，那么就很容易出现一些语法错误，需要修改</li>
+</ul>
+<p>其次就是 TorchScript 涉及到的具体实现原理了。这个以后单独在 blog 里贴出来。</p>
+</li>
+<li>
+<p>ONNX</p>
+<p>属于 Protobuf 文件定义的一套 IR 规范，了解  Protobuf  的基本使用后在看源码会更舒服。</p>
+</li>
+<li>
+<p>ONNX Runtime</p>
+</li>
+</ul>
+
+		
+	</div>
+
+	<div class="pagination">
+		<a href="/posts/model-visualization/" class="left arrow">&#8592;</a>
+		<a href="/posts/img-transform-ssl/" class="right arrow">&#8594;</a>
+
+		<a href="#" class="top">Top</a>
+	</div>
+</main>
+
+
+        		<footer>
+			
+			<span>
+			&copy; <time datetime="2022-07-25 12:50:02.711459821 &#43;0800 CST m=&#43;0.118653884">2022</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
+			</span>
+		</footer>
+
+    </body>
+</html>

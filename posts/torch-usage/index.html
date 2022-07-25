@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en-us">
+    <head>
+		
+		
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+		<title>Torch的一些使用方法记录 &middot; Triloon</title>
+
+		
+		<link rel="stylesheet" href="/css/style.css">
+		<link rel="stylesheet" href="/css/fonts.css">
+		<link rel="stylesheet" href="/css/custom.css">
+		
+		<link rel="icon" href="/favicon.ico"/>
+		<link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+		<link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+		<link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+
+		
+		<link href="" rel="alternate" type="application/rss+xml" title="Triloon" />
+
+		<script src="/js/darkmode.js"></script>
+	</head>
+
+    <body>
+        		<nav class="nav">
+			<div class="nav-container">
+				<a href="/">
+					
+						<h2 class="nav-title">Triloon</h2>
+					
+				</a>
+				<ul>
+    
+    
+        <li>
+            <a href="/about/about">
+                
+                <span>About</span>
+                
+            </a>
+        </li>
+    
+        <li>
+            <a href="/posts/">
+                
+                <span>Posts</span>
+                
+            </a>
+        </li>
+    
+</ul>
+			</div>
+		</nav>
+
+        <div id="darkModeToggle" onclick="toggleDarkMode()">
+  &#9680; 
+</div>
+
+        
+
+<main>
+	
+
+
+        <div class="post">
+		<div class="post-info">
+    <span>Written by</span>
+        triloon
+        <br>
+        <span>on&nbsp;</span><time datetime="2021-10-01 16:06:21 &#43;0800 CST">October 1, 2021</time>
+</div>
+
+		<h1 class="post-title">Torch的一些使用方法记录</h1>
+<div class="post-line"></div>
+
+		
+
+		<p>记录一些Torch使用过程中会用到的小知识点。</p>
+<h2 id="求解中间变量的梯度">求解中间变量的梯度</h2>
+<p>前面提到，<code>backward()</code>函数只会保存Leaf Node的梯度，如果要想保留中间计算结果的梯度，可以使用<code>Tensor.retain_grad()</code>来实现。是不是Leaf Node可以使用 <code>Tensor.is_leaf</code>来判断，简单来说Leaf Node有两类：</p>
+<ul>
+<li><code>Tensor.requires_grad=False</code> 的Tensor属于Leaf Node</li>
+<li><code>Tesnor.requires_grad=True</code>并且是由用户创建的Tensor也属于Leaf Node；用户创建意味着不是其它Op产生的Tensor.</li>
+</ul>
+<p>实际要获取中间变量的梯度，有以下方法：</p>
+<ol>
+<li>使用<code>retain_grad()</code></li>
+</ol>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">get_inter_grad</span>():
+</span></span><span style="display:flex;"><span>  x <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>ones((<span style="color:#099">2</span>, <span style="color:#099">2</span>), requires_grad<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">True</span>) 
+</span></span><span style="display:flex;"><span>  <span style="color:#0086b3">print</span>(x<span style="color:#000;font-weight:bold">.</span>is_leaf)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  y <span style="color:#000;font-weight:bold">=</span> x <span style="color:#000;font-weight:bold">*</span> <span style="color:#099">2</span>
+</span></span><span style="display:flex;"><span>  y<span style="color:#000;font-weight:bold">.</span>retain_grad()
+</span></span><span style="display:flex;"><span>  z <span style="color:#000;font-weight:bold">=</span> y <span style="color:#000;font-weight:bold">**</span> <span style="color:#099">2</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  z<span style="color:#000;font-weight:bold">.</span>backward(torch<span style="color:#000;font-weight:bold">.</span>ones_like(z))
+</span></span><span style="display:flex;"><span>  <span style="color:#0086b3">print</span>(x<span style="color:#000;font-weight:bold">.</span>grad)
+</span></span><span style="display:flex;"><span>  <span style="color:#0086b3">print</span>(y<span style="color:#000;font-weight:bold">.</span>grad)       <span style="color:#998;font-style:italic"># not None</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><ol start="2">
+<li>使用<code>torch.autograd.grad(outputs, inputs)</code></li>
+</ol>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">get_inter_grad</span>():
+</span></span><span style="display:flex;"><span>  x <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>ones((<span style="color:#099">2</span>, <span style="color:#099">2</span>), requires_grad<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">True</span>) 
+</span></span><span style="display:flex;"><span>  <span style="color:#0086b3">print</span>(x<span style="color:#000;font-weight:bold">.</span>is_leaf)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  z <span style="color:#000;font-weight:bold">=</span> y <span style="color:#000;font-weight:bold">**</span> <span style="color:#099">2</span>
+</span></span><span style="display:flex;"><span>  t <span style="color:#000;font-weight:bold">=</span> z<span style="color:#000;font-weight:bold">.</span>mean()
+</span></span><span style="display:flex;"><span>  x_res <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>autograd<span style="color:#000;font-weight:bold">.</span>grad(t, x, create_graph<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">True</span>)[<span style="color:#099">0</span>]
+</span></span><span style="display:flex;"><span>  <span style="color:#0086b3">print</span>(x_res)
+</span></span><span style="display:flex;"><span>  y_res <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>autograd<span style="color:#000;font-weight:bold">.</span>grad(t, y, create_graph<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">True</span>)[<span style="color:#099">0</span>]
+</span></span><span style="display:flex;"><span>  <span style="color:#0086b3">print</span>(y_res)
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>注意，<code>torch.autograd.grad()</code>只能对Scalar output计算梯度，所以才用了<code>t = z.mean()</code>进行反向传播。</p>
+<ol start="3">
+<li>使用<code>torch.Tensor.register_hook()</code></li>
+</ol>
+<p><code>register_hook()</code>函数会注册一个backward hook，每次计算该Tensor的梯度时，都会调用这个<code>hook</code>函数。函数签名是<code>hook(grad) -&gt; Tensor or None</code>，一般来说，这里的 hook 函数不应该对输入的 grad 进行修改，而是返回一个新的梯度来代替 grad。<code>register_hook()</code>函数会返回一个 handle，可以调用<code>handle.remove()</code>来从当前的Tensor中去掉这个 hook 函数。</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>  global_grad <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">0.0</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">extract_grad</span>(grad):
+</span></span><span style="display:flex;"><span>      <span style="color:#0086b3">print</span>(<span style="color:#d14">&#39;current grad: &#39;</span>, grad)
+</span></span><span style="display:flex;"><span>      <span style="color:#000;font-weight:bold">global</span> global_feat
+</span></span><span style="display:flex;"><span>      global_grad <span style="color:#000;font-weight:bold">=</span> grad
+</span></span><span style="display:flex;"><span>      <span style="color:#000;font-weight:bold">return</span> grad
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">get_inter_grad</span>():
+</span></span><span style="display:flex;"><span>      <span style="color:#000;font-weight:bold">global</span> global_grad
+</span></span><span style="display:flex;"><span>      x <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>ones((<span style="color:#099">2</span>, <span style="color:#099">2</span>), requires_grad<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">True</span>) 
+</span></span><span style="display:flex;"><span>      <span style="color:#0086b3">print</span>(x<span style="color:#000;font-weight:bold">.</span>is_leaf)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>      y <span style="color:#000;font-weight:bold">=</span> x <span style="color:#000;font-weight:bold">*</span> <span style="color:#099">2</span>
+</span></span><span style="display:flex;"><span>      z <span style="color:#000;font-weight:bold">=</span> y <span style="color:#000;font-weight:bold">**</span> <span style="color:#099">2</span>
+</span></span><span style="display:flex;"><span>      t <span style="color:#000;font-weight:bold">=</span> z<span style="color:#000;font-weight:bold">.</span>mean()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>      y_hook <span style="color:#000;font-weight:bold">=</span> y<span style="color:#000;font-weight:bold">.</span>register_hook(extract_grad)
+</span></span><span style="display:flex;"><span>      t<span style="color:#000;font-weight:bold">.</span>backward()
+</span></span><span style="display:flex;"><span>      <span style="color:#0086b3">print</span>(<span style="color:#d14">&#39;y grad: &#39;</span>, global_grad)
+</span></span><span style="display:flex;"><span>      <span style="color:#0086b3">print</span>(<span style="color:#d14">&#39;x grad: &#39;</span>, x<span style="color:#000;font-weight:bold">.</span>grad)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>      y_hook<span style="color:#000;font-weight:bold">.</span>remove()
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>但是实际使用下来，第三种方法获取到的还是 <code>global_grad</code> 原始的数值，有待进一步查原因。</p>
+<h2 id="获取模型权重的梯度">获取模型权重的梯度</h2>
+<p>获取权重的梯度代码非常简单：</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">6
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>    <span style="color:#998;font-style:italic"># ...</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">for</span> name, param <span style="color:#000;font-weight:bold">in</span> model<span style="color:#000;font-weight:bold">.</span>named_parameters():
+</span></span><span style="display:flex;"><span>        <span style="color:#0086b3">print</span>(name)
+</span></span><span style="display:flex;"><span>        <span style="color:#0086b3">print</span>(param<span style="color:#000;font-weight:bold">.</span>grad)           <span style="color:#998;font-style:italic"># 真实梯度，param.grad 是一个 Tensor</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#0086b3">print</span>(param<span style="color:#000;font-weight:bold">.</span>data<span style="color:#000;font-weight:bold">.</span>grad)      <span style="color:#998;font-style:italic"># None</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#998;font-style:italic"># ...</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="使用checkpoint功能">使用checkpoint功能</h2>
+<p>gradient checkpointing的意思是说，在反向传播时，重新计算对应代码段的前向计算，这样就可以不用在前向计算时保存临时中间激活输出值以及对应的梯度等。</p>
+<p>但是有一点需要注意就是需要保证那些具有随机属性的计算的两次前向输出应该是一致的，比如 Dropout，因此需要将<code>preserve_rng_state=True</code>传入到<code>torch.utils.checkpoint.checkpint()</code>函数中，但是这样做会导致性能下降较大，所以如果没有涉及到RNG 类的操作，那么需要将<code>preserve_rng_state=False</code>。另一点是，即使设置了<code>preserve_rng_state=True</code>，但是在<code>run_fn</code>函数里面将变量移动到一个新的device上的话，那么 RNG 状态的一致性也还是无法保证，所谓的新的device，就是当前device + 传入到 <code>run_fn</code> 的参数的device 的合集。</p>
+<p>对应实现 <code>checkpinting</code> 的函数是：<code>torch.utils.checkpoint.checkpoint(function, *args, **kwargs)</code>函数。</p>
+<p>checkpointing的工作原理是：<code>trading compute for memory</code>，也就是不会保存计算过程中的中间激活值，而是在反向传播时重新计算这些数值。可以应用到任意部分的模型计算。</p>
+<p>具体来说，<code>function</code>表示的计算前向计算时是在<code>torch.no_grad()</code>里面执行的，但是<code>checkpoint()</code>函数会保存输入的tuple以及function parameters等。<code>function</code>计算可以输出非Tensor的参数，但是gradient recording 只会作用于那些Tensor的输出。注意，如果输出包含在<code>list, dict, custom objects</code>等结构体里，即使是Tensor，也不会被计算gradients。</p>
+<p>一个具体的使用例子是 Albef 仓库里 <code>xbert</code> 的实现:</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">create_custom_forward</span>(module):
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">custom_forward</span>(<span style="color:#000;font-weight:bold">*</span>inputs):
+</span></span><span style="display:flex;"><span>            <span style="color:#000;font-weight:bold">return</span> module(<span style="color:#000;font-weight:bold">*</span>inputs, past_key_value, output_attentions)
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">return</span> custom_forward
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    layer_outputs <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>utils<span style="color:#000;font-weight:bold">.</span>checkpoint<span style="color:#000;font-weight:bold">.</span>checkpoint(
+</span></span><span style="display:flex;"><span>        create_custom_forward(layer_module),
+</span></span><span style="display:flex;"><span>        hidden_states,
+</span></span><span style="display:flex;"><span>        attention_mask,
+</span></span><span style="display:flex;"><span>        layer_head_mask,
+</span></span><span style="display:flex;"><span>        encoder_hidden_states,
+</span></span><span style="display:flex;"><span>        encoder_attention_mask,
+</span></span><span style="display:flex;"><span>    )
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>这里使用了python的闭包方式进行实现function。</p>
+<p>另一个API<code>torch.utils.checkpoint.checkpoint_sequential(functions, segments, input, **kwargs)</code>可以实现对sequential models进行checkpoints。</p>
+<blockquote>
+<p>Sequential models execute a list of modules/functions in order (sequentially). Therefore, we can divide such a model in various segments and checkpoint each segment. All segments except the last will run in torch.no_grad() manner, i.e., not storing the intermediate activations. The inputs of each checkpointed segment will be saved for re-running the segment in the backward pass.</p>
+</blockquote>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>    model <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Sequential(<span style="color:#000;font-weight:bold">...</span>)
+</span></span><span style="display:flex;"><span>    input_var <span style="color:#000;font-weight:bold">=</span> checkpoint_sequential(model, chunks, input_var)
+</span></span></code></pre></div>
+
+		
+	</div>
+
+	<div class="pagination">
+		<a href="/posts/img-transform-ssl/" class="left arrow">&#8592;</a>
+		<a href="/posts/adversarial-training/" class="right arrow">&#8594;</a>
+
+		<a href="#" class="top">Top</a>
+	</div>
+</main>
+
+
+        		<footer>
+			
+			<span>
+			&copy; <time datetime="2022-07-25 12:50:02.709611607 &#43;0800 CST m=&#43;0.116805686">2022</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
+			</span>
+		</footer>
+
+    </body>
+</html>

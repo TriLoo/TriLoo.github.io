@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Triloon</title>
+    <link>https://triloon.space/</link>
+    <description>Recent content on Triloon</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Tue, 18 Jan 2022 19:07:51 +0800</lastBuildDate><atom:link href="https://triloon.space/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Triplet Loss 与在线难例挖掘（译）</title>
+      <link>https://triloon.space/posts/triplet-loss-0/</link>
+      <pubDate>Tue, 18 Jan 2022 19:07:51 +0800</pubDate>
+      
+      <guid>https://triloon.space/posts/triplet-loss-0/</guid>
+      <description>&lt;p&gt;虽然 triplet loss 实现非常简单，但是简单的 loss 要想用好也是需要更细致的分析与调试。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Torch all_gather 的梯度问题</title>
+      <link>https://triloon.space/posts/torch-allgather/</link>
+      <pubDate>Sun, 16 Jan 2022 18:43:13 +0800</pubDate>
+      
+      <guid>https://triloon.space/posts/torch-allgather/</guid>
+      <description>&lt;p&gt;pytorch all_gather 计算结果是叶子节点，也就是不会继续向后传递梯度了。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Deepspeed Zero论文</title>
+      <link>https://triloon.space/posts/deepspeed-zero/</link>
+      <pubDate>Thu, 25 Nov 2021 10:41:35 +0800</pubDate>
+      
+      <guid>https://triloon.space/posts/deepspeed-zero/</guid>
+      <description>&lt;p&gt;DeepSpeed的开山之作 - ZeRO: Memory Optimizations Toward Training Trillion Parameter Models.&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Swin Transformer V2</title>
+      <link>https://triloon.space/posts/swin-transformer-v2/</link>
+      <pubDate>Tue, 23 Nov 2021 12:07:18 +0800</pubDate>
+      
+      <guid>https://triloon.space/posts/swin-transformer-v2/</guid>
+      <description>&lt;p&gt;本文围绕如何有效的增加模型参数量、弥补不同任务输入图像尺寸不同时的Windows大小不同导致的相对位置编码变化问题这两个任务提出了解决方案，总的来说，方案简单有效，值得学习。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>DALI简单实用案例</title>
+      <link>https://triloon.space/posts/dali-intro/</link>
+      <pubDate>Mon, 22 Nov 2021 17:20:46 +0800</pubDate>
+      
+      <guid>https://triloon.space/posts/dali-intro/</guid>
+      <description>&lt;p&gt;DALI(NVIDIA Data Loading Library)库是NVIDIA提供的用于加速数据加载过程的代码库，支持在GPU上完成一些数据处理，从而提高加载速度；另一方面是方便多种源数据文件格式的加载，包括MXNet RecordIO / TFRrecord / LMDB 或者 文件目录等形式的数据集加载；第三就是支持多种数据格式，包括图片、视频、音频等。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>常见掩码生成方式 2</title>
+      <link>https://triloon.space/posts/mlm-related-2/</link>
+      <pubDate>Wed, 27 Oct 2021 22:08:15 +0800</pubDate>
+      
+      <guid>https://triloon.space/posts/mlm-related-2/</guid>
+      <description>&lt;p&gt;这是接着上一篇掩码生成方式写的，主要仅包含SpanBERT &amp;amp; MacBERT的原理与实现。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>MoE 论文阅读：Sparsely-Gated MoE</title>
+      <link>https://triloon.space/posts/moe-original-paper/</link>
+      <pubDate>Wed, 27 Oct 2021 11:15:57 +0800</pubDate>
+      
+      <guid>https://triloon.space/posts/moe-original-paper/</guid>
+      <description>&lt;p&gt;本文主要是一点 Mixture of Experts (MoE) 网络结构的介绍。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>分词算法基础</title>
+      <link>https://triloon.space/posts/tokenizers/</link>
+      <pubDate>Fri, 22 Oct 2021 19:51:11 +0800</pubDate>
+      
+      <guid>https://triloon.space/posts/tokenizers/</guid>
+      <description>&lt;p&gt;常见的几种分词算法小结，包括BERT用到WordPiece以及Albert用到的Byte-Pair-Encoding。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>常见掩码生成方式</title>
+      <link>https://triloon.space/posts/mlm-related/</link>
+      <pubDate>Tue, 19 Oct 2021 19:51:11 +0800</pubDate>
+      
+      <guid>https://triloon.space/posts/mlm-related/</guid>
+      <description>&lt;p&gt;主要是几种常见的MLM的改进以及对应的代码实现，包括WWM, SpanBERT, ERNIE这三种。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>ICCV2021 Best Paper - Swin Transformer</title>
+      <link>https://triloon.space/posts/swin-transformer/</link>
+      <pubDate>Fri, 15 Oct 2021 22:07:45 +0800</pubDate>
+      
+      <guid>https://triloon.space/posts/swin-transformer/</guid>
+      <description>&lt;p&gt;重读论文之后，发现还真是一个非常精巧的模型。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Adversarial Training 2</title>
+      <link>https://triloon.space/posts/adversarial-training-2/</link>
+      <pubDate>Wed, 13 Oct 2021 14:30:10 +0800</pubDate>
+      
+      <guid>https://triloon.space/posts/adversarial-training-2/</guid>
+      <description>&lt;p&gt;对PGD算法的改进，包括FreeAT, FreeLB, SMART等。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Adversarial Training</title>
+      <link>https://triloon.space/posts/adversarial-training/</link>
+      <pubDate>Tue, 05 Oct 2021 11:21:33 +0800</pubDate>
+      
+      <guid>https://triloon.space/posts/adversarial-training/</guid>
+      <description>&lt;p&gt;几个基础的常见的对抗样本的生成算法，包括FGM/FGSM, PGD等。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Torch的一些使用方法记录</title>
+      <link>https://triloon.space/posts/torch-usage/</link>
+      <pubDate>Fri, 01 Oct 2021 16:06:21 +0800</pubDate>
+      
+      <guid>https://triloon.space/posts/torch-usage/</guid>
+      <description>&lt;p&gt;记录一些Torch使用过程中会用到的小知识点。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>基于Transformer结构的图像自监督模型及训练</title>
+      <link>https://triloon.space/posts/img-transform-ssl/</link>
+      <pubDate>Tue, 28 Sep 2021 14:07:50 +0800</pubDate>
+      
+      <guid>https://triloon.space/posts/img-transform-ssl/</guid>
+      <description>&lt;p&gt;一些基于Transformer结构的图像自监督模型以及训练过程中遇到的问题。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Torch实现原理分析积累</title>
+      <link>https://triloon.space/posts/torch-impl-0/</link>
+      <pubDate>Sat, 18 Sep 2021 11:08:11 +0800</pubDate>
+      
+      <guid>https://triloon.space/posts/torch-impl-0/</guid>
+      <description>&lt;p&gt;Pytorch 实现学习积累。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Model Visualization</title>
+      <link>https://triloon.space/posts/model-visualization/</link>
+      <pubDate>Sat, 11 Sep 2021 15:16:07 +0800</pubDate>
+      
+      <guid>https://triloon.space/posts/model-visualization/</guid>
+      <description>&lt;p&gt;深度学习中的一些可视化技术。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Origin Transformer</title>
+      <link>https://triloon.space/posts/origin-transformer/</link>
+      <pubDate>Mon, 06 Sep 2021 20:04:32 +0800</pubDate>
+      
+      <guid>https://triloon.space/posts/origin-transformer/</guid>
+      <description>&lt;p&gt;Attention is all your need.&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Cnn Transformer 系列之 Volo</title>
+      <link>https://triloon.space/posts/cnn-transformer-volo/</link>
+      <pubDate>Mon, 06 Sep 2021 16:26:11 +0800</pubDate>
+      
+      <guid>https://triloon.space/posts/cnn-transformer-volo/</guid>
+      <description>&lt;p&gt;VOLO论文。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>从Adam到AdamW</title>
+      <link>https://triloon.space/posts/adam-adamw/</link>
+      <pubDate>Fri, 03 Sep 2021 20:30:59 +0800</pubDate>
+      
+      <guid>https://triloon.space/posts/adam-adamw/</guid>
+      <description>&lt;p&gt;Adam算法的实现以及一个主要改进AdamW的原理与实现。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Resnet Series</title>
+      <link>https://triloon.space/posts/resnet-series/</link>
+      <pubDate>Thu, 02 Sep 2021 14:12:59 +0800</pubDate>
+      
+      <guid>https://triloon.space/posts/resnet-series/</guid>
+      <description>&lt;p&gt;Residual Connection以及后续发展。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Binary Search Tree</title>
+      <link>https://triloon.space/posts/binary-search-tree/</link>
+      <pubDate>Tue, 31 Aug 2021 15:00:22 +0800</pubDate>
+      
+      <guid>https://triloon.space/posts/binary-search-tree/</guid>
+      <description>&lt;p&gt;二叉搜索树相关笔记&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>图像表征算法中的自监督学习方法</title>
+      <link>https://triloon.space/posts/ssl-image-representation/</link>
+      <pubDate>Tue, 31 Aug 2021 14:15:48 +0800</pubDate>
+      
+      <guid>https://triloon.space/posts/ssl-image-representation/</guid>
+      <description>&lt;p&gt;经典自监督模型，包括MoCo / SimCLR / SwAV / BYOL / SimSiam 等。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Efficient Transformer系列</title>
+      <link>https://triloon.space/posts/efficient-transformer/</link>
+      <pubDate>Tue, 31 Aug 2021 14:02:36 +0800</pubDate>
+      
+      <guid>https://triloon.space/posts/efficient-transformer/</guid>
+      <description>&lt;p&gt;一些以提高 Transformer 计算性能为目的的 Xformer 方案整理。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>My First Post</title>
+      <link>https://triloon.space/posts/my-first-post/</link>
+      <pubDate>Mon, 30 Aug 2021 20:03:11 +0800</pubDate>
+      
+      <guid>https://triloon.space/posts/my-first-post/</guid>
+      <description>&lt;p&gt;怕什么真理无穷，进一寸有一寸的欢喜。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Hugo Notes</title>
+      <link>https://triloon.space/posts/hugo-notes/</link>
+      <pubDate>Mon, 30 Aug 2021 14:37:40 +0800</pubDate>
+      
+      <guid>https://triloon.space/posts/hugo-notes/</guid>
+      <description>&lt;p&gt;一些hugo blog搭建过程中的记录。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>About</title>
+      <link>https://triloon.space/about/about/</link>
+      <pubDate>Mon, 30 Aug 2021 00:00:00 +0000</pubDate>
+      
+      <guid>https://triloon.space/about/about/</guid>
+      <description>my github url is: Triloon</description>
+    </item>
+    
+  </channel>
+</rss>

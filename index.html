@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en-us">
+    <head>
+	<meta name="generator" content="Hugo 0.101.0" />
+		
+		
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+			<meta name="description" content="my blog site">
+
+		<title>Triloon</title>
+
+		
+		<link rel="stylesheet" href="/css/style.css">
+		<link rel="stylesheet" href="/css/fonts.css">
+		<link rel="stylesheet" href="/css/custom.css">
+		
+		<link rel="icon" href="/favicon.ico"/>
+		<link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+		<link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+		<link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+
+		
+		<link href="/index.xml" rel="alternate" type="application/rss+xml" title="Triloon" />
+
+		<script src="/js/darkmode.js"></script>
+	</head>
+
+    <body>
+        		<nav class="nav">
+			<div class="nav-container">
+				<a href="/">
+					
+						<h1 class="nav-title">Triloon</h1>
+					
+				</a>
+				<ul>
+    
+    
+        <li>
+            <a href="/about/about">
+                
+                <span>About</span>
+                
+            </a>
+        </li>
+    
+        <li>
+            <a href="/posts/">
+                
+                <span>Posts</span>
+                
+            </a>
+        </li>
+    
+</ul>
+			</div>
+		</nav>
+
+        <div id="darkModeToggle" onclick="toggleDarkMode()">
+  &#9680; 
+</div>
+
+        
+
+<main>
+	
+
+
+	<div class="catalogue">
+		
+			<a href="https://triloon.space/posts/triplet-loss-0/" class="catalogue-item">
+    <div>
+        <time datetime="2022-01-18 19:07:51 &#43;0800 CST" class="catalogue-time">January 18, 2022</time>
+        <h2 class="catalogue-title">Triplet Loss 与在线难例挖掘（译）</h2>
+        <div class="catalogue-line"></div>
+
+        <p>
+            <p>虽然 triplet loss 实现非常简单，但是简单的 loss 要想用好也是需要更细致的分析与调试。</p>
+        </p>
+    </div>
+</a>
+
+		
+			<a href="https://triloon.space/posts/torch-allgather/" class="catalogue-item">
+    <div>
+        <time datetime="2022-01-16 18:43:13 &#43;0800 CST" class="catalogue-time">January 16, 2022</time>
+        <h2 class="catalogue-title">Torch all_gather 的梯度问题</h2>
+        <div class="catalogue-line"></div>
+
+        <p>
+            <p>pytorch all_gather 计算结果是叶子节点，也就是不会继续向后传递梯度了。</p>
+        </p>
+    </div>
+</a>
+
+		
+			<a href="https://triloon.space/posts/deepspeed-zero/" class="catalogue-item">
+    <div>
+        <time datetime="2021-11-25 10:41:35 &#43;0800 CST" class="catalogue-time">November 25, 2021</time>
+        <h2 class="catalogue-title">Deepspeed Zero论文</h2>
+        <div class="catalogue-line"></div>
+
+        <p>
+            <p>DeepSpeed的开山之作 - ZeRO: Memory Optimizations Toward Training Trillion Parameter Models.</p>
+        </p>
+    </div>
+</a>
+
+		
+			<a href="https://triloon.space/posts/swin-transformer-v2/" class="catalogue-item">
+    <div>
+        <time datetime="2021-11-23 12:07:18 &#43;0800 CST" class="catalogue-time">November 23, 2021</time>
+        <h2 class="catalogue-title">Swin Transformer V2</h2>
+        <div class="catalogue-line"></div>
+
+        <p>
+            <p>本文围绕如何有效的增加模型参数量、弥补不同任务输入图像尺寸不同时的Windows大小不同导致的相对位置编码变化问题这两个任务提出了解决方案，总的来说，方案简单有效，值得学习。</p>
+        </p>
+    </div>
+</a>
+
+		
+			<a href="https://triloon.space/posts/dali-intro/" class="catalogue-item">
+    <div>
+        <time datetime="2021-11-22 17:20:46 &#43;0800 CST" class="catalogue-time">November 22, 2021</time>
+        <h2 class="catalogue-title">DALI简单实用案例</h2>
+        <div class="catalogue-line"></div>
+
+        <p>
+            <p>DALI(NVIDIA Data Loading Library)库是NVIDIA提供的用于加速数据加载过程的代码库，支持在GPU上完成一些数据处理，从而提高加载速度；另一方面是方便多种源数据文件格式的加载，包括MXNet RecordIO / TFRrecord / LMDB 或者 文件目录等形式的数据集加载；第三就是支持多种数据格式，包括图片、视频、音频等。</p>
+        </p>
+    </div>
+</a>
+
+		
+			<a href="https://triloon.space/posts/mlm-related-2/" class="catalogue-item">
+    <div>
+        <time datetime="2021-10-27 22:08:15 &#43;0800 CST" class="catalogue-time">October 27, 2021</time>
+        <h2 class="catalogue-title">常见掩码生成方式 2</h2>
+        <div class="catalogue-line"></div>
+
+        <p>
+            <p>这是接着上一篇掩码生成方式写的，主要仅包含SpanBERT &amp; MacBERT的原理与实现。</p>
+        </p>
+    </div>
+</a>
+
+		
+			<a href="https://triloon.space/posts/moe-original-paper/" class="catalogue-item">
+    <div>
+        <time datetime="2021-10-27 11:15:57 &#43;0800 CST" class="catalogue-time">October 27, 2021</time>
+        <h2 class="catalogue-title">MoE 论文阅读：Sparsely-Gated MoE</h2>
+        <div class="catalogue-line"></div>
+
+        <p>
+            <p>本文主要是一点 Mixture of Experts (MoE) 网络结构的介绍。</p>
+        </p>
+    </div>
+</a>
+
+		
+			<a href="https://triloon.space/posts/tokenizers/" class="catalogue-item">
+    <div>
+        <time datetime="2021-10-22 19:51:11 &#43;0800 CST" class="catalogue-time">October 22, 2021</time>
+        <h2 class="catalogue-title">分词算法基础</h2>
+        <div class="catalogue-line"></div>
+
+        <p>
+            <p>常见的几种分词算法小结，包括BERT用到WordPiece以及Albert用到的Byte-Pair-Encoding。</p>
+        </p>
+    </div>
+</a>
+
+		
+			<a href="https://triloon.space/posts/mlm-related/" class="catalogue-item">
+    <div>
+        <time datetime="2021-10-19 19:51:11 &#43;0800 CST" class="catalogue-time">October 19, 2021</time>
+        <h2 class="catalogue-title">常见掩码生成方式</h2>
+        <div class="catalogue-line"></div>
+
+        <p>
+            <p>主要是几种常见的MLM的改进以及对应的代码实现，包括WWM, SpanBERT, ERNIE这三种。</p>
+        </p>
+    </div>
+</a>
+
+		
+			<a href="https://triloon.space/posts/swin-transformer/" class="catalogue-item">
+    <div>
+        <time datetime="2021-10-15 22:07:45 &#43;0800 CST" class="catalogue-time">October 15, 2021</time>
+        <h2 class="catalogue-title">ICCV2021 Best Paper - Swin Transformer</h2>
+        <div class="catalogue-line"></div>
+
+        <p>
+            <p>重读论文之后，发现还真是一个非常精巧的模型。</p>
+        </p>
+    </div>
+</a>
+
+		
+	</div>
+
+	<div class="pagination">
+		
+		
+			<a href="/page/2/" class="right arrow">&#8594;</a>
+		
+
+		<span>1</span>
+	</div>
+</main>
+
+
+        		<footer>
+			
+			<span>
+			&copy; <time datetime="2022-07-25 12:50:02.773354699 &#43;0800 CST m=&#43;0.180548762">2022</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
+			</span>
+		</footer>
+
+    </body>
+</html>

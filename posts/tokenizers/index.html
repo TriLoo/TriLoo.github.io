@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en-us">
+    <head>
+		
+		
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+		<title>分词算法基础 &middot; Triloon</title>
+
+		
+		<link rel="stylesheet" href="/css/style.css">
+		<link rel="stylesheet" href="/css/fonts.css">
+		<link rel="stylesheet" href="/css/custom.css">
+		
+		<link rel="icon" href="/favicon.ico"/>
+		<link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+		<link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+		<link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+
+		
+		<link href="" rel="alternate" type="application/rss+xml" title="Triloon" />
+
+		<script src="/js/darkmode.js"></script>
+	</head>
+
+    <body>
+        		<nav class="nav">
+			<div class="nav-container">
+				<a href="/">
+					
+						<h2 class="nav-title">Triloon</h2>
+					
+				</a>
+				<ul>
+    
+    
+        <li>
+            <a href="/about/about">
+                
+                <span>About</span>
+                
+            </a>
+        </li>
+    
+        <li>
+            <a href="/posts/">
+                
+                <span>Posts</span>
+                
+            </a>
+        </li>
+    
+</ul>
+			</div>
+		</nav>
+
+        <div id="darkModeToggle" onclick="toggleDarkMode()">
+  &#9680; 
+</div>
+
+        
+
+<main>
+	
+
+
+        <div class="post">
+		<div class="post-info">
+    <span>Written by</span>
+        triloon
+        <br>
+        <span>on&nbsp;</span><time datetime="2021-10-22 19:51:11 &#43;0800 CST">October 22, 2021</time>
+</div>
+
+		<h1 class="post-title">分词算法基础</h1>
+<div class="post-line"></div>
+
+		
+
+		<p>常见的几种分词算法小结，包括BERT用到WordPiece以及Albert用到的Byte-Pair-Encoding。</p>
+<p>BERT 用到的分词算法称为 Word Piece Tokenizer，Albert 用到的是 <a href="https://github.com/google/sentencepiece">SentencePiece</a>。SentencePiece 用到的是 Byte-pair-Encoding 算法以及Unigram Language Model算法，Roberta用的也是这种。</p>
+<p>Albert 等算法直接使用的是 SentencePiece，这个库是包含上面提到的 BPE / ULM 等子词算法。除此之外，SentencePiece也支持字符、词级别的分词。同时为了支持多语言，SentencePiece将句子视为Unicode编码序列，从而子词算法不依赖于语言的表示。</p>
+<p>以BERT用到的分词算法为例进行说明，BERT 中 用到的 Tokenizer 分为两步，第一步是 <code>BasicTokenizer()</code>进行处理，第二步是<code>WordPieceTokenizer</code>进行处理。</p>
+<p>参考包括BERT代码 以及 <a href="https://zhuanlan.zhihu.com/p/132361501">BERT 是如何分词的</a>。</p>
+<h2 id="basictokenizer">BasicTokenizer</h2>
+<p><code>BasicTokenizer</code>只对输入的文本基于空格进行分割。具体过程如下：</p>
+<ul>
+<li>
+<p><code>_clean_text()</code> 去掉文本中的控制字符，然后将<code>\t, \n, \r</code>等字符用空格代替</p>
+</li>
+<li>
+<p><code>_tokenizer_chinese_chars()</code>对中文输入中的每个字两边加上空格，英文输入天然以空格分离</p>
+</li>
+<li>
+<p><code>_run_strip_accents()</code>去掉变音符号，代码如下</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">_run_strip_accents</span>(<span style="color:#999">self</span>, text):
+</span></span><span style="display:flex;"><span>      <span style="color:#d14">&#34;&#34;&#34;Strips accents from a piece of text.&#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>      text <span style="color:#000;font-weight:bold">=</span> unicodedata<span style="color:#000;font-weight:bold">.</span>normalize(<span style="color:#d14">&#34;NFD&#34;</span>, text)
+</span></span><span style="display:flex;"><span>      output <span style="color:#000;font-weight:bold">=</span> []
+</span></span><span style="display:flex;"><span>      <span style="color:#000;font-weight:bold">for</span> char <span style="color:#000;font-weight:bold">in</span> text:
+</span></span><span style="display:flex;"><span>          cat <span style="color:#000;font-weight:bold">=</span> unicodedata<span style="color:#000;font-weight:bold">.</span>category(char)
+</span></span><span style="display:flex;"><span>          <span style="color:#000;font-weight:bold">if</span> cat <span style="color:#000;font-weight:bold">==</span> <span style="color:#d14">&#34;Mn&#34;</span>:
+</span></span><span style="display:flex;"><span>              <span style="color:#000;font-weight:bold">continue</span>
+</span></span><span style="display:flex;"><span>          output<span style="color:#000;font-weight:bold">.</span>append(char)
+</span></span><span style="display:flex;"><span>      <span style="color:#000;font-weight:bold">return</span> <span style="color:#d14">&#34;&#34;</span><span style="color:#000;font-weight:bold">.</span>join(output)
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>这里涉及两个函数：<code>unicodedata.normalize()</code>以及 <code>unicodedata.category()</code>。变音符是指这些符号: $\dot{a}, \ddot{u}$等，而这个函数可以将类似$r\acute{e}sum\acute{e}$变为$resume$符号。首先<code>unicodedata.normalize()</code>函数返回字符串的规范分解形式（Unicode字符有多种规范形式，代码里默认是<code>NFD</code>形式，即规范分解）；<code>unicodedata.category()</code>函数返回输入字符的<a href="https://www.compart.com/en/unicode/category">Unicode类别</a>。</p>
+<p>实际上，变音符号由两个字符组成，通过<code>unicodedata.normalize()</code>可以将两者拆分出来；而<code>unicode_category()</code>函数可以得到每个拆分出来字符的类别。变音符号对应的字符表示是：Mn，即Nonspacing Mark，非间距标记，变音符号也属于这类；剩下的普通字符对应的类别是Ll，即Lowercase Letter，小写字母。</p>
+<p>针对变音字符，Albert 的处理更直接：</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>  <span style="color:#000;font-weight:bold">if</span> <span style="color:#000;font-weight:bold">not</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>keep_accents:
+</span></span><span style="display:flex;"><span>      outputs <span style="color:#000;font-weight:bold">=</span> unicodedata<span style="color:#000;font-weight:bold">.</span>normalize(<span style="color:#d14">&#34;NFKD&#34;</span>, outputs)
+</span></span><span style="display:flex;"><span>      outputs <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;&#34;</span><span style="color:#000;font-weight:bold">.</span>join([c <span style="color:#000;font-weight:bold">for</span> c <span style="color:#000;font-weight:bold">in</span> outputs <span style="color:#000;font-weight:bold">if</span> <span style="color:#000;font-weight:bold">not</span> unicodedata<span style="color:#000;font-weight:bold">.</span>combining(c)])
+</span></span><span style="display:flex;"><span>  <span style="color:#000;font-weight:bold">if</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>do_lower_case:
+</span></span><span style="display:flex;"><span>      outputs <span style="color:#000;font-weight:bold">=</span> outputs<span style="color:#000;font-weight:bold">.</span>lower()
+</span></span></code></pre></div></li>
+<li>
+<p><code>_run_split_on_punc()</code>基于符号（逗号、感叹号、$等字符）进行分割</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">_run_split_on_punc</span>(<span style="color:#999">self</span>, text, never_split<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">None</span>):
+</span></span><span style="display:flex;"><span>      <span style="color:#d14">&#34;&#34;&#34;Splits punctuation on a piece of text.&#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#000;font-weight:bold">if</span> never_split <span style="color:#000;font-weight:bold">is</span> <span style="color:#000;font-weight:bold">not</span> <span style="color:#000;font-weight:bold">None</span> <span style="color:#000;font-weight:bold">and</span> text <span style="color:#000;font-weight:bold">in</span> never_split:
+</span></span><span style="display:flex;"><span>          <span style="color:#000;font-weight:bold">return</span> [text]
+</span></span><span style="display:flex;"><span>      chars <span style="color:#000;font-weight:bold">=</span> <span style="color:#0086b3">list</span>(text)
+</span></span><span style="display:flex;"><span>      i <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">0</span>
+</span></span><span style="display:flex;"><span>      start_new_word <span style="color:#000;font-weight:bold">=</span> <span style="color:#000;font-weight:bold">True</span>
+</span></span><span style="display:flex;"><span>      output <span style="color:#000;font-weight:bold">=</span> []
+</span></span><span style="display:flex;"><span>      <span style="color:#000;font-weight:bold">while</span> i <span style="color:#000;font-weight:bold">&lt;</span> <span style="color:#0086b3">len</span>(chars):
+</span></span><span style="display:flex;"><span>          char <span style="color:#000;font-weight:bold">=</span> chars[i]
+</span></span><span style="display:flex;"><span>          <span style="color:#000;font-weight:bold">if</span> _is_punctuation(char):
+</span></span><span style="display:flex;"><span>              output<span style="color:#000;font-weight:bold">.</span>append([char])
+</span></span><span style="display:flex;"><span>              start_new_word <span style="color:#000;font-weight:bold">=</span> <span style="color:#000;font-weight:bold">True</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#000;font-weight:bold">else</span>:
+</span></span><span style="display:flex;"><span>              <span style="color:#000;font-weight:bold">if</span> start_new_word:
+</span></span><span style="display:flex;"><span>                  output<span style="color:#000;font-weight:bold">.</span>append([])
+</span></span><span style="display:flex;"><span>              start_new_word <span style="color:#000;font-weight:bold">=</span> <span style="color:#000;font-weight:bold">False</span>
+</span></span><span style="display:flex;"><span>              output[<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>]<span style="color:#000;font-weight:bold">.</span>append(char)
+</span></span><span style="display:flex;"><span>          i <span style="color:#000;font-weight:bold">+=</span> <span style="color:#099">1</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>      <span style="color:#000;font-weight:bold">return</span> [<span style="color:#d14">&#34;&#34;</span><span style="color:#000;font-weight:bold">.</span>join(x) <span style="color:#000;font-weight:bold">for</span> x <span style="color:#000;font-weight:bold">in</span> output]
+</span></span></code></pre></div><p>这一步其实就是将连在一块的句子符号分离出来。初始<code>start_new_word=True</code>，如果遇到符号，那么就把这个符号单独压入<code>output</code>里面，然后再从下一个正常字符开始处理。</p>
+</li>
+<li>
+<p>最后将上述分割结果用空格拼接起来然后再按照空格进行分割。</p>
+</li>
+</ul>
+<h2 id="wordpiecetokenizer">WordPieceTokenizer</h2>
+<p>这一步主要思路是根据词表里的单词按照从右向左贪婪的最长匹配方法对词进行分割成更小的单元，即Piece。</p>
+<p>代码如下：</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">23
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">24
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">25
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">26
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">27
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">28
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">29
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">30
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">31
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">32
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>    output_tokens <span style="color:#000;font-weight:bold">=</span> []
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">for</span> token <span style="color:#000;font-weight:bold">in</span> whitespace_tokenize(text):
+</span></span><span style="display:flex;"><span>        chars <span style="color:#000;font-weight:bold">=</span> <span style="color:#0086b3">list</span>(token)
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">if</span> <span style="color:#0086b3">len</span>(chars) <span style="color:#000;font-weight:bold">&gt;</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>max_input_chars_per_word:
+</span></span><span style="display:flex;"><span>            output_tokens<span style="color:#000;font-weight:bold">.</span>append(<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>unk_token)
+</span></span><span style="display:flex;"><span>            <span style="color:#000;font-weight:bold">continue</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        is_bad <span style="color:#000;font-weight:bold">=</span> <span style="color:#000;font-weight:bold">False</span>
+</span></span><span style="display:flex;"><span>        start <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">0</span>
+</span></span><span style="display:flex;"><span>        sub_tokens <span style="color:#000;font-weight:bold">=</span> []
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">while</span> start <span style="color:#000;font-weight:bold">&lt;</span> <span style="color:#0086b3">len</span>(chars):
+</span></span><span style="display:flex;"><span>            end <span style="color:#000;font-weight:bold">=</span> <span style="color:#0086b3">len</span>(chars)
+</span></span><span style="display:flex;"><span>            cur_substr <span style="color:#000;font-weight:bold">=</span> <span style="color:#000;font-weight:bold">None</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#000;font-weight:bold">while</span> start <span style="color:#000;font-weight:bold">&lt;</span> end:
+</span></span><span style="display:flex;"><span>                substr <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;&#34;</span><span style="color:#000;font-weight:bold">.</span>join(chars[start:end])
+</span></span><span style="display:flex;"><span>                <span style="color:#000;font-weight:bold">if</span> start <span style="color:#000;font-weight:bold">&gt;</span> <span style="color:#099">0</span>:
+</span></span><span style="display:flex;"><span>                    substr <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;##&#34;</span> <span style="color:#000;font-weight:bold">+</span> substr
+</span></span><span style="display:flex;"><span>                <span style="color:#000;font-weight:bold">if</span> substr <span style="color:#000;font-weight:bold">in</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>vocab:
+</span></span><span style="display:flex;"><span>                    cur_substr <span style="color:#000;font-weight:bold">=</span> substr
+</span></span><span style="display:flex;"><span>                    <span style="color:#000;font-weight:bold">break</span>
+</span></span><span style="display:flex;"><span>                end <span style="color:#000;font-weight:bold">-=</span> <span style="color:#099">1</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#000;font-weight:bold">if</span> cur_substr <span style="color:#000;font-weight:bold">is</span> <span style="color:#000;font-weight:bold">None</span>:
+</span></span><span style="display:flex;"><span>                is_bad <span style="color:#000;font-weight:bold">=</span> <span style="color:#000;font-weight:bold">True</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#000;font-weight:bold">break</span>
+</span></span><span style="display:flex;"><span>            sub_tokens<span style="color:#000;font-weight:bold">.</span>append(cur_substr)
+</span></span><span style="display:flex;"><span>            start <span style="color:#000;font-weight:bold">=</span> end
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">if</span> is_bad:
+</span></span><span style="display:flex;"><span>            output_tokens<span style="color:#000;font-weight:bold">.</span>append(<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>unk_token)
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">else</span>:
+</span></span><span style="display:flex;"><span>            output_tokens<span style="color:#000;font-weight:bold">.</span>extend(sub_tokens)
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">return</span> output_tokens
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>可以看出来，两个while循环里面，从输入单词的右边开始，end不停的向前推进，同时测试start : end之间的字符是否在vocab字典里面，如果在的话，这些后面的 piece 会加上<code>##</code>前缀，作为分词结果保存起来。外面的while循环里会更新start参数，直至粉刺结束。也就是说，单词被分成子词，并且子词以<code>##</code>开头。</p>
+<p>分词词表里那些以<code>##</code>开头的字符就是备选的 word piece，不是单词的开头，而是一个单词被分成好几片 piece 时后面的几个 piece。</p>
+<p>Roberta / XLM 等模型中提到的 <code>&lt;s&gt;</code> 其实就是 <code>[CLS]</code>，同理<code>&lt;/s&gt;</code>对应<code>[SEP]</code>。</p>
+<p>至此，BERT里面的分词过程分析完了。</p>
+<h2 id="byte-pair-encoding">Byte-Pair-Encoding</h2>
+<p>BPE 算法也被称为字节对编码或二元编码，简单来说，算法过程就是将相邻出现频次最高的两个连续字节数据用一个新的字节数据表示，直到满足词典中单词的个数或下一个最高频的字节对出现频率为1时终止。优点是可以平衡字典词表大小以及步长（编码句子所需要的token数量），缺点是合词过程是固定的，即没有考虑其它更有效的分词单元。</p>
+<p>算法会现在每个词的结尾加上一个结束符<code>&lt;/w&gt;</code>，用于区分是否位于词的结尾还是词的中间，如<code>st</code>出现在<code>st ar</code>或<code>wide st&lt;/w&gt;</code>两个位置意义是完全不同的。</p>
+<p>对应的代码主要函数包括：</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">import</span> <span style="color:#555">re</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#555">collections</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">get_stats</span>(vocab):
+</span></span><span style="display:flex;"><span>    pairs <span style="color:#000;font-weight:bold">=</span> collections<span style="color:#000;font-weight:bold">.</span>defaultdict(<span style="color:#0086b3">int</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">for</span> word, freq <span style="color:#000;font-weight:bold">in</span> vocab<span style="color:#000;font-weight:bold">.</span>items():
+</span></span><span style="display:flex;"><span>        symbols <span style="color:#000;font-weight:bold">=</span> word<span style="color:#000;font-weight:bold">.</span>split()
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">for</span> i <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(<span style="color:#0086b3">len</span>(symbols)<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>):
+</span></span><span style="display:flex;"><span>            <span style="color:#998;font-style:italic"># 这里pairs的键是一个 list</span>
+</span></span><span style="display:flex;"><span>            pairs[symbols[i],symbols[i<span style="color:#000;font-weight:bold">+</span><span style="color:#099">1</span>]] <span style="color:#000;font-weight:bold">+=</span> freq
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">return</span> pairs
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">merge_vocab</span>(pair, v_in):
+</span></span><span style="display:flex;"><span>    v_out <span style="color:#000;font-weight:bold">=</span> {}
+</span></span><span style="display:flex;"><span>    bigram <span style="color:#000;font-weight:bold">=</span> re<span style="color:#000;font-weight:bold">.</span>escape(<span style="color:#d14">&#39; &#39;</span><span style="color:#000;font-weight:bold">.</span>join(pair))
+</span></span><span style="display:flex;"><span>    p <span style="color:#000;font-weight:bold">=</span> re<span style="color:#000;font-weight:bold">.</span>compile(<span style="color:#d14">r</span><span style="color:#d14">&#39;(?&lt;!\S)&#39;</span> <span style="color:#000;font-weight:bold">+</span> bigram <span style="color:#000;font-weight:bold">+</span> <span style="color:#d14">r</span><span style="color:#d14">&#39;(?!\S)&#39;</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">for</span> word <span style="color:#000;font-weight:bold">in</span> v_in:
+</span></span><span style="display:flex;"><span>        w_out <span style="color:#000;font-weight:bold">=</span> p<span style="color:#000;font-weight:bold">.</span>sub(<span style="color:#d14">&#39;&#39;</span><span style="color:#000;font-weight:bold">.</span>join(pair), word)
+</span></span><span style="display:flex;"><span>        v_out[w_out] <span style="color:#000;font-weight:bold">=</span> v_in[word]
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">return</span> v_out
+</span></span></code></pre></div><p>其中，<code>get_stats()</code>函数就是将任意两个连续的bytes（char）拼接起来，加入到字典<code>pairs</code>里面，然后就可以取出出现频次最大的字节对了。<code>merge_vocab()</code>则根据传进来的连续字符拼接结果<code>best</code>(是一个list)进行处理，首先是去除<code>re</code>相关的特殊字符，<code>v_in</code>是当前字典，然后这个函数将字典中best出现的连续两个字符用新的字符替换掉。</p>
+<h2 id="word-piece">Word Piece</h2>
+<p>前面提到了 WordPiece 算法怎么使用，这里是一些制作 WordPiece 词表的细节。</p>
+<p>与BPE算法类似，WordPiece 算法也是先将输入的句子分解成子词（如最细粒度的char级别），然后合并子词，不同的地方在于 WordPiece 在合并连续子词的时候会考虑句子的语言模型概率。简单来说，BPE选择的是频次最高的相邻子词进行合并，WordPiece选择的是能够提升语言模型概率最大的相邻子词进行合并加入到词表。</p>
+<p>下面用数学公式进行说明。假设当前句子$S=(t_0, t_1, \ldots, t_n)$共n个子词构成， 并且假设句子中每个子词是独立分布的，则句子的语言模型概率定义为：</p>
+<p>$$\log P(S) = \sum_{i=1}^{n} P(t_i)$$</p>
+<p>即所有子词概率的乘积，子词概率的初始值基于训练预料统计子词频率得到。</p>
+<p>然后就是合并子词，假设把相邻位置的 x 和 y 两个子词进行合并成 z，那么句子 S 的似然值变化表示为：</p>
+<p>$$\log P(t_z) - (\logP(t_x) + \logP(t_y) = \log \frac{P(t_z)}{P(t_x)P(t_y)}$$</p>
+<p>也就是似然值的变化是两个子词之间的互信息。简而言之，WordPiece每次选择合并子词，他们具有最大的互信息值，也就是两个子词在语言模型上具有较强的关联性，它们在语料中经常相邻着出现。</p>
+<h2 id="unigram-language-model">Unigram Language Model</h2>
+<p>与 WordPiece 类似，同样基于语言概率模型进行合并子词，不同的地方在于，BPE / WordPiece 两个算法的词表都是由小到大增加，而ULM的词表则是减量法，即先初始化一个大词表，然后根据评估准则不断丢弃词表，直到满足限定条件。不同的地方在于，ULM算法会考虑句子的不同分词形式（即子词单元不同），因而可以输出带概率的多个子词分段。</p>
+<p>至于在所有可能的分词结果中选取概率最高的分词形式，计算量比较大，可以使用维特比算法实现；另一方面，子词的初始概率是通过 EM 算法得到的。具体的就了解不深入了。</p>
+<p>具体可以参考<a href="https://zhuanlan.zhihu.com/p/198964217">NLP三大Subword模型详解：BPE、WordPiece、ULM</a>。</p>
+<h2 id="中文分词工具">中文分词工具</h2>
+<p>中文的 wordpiece 就是分字。基于准确率、分词速度角度对比的话，LTP准召比较高，但是速度最慢，整体的对比如图 - 1。</p>
+<p><figure>
+    <center>
+    <img src="/imgs/tokenizers/comp0.png" alt="图 - 1 不同中文分词算法准召、速度对比">
+    <figcaption>图 - 1 不同中文分词算法准召、速度对比</figcaption>
+    </center>
+</figure></p>
+<ul>
+<li>
+<p>哈工大 LTP: <a href="https://github.com/HIT-SCIR/ltp/blob/master/docs/quickstart.rst">LTP</a></p>
+<p>支持类似 HanLP 的几个功能！</p>
+</li>
+<li>
+<p>结巴: <a href="https://github.com/fxsjy/jieba">jieba - github</a></p>
+<ul>
+<li>基于前缀字典实现高效的词图扫描，生成句子中汉字所有可能成词情况所构成的有向无环图</li>
+<li>利用动态规划，查找最大概率路径，找出基于词频的最大切分组合</li>
+<li>对于未登陆词，采用了基于汉字成词能力的HMM模型，使用了viterbi算法</li>
+</ul>
+<p>支持四种分词模式，精确模式、全模式、搜索引擎模型、paddle模式等。</p>
+<p>此外，jieba 支持分词、自定义词典、关键词提取、词性标注。关键词提取支持基于 TF-IDF（返回TF-IDF权重最大的词）、TextRank提取关键词（分词，然后再固定窗口内计算词的共现关系，构建图，然后计算图中节点的PageRank）。</p>
+</li>
+<li>
+<p>SnowNLP</p>
+</li>
+<li>
+<p>PkuSeg</p>
+</li>
+<li>
+<p>THULAC</p>
+</li>
+<li>
+<p>HanLP: <a href="https://github.com/hankcs/HanLP">HanLP</a></p>
+<p>支持多大10中任务：分词、词性标注、命名实体识别、依存句法分析、成分句法分析、语义依存分析、语义角色标注、词干提取、词法语法特征分析、抽象意义分析等等。</p>
+</li>
+</ul>
+
+		
+	</div>
+
+	<div class="pagination">
+		<a href="/posts/mlm-related/" class="left arrow">&#8592;</a>
+		<a href="/posts/moe-original-paper/" class="right arrow">&#8594;</a>
+
+		<a href="#" class="top">Top</a>
+	</div>
+</main>
+
+
+        		<footer>
+			
+			<span>
+			&copy; <time datetime="2022-07-25 12:50:02.724616885 &#43;0800 CST m=&#43;0.131810948">2022</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
+			</span>
+		</footer>
+
+    </body>
+</html>

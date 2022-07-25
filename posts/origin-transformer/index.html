@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en-us">
+    <head>
+		
+		
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+		<title>Origin Transformer &middot; Triloon</title>
+
+		
+		<link rel="stylesheet" href="/css/style.css">
+		<link rel="stylesheet" href="/css/fonts.css">
+		<link rel="stylesheet" href="/css/custom.css">
+		
+		<link rel="icon" href="/favicon.ico"/>
+		<link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+		<link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+		<link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+
+		
+		<link href="" rel="alternate" type="application/rss+xml" title="Triloon" />
+
+		<script src="/js/darkmode.js"></script>
+	</head>
+
+    <body>
+        		<nav class="nav">
+			<div class="nav-container">
+				<a href="/">
+					
+						<h2 class="nav-title">Triloon</h2>
+					
+				</a>
+				<ul>
+    
+    
+        <li>
+            <a href="/about/about">
+                
+                <span>About</span>
+                
+            </a>
+        </li>
+    
+        <li>
+            <a href="/posts/">
+                
+                <span>Posts</span>
+                
+            </a>
+        </li>
+    
+</ul>
+			</div>
+		</nav>
+
+        <div id="darkModeToggle" onclick="toggleDarkMode()">
+  &#9680; 
+</div>
+
+        
+
+<main>
+	
+
+
+        <div class="post">
+		<div class="post-info">
+    <span>Written by</span>
+        triloon
+        <br>
+        <span>on&nbsp;</span><time datetime="2021-09-06 20:04:32 &#43;0800 CST">September 6, 2021</time>
+</div>
+
+		<h1 class="post-title">Origin Transformer</h1>
+<div class="post-line"></div>
+
+		
+
+		<p>Attention is all your need.</p>
+<h2 id="基础">基础</h2>
+<h3 id="attention">Attention</h3>
+<p>Attention 定义上是一个映射函数，输入<code>Q,K,V</code>等向量，输出是一个新的向量。具体定义如下：</p>
+<blockquote>
+<p>An attention function can be described as mapping a query and a set of key-value pairs to an output,
+where the query, keys, values, and output are all vectors. The output is computed as a weighted sum
+of the values, where the weight assigned to each value is computed by a compatibility function of the
+query with the corresponding key.</p>
+</blockquote>
+<h3 id="scaled-dot-product-attention">Scaled Dot-Product Attention</h3>
+<p>这里 <code>Dot-Product</code> 是一种计算Attention权重的方式（另一种常见的方式是 Additive Attention）。输入Q与K都是向量，维度为 $d_k$，输入 V 也是向量，维度为 $d_v$，然后权重计算过程是将 Q 与所有的 K 计算向量点乘（Dot-Product）。</p>
+<p>所谓的 <code>Scaled</code> 体现在将上述点乘结果除以 $\sqrt{d_k}$。为什么是除以这个数？主要原因是，两个 $d_k$ 维的矩阵乘（矩阵元素是mean 0, variance 1 生成的随机数），结果矩阵的方差就是$d_k$。所以，如果这里不进行 Scale，那么得到的矩阵数值就会越来越大，导致后面的 Softmax 饱和。</p>
+<p><figure>
+    <center>
+    <img src="/imgs/origin-transformer/transformer0.png" alt="图-1 Scaled Dot-Product Attention示意图">
+    <figcaption>图-1 Scaled Dot-Product Attention示意图</figcaption>
+    </center>
+</figure></p>
+<p>补充一下 Additive Attention。具体实现是通过全连接映射然后按元素加得到，公式如下。这里为什么选择 Dot-Product 而不是 Additive Attention 呢？而且两者的理论计算复杂度差不多。论文里也给出了解释，就是Dot-Product在实际计算中其实是更快的，毕竟矩阵乘法被研究、优化的更多。</p>
+<p>$$a(q, k) = w_v^T \tanh (W_q q + W_k k) \in \mathbb{R}$$</p>
+<h3 id="multi-head">Multi-head</h3>
+<p>作者发现，用不同的Linear Projection 来将 Q, K, V 进行映，然后对应的计算 Attention，最终将结果拼接起来的效果比使用一个单独的 Attention 效果更好。下面的公式与图2就可以很好的说明计算过程了，实际实现可以通过先合并 Linear Projection 的权重，然后在经过 Reshape 完成。</p>
+<p>$$\begin{gather*}
+\mathrm{MultiHead}(Q, K, V) = \mathrm{Concat}(head_1, \dots, head_n)W^O  \
+where, head_i = \text{Attention}(QW_i^Q, KW_i^K, VW_i^V)
+\end{gather*}$$</p>
+<p><figure>
+    <center>
+    <img src="/imgs/origin-transformer/transformer1.png" alt="图-2 Multi-Head Attention示意图">
+    <figcaption>图-2 Multi-Head Attention示意图</figcaption>
+    </center>
+</figure></p>
+<h3 id="position-wise-ffn">Position-wise FFN</h3>
+<p>实现上来看是两层全连接，并且第一层一般会将输入Tensor的channel个数扩展expansion(=4)倍，然后第二层全连接在恢复原来的 channel 个数。</p>
+<p>为什么叫 Position-wise 呢？按照论文的说法，我猜这里的Position是指 Depth 维度上的位置，体现在相同层的不同位置的 Token 公用相同的 Lienar Projection 权重矩阵，但是不同层上使用不同的 Linear Projection。</p>
+<blockquote>
+<p>While the linear transformations are the same across different positions, they use different parameters from layer to layer</p>
+</blockquote>
+<p>不过 D2L 中李沐的说法是：</p>
+<blockquote>
+<p>The positionwise feed-forward network transforms the representation at all the sequence positions using the same MLP. This is why we call it positionwise.</p>
+</blockquote>
+<h2 id="encoder-decoder结构">Encoder-Decoder结构</h2>
+<p>一个方面是如何将 Encoder 的信息传递给 Decoder，有两种做法，一种是指在Decoder的第一个输入位置上使用，另一种是在Decoder的每一次输入上都使用。</p>
+<h3 id="seq2seq">Seq2Seq</h3>
+<p>这里参考<a href="https://d2l.ai/chapter_recurrent-modern/seq2seq.html">Sequence to sequence leanring - d2l</a>中的讲解。</p>
+<p>具体的 Encoder - Decoder 部分这里基于 GRU 来实现。输入尺寸为：$(batch_size, num_steps, embed_size)$；GRU 的计算包含两个输出，一个是GRU 最后输出结果output，尺寸仍然是: $(num_steps, batch_size, embed_size)$，相当于每一步（共num_steps，可认为是 num_steps 个 Toke）都输出了一个新的 embed_size 大小的向量；另一个输出是隐空间变量 states，尺寸是 $(num_layers, batch_size, num_hiddens)$，相当于是当前输入Token与上一个Token对应的隐变量共同作用生成了当前Token对应的隐变量，这个隐变量就包含了前面所有 Token 的信息。 当前 token 的 output 与隐变量 state 之间的关系是：<code>output = Mlp(state)</code>。</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 0
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">rnn</span>(inputs, state, params):
+</span></span><span style="display:flex;"><span>    <span style="color:#998;font-style:italic"># Shape of `inputs`: (`num_steps`, `batch_size`, `vocab_size`)</span>
+</span></span><span style="display:flex;"><span>    W_xh, W_hh, b_h, W_hq, b_q <span style="color:#000;font-weight:bold">=</span> params
+</span></span><span style="display:flex;"><span>    H, <span style="color:#000;font-weight:bold">=</span> state
+</span></span><span style="display:flex;"><span>    outputs <span style="color:#000;font-weight:bold">=</span> []
+</span></span><span style="display:flex;"><span>    <span style="color:#998;font-style:italic"># Shape of `X`: (`batch_size`, `vocab_size`)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">for</span> X <span style="color:#000;font-weight:bold">in</span> inputs:
+</span></span><span style="display:flex;"><span>        H <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>tanh(np<span style="color:#000;font-weight:bold">.</span>dot(X, W_xh) <span style="color:#000;font-weight:bold">+</span> np<span style="color:#000;font-weight:bold">.</span>dot(H, W_hh) <span style="color:#000;font-weight:bold">+</span> b_h)
+</span></span><span style="display:flex;"><span>        Y <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>dot(H, W_hq) <span style="color:#000;font-weight:bold">+</span> b_q
+</span></span><span style="display:flex;"><span>        outputs<span style="color:#000;font-weight:bold">.</span>append(Y)
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">return</span> np<span style="color:#000;font-weight:bold">.</span>concatenate(outputs, axis<span style="color:#000;font-weight:bold">=</span><span style="color:#099">0</span>), (H,)
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>上面说完 Encoder 部分，Decoder 部分结构相同，但重要的是 Decoder 部分的输出应该怎么决定。</p>
+<p>输入主要包含两个部分，首先是起始Token，这里起始 Token 是一个特殊字符，<code>&lt;bos&gt;</code>；另一个部分就是隐变量的确定，这里使用 Encoder 输出的隐变量作为初始隐变量，注意这里 Encoder - Decoder 需要使用相同的层数，这样隐变量的尺寸才匹配，即：$(num_layers, batch size, embed_size)$。下面给出的示例代码中，还会将 Encoder 输出的最后一层的隐变量与输入 X 拼接起来进行计算。Decoder 的输出就是$(batch size, num steps, vocab size)$。</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 0
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">23
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">24
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">25
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">Seq2SeqDecoder</span>(d2l<span style="color:#000;font-weight:bold">.</span>Decoder):
+</span></span><span style="display:flex;"><span>    <span style="color:#d14">&#34;&#34;&#34;The RNN decoder for sequence to sequence learning.&#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">def</span> __init__(<span style="color:#999">self</span>, vocab_size, embed_size, num_hiddens, num_layers,
+</span></span><span style="display:flex;"><span>                 dropout<span style="color:#000;font-weight:bold">=</span><span style="color:#099">0</span>, <span style="color:#000;font-weight:bold">**</span>kwargs):
+</span></span><span style="display:flex;"><span>        <span style="color:#0086b3">super</span>(Seq2SeqDecoder, <span style="color:#999">self</span>)<span style="color:#000;font-weight:bold">.</span>__init__(<span style="color:#000;font-weight:bold">**</span>kwargs)
+</span></span><span style="display:flex;"><span>        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>embedding <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Embedding(vocab_size, embed_size)
+</span></span><span style="display:flex;"><span>        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>rnn <span style="color:#000;font-weight:bold">=</span> rnn<span style="color:#000;font-weight:bold">.</span>GRU(num_hiddens, num_layers, dropout<span style="color:#000;font-weight:bold">=</span>dropout)
+</span></span><span style="display:flex;"><span>        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>dense <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Dense(vocab_size, flatten<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">False</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">init_state</span>(<span style="color:#999">self</span>, enc_outputs, <span style="color:#000;font-weight:bold">*</span>args):
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">return</span> enc_outputs[<span style="color:#099">1</span>]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">forward</span>(<span style="color:#999">self</span>, X, state):
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># The output `X` shape: (`num_steps`, `batch_size`, `embed_size`)</span>
+</span></span><span style="display:flex;"><span>        X <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>embedding(X)<span style="color:#000;font-weight:bold">.</span>swapaxes(<span style="color:#099">0</span>, <span style="color:#099">1</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># `context` shape: (`batch_size`, `num_hiddens`)</span>
+</span></span><span style="display:flex;"><span>        context <span style="color:#000;font-weight:bold">=</span> state[<span style="color:#099">0</span>][<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>]      <span style="color:#998;font-style:italic"># 最后一层对应的隐变量</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># Broadcast `context` so it has the same `num_steps` as `X`</span>
+</span></span><span style="display:flex;"><span>        context <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>broadcast_to(
+</span></span><span style="display:flex;"><span>            context, (X<span style="color:#000;font-weight:bold">.</span>shape[<span style="color:#099">0</span>], context<span style="color:#000;font-weight:bold">.</span>shape[<span style="color:#099">0</span>], context<span style="color:#000;font-weight:bold">.</span>shape[<span style="color:#099">1</span>]))
+</span></span><span style="display:flex;"><span>        X_and_context <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>concatenate((X, context), <span style="color:#099">2</span>)
+</span></span><span style="display:flex;"><span>        output, state <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>rnn(X_and_context, state)
+</span></span><span style="display:flex;"><span>        output <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>dense(output)<span style="color:#000;font-weight:bold">.</span>swapaxes(<span style="color:#099">0</span>, <span style="color:#099">1</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># `output` shape: (`batch_size`, `num_steps`, `vocab_size`)</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># `state[0]` shape: (`num_layers`, `batch_size`, `num_hiddens`)</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">return</span> output, state
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="transformer-中的实现">Transformer 中的实现</h3>
+<p>Encoder 部分简单的是 Transformer 层的堆叠。Transformer 层包含两个sublayer，分别是 MultiHead Self Attention 以及 Positionwise FFN，这两个 sublayer 都会通过残差连接并紧跟着计算一个 LayerNorm （这里不讨论pre-norm的实现）。</p>
+<p>Decoder 部分相比于 Encoder 的两个 sublayer 构成，多了一个 cross-attention 的层。cross-attention的主要区别在于输入的 K, V 来自于对应的 Encoder 层，Query 来自于 Decoder 中上一层的 MultiHead Self Attention的输出。整体结构如下。</p>
+<p><figure>
+    <center>
+    <img src="/imgs/origin-transformer/transformer2.png" alt="图-3 Transformer Encoder-Decoder 示意图">
+    <figcaption>图-3 Transformer Encoder-Decoder 示意图</figcaption>
+    </center>
+</figure></p>
+<p>下面给出了MXNet实现代码，非常详细，但是解答了下面几个疑问。</p>
+<ul>
+<li>Decoder 最开始的输入是<code>&lt;bos&gt;</code>，在训练时，这个也是拼接在最前面的</li>
+<li>Decoder 中每一层中 Cross Attention 的 K, V 都是相同的，都来自于 Encoder 的最后输出</li>
+<li>在最大 num_steps 限制下，最后一个元素是 <code>&lt;eos&gt;</code> 时则退出 Decoder 部分</li>
+</ul>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">  0
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">  1
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">  2
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">  3
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">  4
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">  5
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">  6
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">  7
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">  8
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">  9
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 10
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 11
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 12
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 13
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 14
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 15
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 16
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 17
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 18
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 19
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 20
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 21
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 22
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 23
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 24
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 25
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 26
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 27
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 28
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 29
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 30
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 31
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 32
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 33
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 34
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 35
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 36
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 37
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 38
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 39
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 40
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 41
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 42
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 43
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 44
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 45
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 46
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 47
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 48
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 49
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 50
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 51
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 52
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 53
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 54
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 55
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 56
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 57
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 58
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 59
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 60
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 61
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 62
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 63
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 64
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 65
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 66
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 67
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 68
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 69
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 70
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 71
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 72
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 73
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 74
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 75
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 76
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 77
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 78
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 79
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 80
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 81
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 82
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 83
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 84
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 85
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 86
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 87
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 88
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 89
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 90
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 91
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 92
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 93
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 94
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 95
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 96
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 97
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 98
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 99
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">100
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">101
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">102
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">103
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">104
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">105
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">106
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">107
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">108
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">109
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">110
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">111
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">112
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">113
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">114
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">115
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">116
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">117
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">118
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">119
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">120
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">121
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">122
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">123
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">124
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">125
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">126
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">127
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">128
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">129
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">130
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">131
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">132
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">133
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">134
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">135
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">136
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">137
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">138
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">139
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">140
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">141
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">142
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">143
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">144
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">145
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">146
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">147
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">148
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">149
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">150
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">151
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">152
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">153
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">154
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">155
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">156
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">157
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">158
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">159
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">160
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">161
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">162
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">163
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">164
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">165
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">166
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">167
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">168
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">169
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">170
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">171
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">172
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">173
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">174
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">175
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">176
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">177
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">178
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">179
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">180
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">181
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">182
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">183
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">184
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">185
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">186
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">187
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">188
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">189
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">190
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">191
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">192
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">193
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">194
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">195
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">196
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">197
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">198
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">199
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">200
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">201
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">202
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">203
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">204
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">205
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">206
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">207
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">208
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">209
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">210
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">211
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">212
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">213
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">214
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">215
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">EncoderDecoder</span>(nn<span style="color:#000;font-weight:bold">.</span>Block):
+</span></span><span style="display:flex;"><span>    <span style="color:#d14">&#34;&#34;&#34;The base class for the encoder-decoder architecture.&#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">def</span> __init__(<span style="color:#999">self</span>, encoder, decoder, <span style="color:#000;font-weight:bold">**</span>kwargs):
+</span></span><span style="display:flex;"><span>        <span style="color:#0086b3">super</span>(EncoderDecoder, <span style="color:#999">self</span>)<span style="color:#000;font-weight:bold">.</span>__init__(<span style="color:#000;font-weight:bold">**</span>kwargs)
+</span></span><span style="display:flex;"><span>        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>encoder <span style="color:#000;font-weight:bold">=</span> encoder
+</span></span><span style="display:flex;"><span>        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>decoder <span style="color:#000;font-weight:bold">=</span> decoder
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">forward</span>(<span style="color:#999">self</span>, enc_X, dec_X, <span style="color:#000;font-weight:bold">*</span>args):
+</span></span><span style="display:flex;"><span>        enc_outputs <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>encoder(enc_X, <span style="color:#000;font-weight:bold">*</span>args)
+</span></span><span style="display:flex;"><span>        dec_state <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>decoder<span style="color:#000;font-weight:bold">.</span>init_state(enc_outputs, <span style="color:#000;font-weight:bold">*</span>args)
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">return</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>decoder(dec_X, dec_state)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">EncoderBlock</span>(nn<span style="color:#000;font-weight:bold">.</span>Block):
+</span></span><span style="display:flex;"><span>    <span style="color:#d14">&#34;&#34;&#34;Transformer encoder block.&#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">def</span> __init__(<span style="color:#999">self</span>, num_hiddens, ffn_num_hiddens, num_heads, dropout,
+</span></span><span style="display:flex;"><span>                 use_bias<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">False</span>, <span style="color:#000;font-weight:bold">**</span>kwargs):
+</span></span><span style="display:flex;"><span>        <span style="color:#0086b3">super</span>(EncoderBlock, <span style="color:#999">self</span>)<span style="color:#000;font-weight:bold">.</span>__init__(<span style="color:#000;font-weight:bold">**</span>kwargs)
+</span></span><span style="display:flex;"><span>        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>attention <span style="color:#000;font-weight:bold">=</span> d2l<span style="color:#000;font-weight:bold">.</span>MultiHeadAttention(num_hiddens, num_heads,
+</span></span><span style="display:flex;"><span>                                                dropout, use_bias)
+</span></span><span style="display:flex;"><span>        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>addnorm1 <span style="color:#000;font-weight:bold">=</span> AddNorm(dropout)
+</span></span><span style="display:flex;"><span>        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>ffn <span style="color:#000;font-weight:bold">=</span> PositionWiseFFN(ffn_num_hiddens, num_hiddens)
+</span></span><span style="display:flex;"><span>        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>addnorm2 <span style="color:#000;font-weight:bold">=</span> AddNorm(dropout)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">forward</span>(<span style="color:#999">self</span>, X, valid_lens):
+</span></span><span style="display:flex;"><span>        Y <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>addnorm1(X, <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>attention(X, X, X, valid_lens))
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">return</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>addnorm2(Y, <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>ffn(Y))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">TransformerEncoder</span>(d2l<span style="color:#000;font-weight:bold">.</span>Encoder):
+</span></span><span style="display:flex;"><span>    <span style="color:#d14">&#34;&#34;&#34;Transformer encoder.&#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">def</span> __init__(<span style="color:#999">self</span>, vocab_size, num_hiddens, ffn_num_hiddens, num_heads,
+</span></span><span style="display:flex;"><span>                 num_layers, dropout, use_bias<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">False</span>, <span style="color:#000;font-weight:bold">**</span>kwargs):
+</span></span><span style="display:flex;"><span>        <span style="color:#0086b3">super</span>(TransformerEncoder, <span style="color:#999">self</span>)<span style="color:#000;font-weight:bold">.</span>__init__(<span style="color:#000;font-weight:bold">**</span>kwargs)
+</span></span><span style="display:flex;"><span>        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>num_hiddens <span style="color:#000;font-weight:bold">=</span> num_hiddens
+</span></span><span style="display:flex;"><span>        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>embedding <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Embedding(vocab_size, num_hiddens)
+</span></span><span style="display:flex;"><span>        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>pos_encoding <span style="color:#000;font-weight:bold">=</span> d2l<span style="color:#000;font-weight:bold">.</span>PositionalEncoding(num_hiddens, dropout)
+</span></span><span style="display:flex;"><span>        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>blks <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Sequential()
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">for</span> _ <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(num_layers):
+</span></span><span style="display:flex;"><span>            <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>blks<span style="color:#000;font-weight:bold">.</span>add(
+</span></span><span style="display:flex;"><span>                EncoderBlock(num_hiddens, ffn_num_hiddens, num_heads, dropout,
+</span></span><span style="display:flex;"><span>                             use_bias))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">forward</span>(<span style="color:#999">self</span>, X, valid_lens, <span style="color:#000;font-weight:bold">*</span>args):
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># Since positional encoding values are between -1 and 1, the embedding</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># values are multiplied by the square root of the embedding dimension</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># to rescale before they are summed up</span>
+</span></span><span style="display:flex;"><span>        X <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>pos_encoding(<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>embedding(X) <span style="color:#000;font-weight:bold">*</span> math<span style="color:#000;font-weight:bold">.</span>sqrt(<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>num_hiddens))
+</span></span><span style="display:flex;"><span>        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>attention_weights <span style="color:#000;font-weight:bold">=</span> [<span style="color:#000;font-weight:bold">None</span>] <span style="color:#000;font-weight:bold">*</span> <span style="color:#0086b3">len</span>(<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>blks)
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">for</span> i, blk <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">enumerate</span>(<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>blks):
+</span></span><span style="display:flex;"><span>            X <span style="color:#000;font-weight:bold">=</span> blk(X, valid_lens)
+</span></span><span style="display:flex;"><span>            <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>attention_weights[
+</span></span><span style="display:flex;"><span>                i] <span style="color:#000;font-weight:bold">=</span> blk<span style="color:#000;font-weight:bold">.</span>attention<span style="color:#000;font-weight:bold">.</span>attention<span style="color:#000;font-weight:bold">.</span>attention_weights
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">return</span> X
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">DecoderBlock</span>(nn<span style="color:#000;font-weight:bold">.</span>Block):
+</span></span><span style="display:flex;"><span>    <span style="color:#998;font-style:italic"># The `i`-th block in the decoder</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">def</span> __init__(<span style="color:#999">self</span>, num_hiddens, ffn_num_hiddens, num_heads, dropout, i,
+</span></span><span style="display:flex;"><span>                 <span style="color:#000;font-weight:bold">**</span>kwargs):
+</span></span><span style="display:flex;"><span>        <span style="color:#0086b3">super</span>(DecoderBlock, <span style="color:#999">self</span>)<span style="color:#000;font-weight:bold">.</span>__init__(<span style="color:#000;font-weight:bold">**</span>kwargs)
+</span></span><span style="display:flex;"><span>        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>i <span style="color:#000;font-weight:bold">=</span> i
+</span></span><span style="display:flex;"><span>        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>attention1 <span style="color:#000;font-weight:bold">=</span> d2l<span style="color:#000;font-weight:bold">.</span>MultiHeadAttention(num_hiddens, num_heads,
+</span></span><span style="display:flex;"><span>                                                 dropout)
+</span></span><span style="display:flex;"><span>        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>addnorm1 <span style="color:#000;font-weight:bold">=</span> AddNorm(dropout)
+</span></span><span style="display:flex;"><span>        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>attention2 <span style="color:#000;font-weight:bold">=</span> d2l<span style="color:#000;font-weight:bold">.</span>MultiHeadAttention(num_hiddens, num_heads,
+</span></span><span style="display:flex;"><span>                                                 dropout)
+</span></span><span style="display:flex;"><span>        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>addnorm2 <span style="color:#000;font-weight:bold">=</span> AddNorm(dropout)
+</span></span><span style="display:flex;"><span>        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>ffn <span style="color:#000;font-weight:bold">=</span> PositionWiseFFN(ffn_num_hiddens, num_hiddens)
+</span></span><span style="display:flex;"><span>        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>addnorm3 <span style="color:#000;font-weight:bold">=</span> AddNorm(dropout)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">forward</span>(<span style="color:#999">self</span>, X, state):
+</span></span><span style="display:flex;"><span>        enc_outputs, enc_valid_lens <span style="color:#000;font-weight:bold">=</span> state[<span style="color:#099">0</span>], state[<span style="color:#099">1</span>]
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># During training, all the tokens of any output sequence are processed</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># at the same time, so `state[2][self.i]` is `None` as initialized.</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># When decoding any output sequence token by token during prediction,</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># `state[2][self.i]` contains representations of the decoded output at</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># the `i`-th block up to the current time step</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">if</span> state[<span style="color:#099">2</span>][<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>i] <span style="color:#000;font-weight:bold">is</span> <span style="color:#000;font-weight:bold">None</span>:
+</span></span><span style="display:flex;"><span>            key_values <span style="color:#000;font-weight:bold">=</span> X
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">else</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#998;font-style:italic"># 这里是只使用已预测的Token进行计算</span>
+</span></span><span style="display:flex;"><span>            key_values <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>concatenate((state[<span style="color:#099">2</span>][<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>i], X), axis<span style="color:#000;font-weight:bold">=</span><span style="color:#099">1</span>)     
+</span></span><span style="display:flex;"><span>        state[<span style="color:#099">2</span>][<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>i] <span style="color:#000;font-weight:bold">=</span> key_values
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">if</span> autograd<span style="color:#000;font-weight:bold">.</span>is_training():
+</span></span><span style="display:flex;"><span>            batch_size, num_steps, _ <span style="color:#000;font-weight:bold">=</span> X<span style="color:#000;font-weight:bold">.</span>shape
+</span></span><span style="display:flex;"><span>            <span style="color:#998;font-style:italic"># Shape of `dec_valid_lens`: (`batch_size`, `num_steps`), where</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#998;font-style:italic"># every row is [1, 2, ..., `num_steps`]</span>
+</span></span><span style="display:flex;"><span>            dec_valid_lens <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>tile(np<span style="color:#000;font-weight:bold">.</span>arange(<span style="color:#099">1</span>, num_steps <span style="color:#000;font-weight:bold">+</span> <span style="color:#099">1</span>, ctx<span style="color:#000;font-weight:bold">=</span>X<span style="color:#000;font-weight:bold">.</span>ctx),
+</span></span><span style="display:flex;"><span>                                     (batch_size, <span style="color:#099">1</span>))
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">else</span>:
+</span></span><span style="display:flex;"><span>            dec_valid_lens <span style="color:#000;font-weight:bold">=</span> <span style="color:#000;font-weight:bold">None</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># Self-attention</span>
+</span></span><span style="display:flex;"><span>        X2 <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>attention1(X, key_values, key_values, dec_valid_lens)
+</span></span><span style="display:flex;"><span>        Y <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>addnorm1(X, X2)
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># Encoder-decoder attention. Shape of `enc_outputs`:</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># (`batch_size`, `num_steps`, `num_hiddens`)</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic">## 这里使用 Encoder 最后的输出的 enc_outputs 当作 K, V 进行计算！！</span>
+</span></span><span style="display:flex;"><span>        Y2 <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>attention2(Y, enc_outputs, enc_outputs, enc_valid_lens)
+</span></span><span style="display:flex;"><span>        Z <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>addnorm2(Y, Y2)
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">return</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>addnorm3(Z, <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>ffn(Z)), state
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">TransformerDecoder</span>(d2l<span style="color:#000;font-weight:bold">.</span>AttentionDecoder):
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">def</span> __init__(<span style="color:#999">self</span>, vocab_size, num_hiddens, ffn_num_hiddens, num_heads,
+</span></span><span style="display:flex;"><span>                 num_layers, dropout, <span style="color:#000;font-weight:bold">**</span>kwargs):
+</span></span><span style="display:flex;"><span>        <span style="color:#0086b3">super</span>(TransformerDecoder, <span style="color:#999">self</span>)<span style="color:#000;font-weight:bold">.</span>__init__(<span style="color:#000;font-weight:bold">**</span>kwargs)
+</span></span><span style="display:flex;"><span>        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>num_hiddens <span style="color:#000;font-weight:bold">=</span> num_hiddens
+</span></span><span style="display:flex;"><span>        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>num_layers <span style="color:#000;font-weight:bold">=</span> num_layers
+</span></span><span style="display:flex;"><span>        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>embedding <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Embedding(vocab_size, num_hiddens)
+</span></span><span style="display:flex;"><span>        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>pos_encoding <span style="color:#000;font-weight:bold">=</span> d2l<span style="color:#000;font-weight:bold">.</span>PositionalEncoding(num_hiddens, dropout)
+</span></span><span style="display:flex;"><span>        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>blks <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Sequential()
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">for</span> i <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(num_layers):
+</span></span><span style="display:flex;"><span>            <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>blks<span style="color:#000;font-weight:bold">.</span>add(
+</span></span><span style="display:flex;"><span>                DecoderBlock(num_hiddens, ffn_num_hiddens, num_heads, dropout,
+</span></span><span style="display:flex;"><span>                             i))
+</span></span><span style="display:flex;"><span>        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>dense <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Dense(vocab_size, flatten<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">False</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">init_state</span>(<span style="color:#999">self</span>, enc_outputs, enc_valid_lens, <span style="color:#000;font-weight:bold">*</span>args):
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">return</span> [enc_outputs, enc_valid_lens, [<span style="color:#000;font-weight:bold">None</span>] <span style="color:#000;font-weight:bold">*</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>num_layers]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">forward</span>(<span style="color:#999">self</span>, X, state):
+</span></span><span style="display:flex;"><span>        X <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>pos_encoding(<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>embedding(X) <span style="color:#000;font-weight:bold">*</span> math<span style="color:#000;font-weight:bold">.</span>sqrt(<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>num_hiddens))
+</span></span><span style="display:flex;"><span>        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>_attention_weights <span style="color:#000;font-weight:bold">=</span> [[<span style="color:#000;font-weight:bold">None</span>] <span style="color:#000;font-weight:bold">*</span> <span style="color:#0086b3">len</span>(<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>blks) <span style="color:#000;font-weight:bold">for</span> _ <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(<span style="color:#099">2</span>)]
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">for</span> i, blk <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">enumerate</span>(<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>blks):
+</span></span><span style="display:flex;"><span>            X, state <span style="color:#000;font-weight:bold">=</span> blk(X, state)
+</span></span><span style="display:flex;"><span>            <span style="color:#998;font-style:italic"># Decoder self-attention weights</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>_attention_weights[<span style="color:#099">0</span>][
+</span></span><span style="display:flex;"><span>                i] <span style="color:#000;font-weight:bold">=</span> blk<span style="color:#000;font-weight:bold">.</span>attention1<span style="color:#000;font-weight:bold">.</span>attention<span style="color:#000;font-weight:bold">.</span>attention_weights
+</span></span><span style="display:flex;"><span>            <span style="color:#998;font-style:italic"># Encoder-decoder attention weights</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>_attention_weights[<span style="color:#099">1</span>][
+</span></span><span style="display:flex;"><span>                i] <span style="color:#000;font-weight:bold">=</span> blk<span style="color:#000;font-weight:bold">.</span>attention2<span style="color:#000;font-weight:bold">.</span>attention<span style="color:#000;font-weight:bold">.</span>attention_weights
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">return</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>dense(X), state
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#3c5d5d;font-weight:bold">@property</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">attention_weights</span>(<span style="color:#999">self</span>):
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">return</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>_attention_weights
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>num_hiddens, num_layers, dropout, batch_size, num_steps <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">32</span>, <span style="color:#099">2</span>, <span style="color:#099">0.1</span>, <span style="color:#099">64</span>, <span style="color:#099">10</span>
+</span></span><span style="display:flex;"><span>lr, num_epochs, device <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">0.005</span>, <span style="color:#099">200</span>, d2l<span style="color:#000;font-weight:bold">.</span>try_gpu()
+</span></span><span style="display:flex;"><span>ffn_num_hiddens, num_heads <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">64</span>, <span style="color:#099">4</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>train_iter, src_vocab, tgt_vocab <span style="color:#000;font-weight:bold">=</span> d2l<span style="color:#000;font-weight:bold">.</span>load_data_nmt(batch_size, num_steps)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>encoder <span style="color:#000;font-weight:bold">=</span> TransformerEncoder(<span style="color:#0086b3">len</span>(src_vocab), num_hiddens, ffn_num_hiddens,
+</span></span><span style="display:flex;"><span>                             num_heads, num_layers, dropout)
+</span></span><span style="display:flex;"><span>decoder <span style="color:#000;font-weight:bold">=</span> TransformerDecoder(<span style="color:#0086b3">len</span>(tgt_vocab), num_hiddens, ffn_num_hiddens,
+</span></span><span style="display:flex;"><span>                             num_heads, num_layers, dropout)
+</span></span><span style="display:flex;"><span>net <span style="color:#000;font-weight:bold">=</span> d2l<span style="color:#000;font-weight:bold">.</span>EncoderDecoder(encoder, decoder)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>d2l<span style="color:#000;font-weight:bold">.</span>train_seq2seq(net, train_iter, lr, num_epochs, tgt_vocab, device)
+</span></span><span style="display:flex;"><span>engs <span style="color:#000;font-weight:bold">=</span> [<span style="color:#d14">&#39;go .&#39;</span>, <span style="color:#d14">&#34;i lost .&#34;</span>, <span style="color:#d14">&#39;he</span><span style="color:#d14">\&#39;</span><span style="color:#d14">s calm .&#39;</span>, <span style="color:#d14">&#39;i</span><span style="color:#d14">\&#39;</span><span style="color:#d14">m home .&#39;</span>]
+</span></span><span style="display:flex;"><span>fras <span style="color:#000;font-weight:bold">=</span> [<span style="color:#d14">&#39;va !&#39;</span>, <span style="color:#d14">&#39;j</span><span style="color:#d14">\&#39;</span><span style="color:#d14">ai perdu .&#39;</span>, <span style="color:#d14">&#39;il est calme .&#39;</span>, <span style="color:#d14">&#39;je suis chez moi .&#39;</span>]
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">for</span> eng, fra <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">zip</span>(engs, fras):
+</span></span><span style="display:flex;"><span>    translation, dec_attention_weight_seq <span style="color:#000;font-weight:bold">=</span> d2l<span style="color:#000;font-weight:bold">.</span>predict_seq2seq(
+</span></span><span style="display:flex;"><span>        net, eng, src_vocab, tgt_vocab, num_steps, device, <span style="color:#000;font-weight:bold">True</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#0086b3">print</span>(<span style="color:#d14">f</span><span style="color:#d14">&#39;</span><span style="color:#d14">{</span>eng<span style="color:#d14">}</span><span style="color:#d14"> =&gt; </span><span style="color:#d14">{</span>translation<span style="color:#d14">}</span><span style="color:#d14">, &#39;</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#d14">f</span><span style="color:#d14">&#39;bleu </span><span style="color:#d14">{</span>d2l<span style="color:#000;font-weight:bold">.</span>bleu(translation, fra, k<span style="color:#000;font-weight:bold">=</span><span style="color:#099">2</span>)<span style="color:#d14">:</span><span style="color:#d14">.3f</span><span style="color:#d14">}</span><span style="color:#d14">&#39;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">predict_seq2seq</span>(net, src_sentence, src_vocab, tgt_vocab, num_steps,
+</span></span><span style="display:flex;"><span>                    device, save_attention_weights<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">False</span>):
+</span></span><span style="display:flex;"><span>    <span style="color:#d14">&#34;&#34;&#34;Predict for sequence to sequence.&#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    src_tokens <span style="color:#000;font-weight:bold">=</span> src_vocab[src_sentence<span style="color:#000;font-weight:bold">.</span>lower()<span style="color:#000;font-weight:bold">.</span>split(<span style="color:#d14">&#39; &#39;</span>)] <span style="color:#000;font-weight:bold">+</span> [
+</span></span><span style="display:flex;"><span>        src_vocab[<span style="color:#d14">&#39;&lt;eos&gt;&#39;</span>]]
+</span></span><span style="display:flex;"><span>    enc_valid_len <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>array([<span style="color:#0086b3">len</span>(src_tokens)], ctx<span style="color:#000;font-weight:bold">=</span>device)
+</span></span><span style="display:flex;"><span>    src_tokens <span style="color:#000;font-weight:bold">=</span> d2l<span style="color:#000;font-weight:bold">.</span>truncate_pad(src_tokens, num_steps, src_vocab[<span style="color:#d14">&#39;&lt;pad&gt;&#39;</span>])
+</span></span><span style="display:flex;"><span>    <span style="color:#998;font-style:italic"># Add the batch axis</span>
+</span></span><span style="display:flex;"><span>    enc_X <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>expand_dims(np<span style="color:#000;font-weight:bold">.</span>array(src_tokens, ctx<span style="color:#000;font-weight:bold">=</span>device), axis<span style="color:#000;font-weight:bold">=</span><span style="color:#099">0</span>)
+</span></span><span style="display:flex;"><span>    enc_outputs <span style="color:#000;font-weight:bold">=</span> net<span style="color:#000;font-weight:bold">.</span>encoder(enc_X, enc_valid_len)
+</span></span><span style="display:flex;"><span>    dec_state <span style="color:#000;font-weight:bold">=</span> net<span style="color:#000;font-weight:bold">.</span>decoder<span style="color:#000;font-weight:bold">.</span>init_state(enc_outputs, enc_valid_len)
+</span></span><span style="display:flex;"><span>    <span style="color:#998;font-style:italic"># Add the batch axis</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#998;font-style:italic">## 最开始的是 &#39;&lt;bos&gt;&#39;</span>
+</span></span><span style="display:flex;"><span>    dec_X <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>expand_dims(np<span style="color:#000;font-weight:bold">.</span>array([tgt_vocab[<span style="color:#d14">&#39;&lt;bos&gt;&#39;</span>]], ctx<span style="color:#000;font-weight:bold">=</span>device), axis<span style="color:#000;font-weight:bold">=</span><span style="color:#099">0</span>)
+</span></span><span style="display:flex;"><span>    output_seq, attention_weight_seq <span style="color:#000;font-weight:bold">=</span> [], []
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">for</span> _ <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(num_steps):
+</span></span><span style="display:flex;"><span>        Y, dec_state <span style="color:#000;font-weight:bold">=</span> net<span style="color:#000;font-weight:bold">.</span>decoder(dec_X, dec_state)
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># We use the token with the highest prediction likelihood as the input</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># of the decoder at the next time step</span>
+</span></span><span style="display:flex;"><span>        dec_X <span style="color:#000;font-weight:bold">=</span> Y<span style="color:#000;font-weight:bold">.</span>argmax(axis<span style="color:#000;font-weight:bold">=</span><span style="color:#099">2</span>)
+</span></span><span style="display:flex;"><span>        pred <span style="color:#000;font-weight:bold">=</span> dec_X<span style="color:#000;font-weight:bold">.</span>squeeze(axis<span style="color:#000;font-weight:bold">=</span><span style="color:#099">0</span>)<span style="color:#000;font-weight:bold">.</span>astype(<span style="color:#d14">&#39;int32&#39;</span>)<span style="color:#000;font-weight:bold">.</span>item()
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># Save attention weights (to be covered later)</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">if</span> save_attention_weights:
+</span></span><span style="display:flex;"><span>            attention_weight_seq<span style="color:#000;font-weight:bold">.</span>append(net<span style="color:#000;font-weight:bold">.</span>decoder<span style="color:#000;font-weight:bold">.</span>attention_weights)
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># Once the end-of-sequence token is predicted, the generation of the</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># output sequence is complete</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">if</span> pred <span style="color:#000;font-weight:bold">==</span> tgt_vocab[<span style="color:#d14">&#39;&lt;eos&gt;&#39;</span>]:
+</span></span><span style="display:flex;"><span>            <span style="color:#000;font-weight:bold">break</span>
+</span></span><span style="display:flex;"><span>        output_seq<span style="color:#000;font-weight:bold">.</span>append(pred)
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">return</span> <span style="color:#d14">&#39; &#39;</span><span style="color:#000;font-weight:bold">.</span>join(tgt_vocab<span style="color:#000;font-weight:bold">.</span>to_tokens(output_seq)), attention_weight_seq
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">train_seq2seq</span>(net, data_iter, lr, num_epochs, tgt_vocab, device):
+</span></span><span style="display:flex;"><span>    <span style="color:#d14">&#34;&#34;&#34;Train a model for sequence to sequence.&#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    net<span style="color:#000;font-weight:bold">.</span>initialize(init<span style="color:#000;font-weight:bold">.</span>Xavier(), force_reinit<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">True</span>, ctx<span style="color:#000;font-weight:bold">=</span>device)
+</span></span><span style="display:flex;"><span>    trainer <span style="color:#000;font-weight:bold">=</span> gluon<span style="color:#000;font-weight:bold">.</span>Trainer(net<span style="color:#000;font-weight:bold">.</span>collect_params(), <span style="color:#d14">&#39;adam&#39;</span>,
+</span></span><span style="display:flex;"><span>                            {<span style="color:#d14">&#39;learning_rate&#39;</span>: lr})
+</span></span><span style="display:flex;"><span>    loss <span style="color:#000;font-weight:bold">=</span> MaskedSoftmaxCELoss()
+</span></span><span style="display:flex;"><span>    animator <span style="color:#000;font-weight:bold">=</span> d2l<span style="color:#000;font-weight:bold">.</span>Animator(xlabel<span style="color:#000;font-weight:bold">=</span><span style="color:#d14">&#39;epoch&#39;</span>, ylabel<span style="color:#000;font-weight:bold">=</span><span style="color:#d14">&#39;loss&#39;</span>,
+</span></span><span style="display:flex;"><span>                            xlim<span style="color:#000;font-weight:bold">=</span>[<span style="color:#099">10</span>, num_epochs])
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">for</span> epoch <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(num_epochs):
+</span></span><span style="display:flex;"><span>        timer <span style="color:#000;font-weight:bold">=</span> d2l<span style="color:#000;font-weight:bold">.</span>Timer()
+</span></span><span style="display:flex;"><span>        metric <span style="color:#000;font-weight:bold">=</span> d2l<span style="color:#000;font-weight:bold">.</span>Accumulator(<span style="color:#099">2</span>)  <span style="color:#998;font-style:italic"># Sum of training loss, no. of tokens</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">for</span> batch <span style="color:#000;font-weight:bold">in</span> data_iter:
+</span></span><span style="display:flex;"><span>            X, X_valid_len, Y, Y_valid_len <span style="color:#000;font-weight:bold">=</span> [
+</span></span><span style="display:flex;"><span>                x<span style="color:#000;font-weight:bold">.</span>as_in_ctx(device) <span style="color:#000;font-weight:bold">for</span> x <span style="color:#000;font-weight:bold">in</span> batch]
+</span></span><span style="display:flex;"><span>            bos <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>array([tgt_vocab[<span style="color:#d14">&#39;&lt;bos&gt;&#39;</span>]] <span style="color:#000;font-weight:bold">*</span> Y<span style="color:#000;font-weight:bold">.</span>shape[<span style="color:#099">0</span>],
+</span></span><span style="display:flex;"><span>                           ctx<span style="color:#000;font-weight:bold">=</span>device)<span style="color:#000;font-weight:bold">.</span>reshape(<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>, <span style="color:#099">1</span>)
+</span></span><span style="display:flex;"><span>            dec_input <span style="color:#000;font-weight:bold">=</span> d2l<span style="color:#000;font-weight:bold">.</span>concat([bos, Y[:, :<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>]], <span style="color:#099">1</span>)  <span style="color:#998;font-style:italic"># Teacher forcing</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#000;font-weight:bold">with</span> autograd<span style="color:#000;font-weight:bold">.</span>record():
+</span></span><span style="display:flex;"><span>                Y_hat, _ <span style="color:#000;font-weight:bold">=</span> net(X, dec_input, X_valid_len)
+</span></span><span style="display:flex;"><span>                l <span style="color:#000;font-weight:bold">=</span> loss(Y_hat, Y, Y_valid_len)
+</span></span><span style="display:flex;"><span>            l<span style="color:#000;font-weight:bold">.</span>backward()
+</span></span><span style="display:flex;"><span>            d2l<span style="color:#000;font-weight:bold">.</span>grad_clipping(net, <span style="color:#099">1</span>)
+</span></span><span style="display:flex;"><span>            num_tokens <span style="color:#000;font-weight:bold">=</span> Y_valid_len<span style="color:#000;font-weight:bold">.</span>sum()
+</span></span><span style="display:flex;"><span>            trainer<span style="color:#000;font-weight:bold">.</span>step(num_tokens)
+</span></span><span style="display:flex;"><span>            metric<span style="color:#000;font-weight:bold">.</span>add(l<span style="color:#000;font-weight:bold">.</span>sum(), num_tokens)
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">if</span> (epoch <span style="color:#000;font-weight:bold">+</span> <span style="color:#099">1</span>) <span style="color:#000;font-weight:bold">%</span> <span style="color:#099">10</span> <span style="color:#000;font-weight:bold">==</span> <span style="color:#099">0</span>:
+</span></span><span style="display:flex;"><span>            animator<span style="color:#000;font-weight:bold">.</span>add(epoch <span style="color:#000;font-weight:bold">+</span> <span style="color:#099">1</span>, (metric[<span style="color:#099">0</span>] <span style="color:#000;font-weight:bold">/</span> metric[<span style="color:#099">1</span>],))
+</span></span><span style="display:flex;"><span>    <span style="color:#0086b3">print</span>(<span style="color:#d14">f</span><span style="color:#d14">&#39;loss </span><span style="color:#d14">{</span>metric[<span style="color:#099">0</span>] <span style="color:#000;font-weight:bold">/</span> metric[<span style="color:#099">1</span>]<span style="color:#d14">:</span><span style="color:#d14">.3f</span><span style="color:#d14">}</span><span style="color:#d14">, </span><span style="color:#d14">{</span>metric[<span style="color:#099">1</span>] <span style="color:#000;font-weight:bold">/</span> timer<span style="color:#000;font-weight:bold">.</span>stop()<span style="color:#d14">:</span><span style="color:#d14">.1f</span><span style="color:#d14">}</span><span style="color:#d14"> &#39;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div>
+
+		
+	</div>
+
+	<div class="pagination">
+		<a href="/posts/cnn-transformer-volo/" class="left arrow">&#8592;</a>
+		<a href="/posts/model-visualization/" class="right arrow">&#8594;</a>
+
+		<a href="#" class="top">Top</a>
+	</div>
+</main>
+
+
+        		<footer>
+			
+			<span>
+			&copy; <time datetime="2022-07-25 12:50:02.760509893 &#43;0800 CST m=&#43;0.167703956">2022</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
+			</span>
+		</footer>
+
+    </body>
+</html>

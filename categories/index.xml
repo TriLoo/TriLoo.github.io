@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Categories on Triloon</title>
+    <link>https://triloon.space/categories/</link>
+    <description>Recent content in Categories on Triloon</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Mon, 30 Aug 2021 20:03:11 +0800</lastBuildDate><atom:link href="https://triloon.space/categories/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>red</title>
+      <link>https://triloon.space/categories/red/</link>
+      <pubDate>Mon, 30 Aug 2021 20:03:11 +0800</pubDate>
+      
+      <guid>https://triloon.space/categories/red/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>yellow</title>
+      <link>https://triloon.space/categories/yellow/</link>
+      <pubDate>Mon, 30 Aug 2021 20:03:11 +0800</pubDate>
+      
+      <guid>https://triloon.space/categories/yellow/</guid>
+      <description></description>
+    </item>
+    
+  </channel>
+</rss>

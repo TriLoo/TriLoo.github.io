@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en-us">
+    <head>
+		
+		
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+		<title>Hugo Notes &middot; Triloon</title>
+
+		
+		<link rel="stylesheet" href="/css/style.css">
+		<link rel="stylesheet" href="/css/fonts.css">
+		<link rel="stylesheet" href="/css/custom.css">
+		
+		<link rel="icon" href="/favicon.ico"/>
+		<link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+		<link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+		<link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+
+		
+		<link href="" rel="alternate" type="application/rss+xml" title="Triloon" />
+
+		<script src="/js/darkmode.js"></script>
+	</head>
+
+    <body>
+        		<nav class="nav">
+			<div class="nav-container">
+				<a href="/">
+					
+						<h2 class="nav-title">Triloon</h2>
+					
+				</a>
+				<ul>
+    
+    
+        <li>
+            <a href="/about/about">
+                
+                <span>About</span>
+                
+            </a>
+        </li>
+    
+        <li>
+            <a href="/posts/">
+                
+                <span>Posts</span>
+                
+            </a>
+        </li>
+    
+</ul>
+			</div>
+		</nav>
+
+        <div id="darkModeToggle" onclick="toggleDarkMode()">
+  &#9680; 
+</div>
+
+        
+
+<main>
+	
+
+
+        <div class="post">
+		<div class="post-info">
+    <span>Written by</span>
+        triloon
+        <br>
+        <span>on&nbsp;</span><time datetime="2021-08-30 14:37:40 &#43;0800 CST">August 30, 2021</time>
+</div>
+
+		<h1 class="post-title">Hugo Notes</h1>
+<div class="post-line"></div>
+
+		
+
+		<p>一些hugo blog搭建过程中的记录。</p>
+<ul>
+<li>
+<p>基础命令</p>
+<ul>
+<li>
+<p>Ubuntu 安装高版本的 hugo：<a href="https://github.com/gohugoio/hugo/releases">hugo release</a>这里下载高版本的hugo deb 文件；ubuntu 默认安装的还是0.63版本，编译的时候会报错：goldmark parser error.</p>
+</li>
+<li>
+<p>从 github 下载此仓库，然后切换到 src 分支上</p>
+</li>
+<li>
+<p>使用命令下载 theme（在此之前可能需要删除已有的目录）:</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>git clone https://github.com/EmielH/tale-hugo.git themes/tale
+</span></span></code></pre></td></tr></table>
+</div>
+</div><ul>
+<li>使用 <code>hugo</code> 进行编译</li>
+<li>更新到 github master 分支： <code>cd public &amp;&amp; git add -A . &amp;&amp; git commit -m 'update commit info' &amp;&amp; git push</code></li>
+<li>期间使用 <code>hugo server -D</code>查看正在编写的blog的效果。</li>
+</ul>
+<p>参考这个知乎文章：<a href="https://zhuanlan.zhihu.com/p/422859066">Hugo 搭建个人博客教程</a></p>
+</li>
+</ul>
+</li>
+<li>
+<p>添加 table of contents</p>
+<p>参考博客：<a href="https://codingreflections.com/hugo-table-of-contents/">How to Add Table Of Contents to a Hugo Blog</a>。目前用到的是第一种方式。
+包含两个步骤：</p>
+<ul>
+<li>create shortcode</li>
+<li>call the shortcode inside markdown</li>
+</ul>
+</li>
+<li>
+<p>添加代码块并展示行号</p>
+<p>参考博客：<a href="https://gohugo.io/content-management/syntax-highlighting/">Syntax Highlighting</a>，以及官方文档：<a href="https://gohugo.io/getting-started/configuration-markup#highlight">Configure Markup - highlight</a></p>
+<p>文中还给出了不同配置参数的解释、可用的 style 展示等。</p>
+</li>
+<li>
+<p>添加Latex公式支持</p>
+<p>无用的博客，因为已经过时了，hugo不在支持 mmark 这种 content format 了。<a href="https://dawnarc.com/2019/09/hugokatex-intergration/">KaTex Intergration - 玄冬Wong</a>。而且目前 mathjax 比 katex 支持的更全。</p>
+<p>另一篇博客是: <a href="https://rulenuts.netlify.app/post/config-hugo-with-mathjax-or-katex/">Config Hugo with Mathjax or Katex</a></p>
+<p>最终有用的博客是：<a href="https://www.gohugo.org/doc/tutorials/mathjax/">MathJax Support</a> 以及 <a href="http://xuchengpeng.com/hexo-blog/2018/07/10/setting-mathjax-with-hugo/">Setting MathJax with Hugo</a> 以及 <a href="https://note.qidong.name/2018/03/hugo-mathjax/">在Hugo中使用MathJax</a> 以及<a href="https://blog.csdn.net/weixin_42109159/article/details/105099962">hugo使用katex</a></p>
+</li>
+<li>
+<p>插入图片</p>
+<p>两个可行的参考是：<a href="https://discourse.gohugo.io/t/solved-how-to-insert-image-in-my-post/1473">how-to-insert-image-in-my-post</a> 以及 <a href="https://gohugo.io/content-management/shortcodes/#figure">hugo-conent-management shortcodes</a></p>
+<p>具体使用：将下载的图片保存到 static 目录，比如按照 post tilte 命名的目录下面（例如，<code>/User/apple/myblogs/static/imgs/binary-search-tree/img00.png</code>，<code>/User/apple/myblogs</code>为项目根目录，即运行<code>hugo server</code>等命令的目录，<code>/User/apple/myblogs/public</code>为编译后的结果），然后在.md正文里指定图片地址（例如，<code>![image caption](/imgs/binary-search-tree/img00.png)</code>，注意下直接从<code>/imgs</code>开始）。</p>
+<p>第二个博客里给出了另外一种加载图片的方式，即使用shortcodes（Markdown语言的补充，方便建立网页。），而且也给出了其他多媒体信息的加载方式，比如vimeo, youtube, gist, tweet, instagram等信息。</p>
+<p>显示图片 Caption 过程，可以参考<a href="https://sebastiandedeyne.com/captioned-images-with-markdown-render-hooks-in-hugo/">Caption images with markdown render hooks in Hugo</a>，也就是在<code>myblogs/layouts/_default/_makeup</code>目录下面创建一个<code>render-image.html</code>文件，然后填上如下内容：</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">0
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-html" data-lang="html"><span style="display:flex;"><span>&lt;<span style="color:#000080">figure</span>&gt;
+</span></span><span style="display:flex;"><span>  &lt;<span style="color:#000080">center</span>&gt;
+</span></span><span style="display:flex;"><span>  &lt;<span style="color:#000080">img</span> <span style="color:#008080">src</span><span style="color:#000;font-weight:bold">=</span><span style="color:#d14">&#34;{{ .Destination | safeURL }}&#34;</span> <span style="color:#008080">alt</span><span style="color:#000;font-weight:bold">=</span><span style="color:#d14">&#34;{{ .Text }}&#34;</span>&gt;
+</span></span><span style="display:flex;"><span>  &lt;<span style="color:#000080">figcaption</span>&gt;{{ .Text }}&lt;/<span style="color:#000080">figcaption</span>&gt;
+</span></span><span style="display:flex;"><span>  &lt;/<span style="color:#000080">center</span>&gt;
+</span></span><span style="display:flex;"><span>&lt;/<span style="color:#000080">figure</span>&gt;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>或者用 <code>.Title</code> 代替代码块第三行的 <code>.Text</code> 来使用 Title 作为 Caption。然后在Markdone里加载图片没有变化，注意 Title 的位置：<code>![alt text](path &quot;title&quot;)</code>，title可以是空。</p>
+</li>
+<li>
+<p>添加网页图标</p>
+<p>一个常见的博客是：<a href="https://www.enthuseandinspire.co.uk/blog/favicon/">Favicon</a>，但是目前来看还没有起作用。但是在 <code>triloon.space</code> 上起作用了，后续需要补充上 windows 的格式。</p>
+</li>
+</ul>
+
+		
+	</div>
+
+	<div class="pagination">
+		<a href="/about/about/" class="left arrow">&#8592;</a>
+		<a href="/posts/my-first-post/" class="right arrow">&#8594;</a>
+
+		<a href="#" class="top">Top</a>
+	</div>
+</main>
+
+
+        		<footer>
+			
+			<span>
+			&copy; <time datetime="2022-07-25 12:50:02.687258969 &#43;0800 CST m=&#43;0.094453033">2022</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
+			</span>
+		</footer>
+
+    </body>
+</html>

@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en-us">
+    <head>
+		
+		
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+		<title>常见掩码生成方式 2 &middot; Triloon</title>
+
+		
+		<link rel="stylesheet" href="/css/style.css">
+		<link rel="stylesheet" href="/css/fonts.css">
+		<link rel="stylesheet" href="/css/custom.css">
+		
+		<link rel="icon" href="/favicon.ico"/>
+		<link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+		<link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+		<link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+
+		
+		<link href="" rel="alternate" type="application/rss+xml" title="Triloon" />
+
+		<script src="/js/darkmode.js"></script>
+	</head>
+
+    <body>
+        		<nav class="nav">
+			<div class="nav-container">
+				<a href="/">
+					
+						<h2 class="nav-title">Triloon</h2>
+					
+				</a>
+				<ul>
+    
+    
+        <li>
+            <a href="/about/about">
+                
+                <span>About</span>
+                
+            </a>
+        </li>
+    
+        <li>
+            <a href="/posts/">
+                
+                <span>Posts</span>
+                
+            </a>
+        </li>
+    
+</ul>
+			</div>
+		</nav>
+
+        <div id="darkModeToggle" onclick="toggleDarkMode()">
+  &#9680; 
+</div>
+
+        
+
+<main>
+	
+
+
+        <div class="post">
+		<div class="post-info">
+    <span>Written by</span>
+        triloon
+        <br>
+        <span>on&nbsp;</span><time datetime="2021-10-27 22:08:15 &#43;0800 CST">October 27, 2021</time>
+</div>
+
+		<h1 class="post-title">常见掩码生成方式 2</h1>
+<div class="post-line"></div>
+
+		
+
+		<p>这是接着上一篇掩码生成方式写的，主要仅包含SpanBERT &amp; MacBERT的原理与实现。</p>
+<h2 id="spanbert">SpanBERT</h2>
+<p>SpanBERT的官方实现代码比想象中的复杂，并且还没有比较好的说明文档，所以这里单独作为一篇笔记详细分析一下。SpanBERT这篇论文主要的创新点有三个，（1）引入了新的掩膜方式，即随机掩膜掉连续长度的token，（2）引入了掩膜边界预测损失，即Span Boundary Object (SBO)，（3）去掉了BERT中使用的 NSP 任务</p>
+<h3 id="spanbert创新点">SpanBERT创新点</h3>
+<p>对于第一点，需要确定连续掩膜的起始位置 + 掩膜长度。这里起始位置是uniform随机选择的；掩膜长度是按照$l \sim \textrm{Geo}(p=0.2)$ 来确定的，其中Geo对应的是<a href="https://en.wikipedia.org/wiki/Geometric_distribution">Geometric Distribution</a>。</p>
+<p>Gemoetric Distribution分布可以从两个角度理解，试验k次，成功的次数，其中p为每次实验成功的概率，或者实验k次，成功前连续有k-1次失败的概率，前者k的取值是$[1, 2, \ldots ]$，后者的取值是$[0, 1, \ldots]$。对应的数学公式如下。</p>
+<p>$$\textrm{Geo}(p) = (1-p)^{k-1}p$$</p>
+<p>这里 k 也就是掩膜的长度了，也就是对应的掩膜长度对应1、2、3 &hellip; 等的概率了。并且，p越接近于1，概率下降越快，也就更倾向于更短的掩膜；还有一点是，这里的长度值得是 whole word 的个数，而不是wordpiece元素的个数! 与前面WWM的做法不同的是，SpanBERT将位于Span内的要被掩膜的tokens采用同一种掩膜方式，现在掩膜方式有三种：使用Mask、随机Token、保持不变。</p>
+<p>SBO 任务实际上是用Span边界位置未被掩膜掉的两个 token 预测被掩膜掉的 token 的分类任务，与 MLM 相互补充，只不过 MLM 用的是所有 token 的信息，SBO 只用了边界位置 token 的信息。比如输入的 token 序列是$x_1, \ldots, x_n$，然后$x_s, x_e$表示掩膜span的边界，则SBO使用$x_{s-1}, x_{e+1}$两个token配合在相对位置$i$上的信息来预测具体的 token $y_i$，如下式所示。</p>
+<p>$$y_i = f(e_{s-1}, e_{e+1}, p_{i-s+1})$$</p>
+<p>$p$为相对位置编码，维度是200，对应的函数$f$是一个两层的前向网络，激活函数为 GELU，上述三个输入数据拼接起来后送入到这个前向网络，伪代码如下。</p>
+<p>$$h_0 = [ x_{s-1}; x_{e+1}; p_{i-s+1} ]$$</p>
+<p>$$h_1 = \textrm{LayerNorm}(\textrm{GeLU}(W_1h_0))$$</p>
+<p>$$y_i = \textrm{LayerNorm}(\textrm{GeLU}(W_2h_1))$$</p>
+<p>然后SpanBERT对应的预训练任务用公式表示如下。</p>
+<p>$$\mathcal{L}_(x _i) = \mathcal{L} _{MLM}(x _i) + \mathcal{L} _{SBO}(x _i) = -\log P(x _i | \mathbf{x _i}) - \log P(x _i | \mathbf{y _i})$$</p>
+<p>其中，$x_i$为预测的 token 的索引，$\mathbf{x_i}$ 为模型输出的对应位置的特征向量，$\mathbf{y_i}$为上述通过 SBO 计算出来的特征向量。</p>
+<p>去掉 NSP 任务是指，只用一个句子来计算上述的SBO任务，作者主要发现BERT用到的NSP任务中构造负样本的方式（其它doc的句子作为负样本）噪声太大，会妨碍模型的学习。</p>
+<p>总结上文，SpanBERT论文里起始用到的两个掩膜Loss，一个是普通的 MLM，一个是 SBO，他们的关系以及计算方式如下图所示。</p>
+<p><figure>
+    <center>
+    <img src="/imgs/mlm-related/span0.png" alt="图 - 1 SpanBERT计算MLM &amp;amp; SBO损失函数示意图">
+    <figcaption>图 - 1 SpanBERT计算MLM &amp;amp; SBO损失函数示意图</figcaption>
+    </center>
+</figure></p>
+<h3 id="spanbert代码实现">SpanBERT代码实现</h3>
+<p>要分析SpanBERT的实现，代码部分主要就是三个部分：数据加载、模型计算、Loss计算，至于transformers &amp; fairseq 等框架问题都比较清洗，花点时间理解一下即可。</p>
+<p>数据加载部分的重点在于掩码的生成，经过<code>spanbert.py::SpanBertTask.load_dataset()</code>函数内调用<code>indexed_dataset.py::IndexedRawTextDataset</code>以及<code>BlockDataset</code>等Dataset类，最终在<code>NoNSPSpanBertDataset</code>类内完成掩膜的生成以及对应label的计算等，这里采用的掩膜方式为<code>PairWithSpanMaskingScheme</code>类。下面是主要的<code>mask()</code>函数的代码。</p>
+<p>送入到损失函数计算的数据生成代码是：</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">def</span> __getitem__(<span style="color:#999">self</span>, index):
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">with</span> data_utils<span style="color:#000;font-weight:bold">.</span>numpy_seed(<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>seed <span style="color:#000;font-weight:bold">+</span> index):
+</span></span><span style="display:flex;"><span>            block <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>dataset[index]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># tagmap -&gt; default None</span>
+</span></span><span style="display:flex;"><span>        tagmap <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>dataset<span style="color:#000;font-weight:bold">.</span>tag_map[block[<span style="color:#099">0</span>]:block[<span style="color:#099">1</span>]] <span style="color:#000;font-weight:bold">if</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>dataset<span style="color:#000;font-weight:bold">.</span>tag_map <span style="color:#000;font-weight:bold">is</span> <span style="color:#000;font-weight:bold">not</span> <span style="color:#000;font-weight:bold">None</span> <span style="color:#000;font-weight:bold">else</span> <span style="color:#000;font-weight:bold">None</span>
+</span></span><span style="display:flex;"><span>        masked_block, masked_tgt, pair_targets <span style="color:#000;font-weight:bold">=</span> \
+</span></span><span style="display:flex;"><span>            <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>_mask_block(<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>dataset<span style="color:#000;font-weight:bold">.</span>tokens[block[<span style="color:#099">0</span>]:block[<span style="color:#099">1</span>]], tagmap)        <span style="color:#998;font-style:italic">#   进行掩码!</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        item <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>concatenate(
+</span></span><span style="display:flex;"><span>            [
+</span></span><span style="display:flex;"><span>                [<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>vocab<span style="color:#000;font-weight:bold">.</span>cls()],
+</span></span><span style="display:flex;"><span>                masked_block,
+</span></span><span style="display:flex;"><span>                [<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>vocab<span style="color:#000;font-weight:bold">.</span>sep()],
+</span></span><span style="display:flex;"><span>            ]
+</span></span><span style="display:flex;"><span>        )
+</span></span><span style="display:flex;"><span>        target <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>concatenate([[<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>vocab<span style="color:#000;font-weight:bold">.</span>pad()], masked_tgt, [<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>vocab<span style="color:#000;font-weight:bold">.</span>pad()]])
+</span></span><span style="display:flex;"><span>        seg <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>zeros(block[<span style="color:#099">1</span>] <span style="color:#000;font-weight:bold">-</span> block[<span style="color:#099">0</span>] <span style="color:#000;font-weight:bold">+</span> <span style="color:#099">2</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">if</span> pair_targets <span style="color:#000;font-weight:bold">is</span> <span style="color:#000;font-weight:bold">not</span> <span style="color:#000;font-weight:bold">None</span> <span style="color:#000;font-weight:bold">and</span>  <span style="color:#0086b3">len</span>(pair_targets) <span style="color:#000;font-weight:bold">&gt;</span> <span style="color:#099">0</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#998;font-style:italic"># dummy = [[0 for i in range(self.args.max_pair_targets + 2)]]</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#998;font-style:italic"># add 1 to the first two since they are input indices. Rest are targets.</span>
+</span></span><span style="display:flex;"><span>            pair_targets <span style="color:#000;font-weight:bold">=</span> [[(x<span style="color:#000;font-weight:bold">+</span><span style="color:#099">1</span>) <span style="color:#000;font-weight:bold">if</span> i <span style="color:#000;font-weight:bold">&lt;</span> <span style="color:#099">2</span> <span style="color:#000;font-weight:bold">else</span> x <span style="color:#000;font-weight:bold">for</span> i, x <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">enumerate</span>(pair_tgt)] <span style="color:#000;font-weight:bold">for</span> pair_tgt <span style="color:#000;font-weight:bold">in</span> pair_targets]
+</span></span><span style="display:flex;"><span>            <span style="color:#998;font-style:italic"># pair_targets = dummy + pair_targets</span>
+</span></span><span style="display:flex;"><span>            pair_targets <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>from_numpy(np<span style="color:#000;font-weight:bold">.</span>array(pair_targets))<span style="color:#000;font-weight:bold">.</span>long()
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">else</span>:
+</span></span><span style="display:flex;"><span>            pair_targets <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>zeros((<span style="color:#099">1</span>, <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>args<span style="color:#000;font-weight:bold">.</span>max_pair_targets <span style="color:#000;font-weight:bold">+</span> <span style="color:#099">2</span>), dtype<span style="color:#000;font-weight:bold">=</span>torch<span style="color:#000;font-weight:bold">.</span>long)
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">return</span> {
+</span></span><span style="display:flex;"><span>            <span style="color:#d14">&#39;id&#39;</span>: index,
+</span></span><span style="display:flex;"><span>            <span style="color:#d14">&#39;source&#39;</span>: torch<span style="color:#000;font-weight:bold">.</span>from_numpy(item)<span style="color:#000;font-weight:bold">.</span>long(),
+</span></span><span style="display:flex;"><span>            <span style="color:#d14">&#39;segment_labels&#39;</span>: torch<span style="color:#000;font-weight:bold">.</span>from_numpy(seg)<span style="color:#000;font-weight:bold">.</span>long(),
+</span></span><span style="display:flex;"><span>            <span style="color:#998;font-style:italic">## 重点是 lm_target &amp; pair_targets 的生成过程以及内容</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#d14">&#39;lm_target&#39;</span>: torch<span style="color:#000;font-weight:bold">.</span>from_numpy(target)<span style="color:#000;font-weight:bold">.</span>long(),
+</span></span><span style="display:flex;"><span>            <span style="color:#d14">&#39;pair_targets&#39;</span>: pair_targets,
+</span></span><span style="display:flex;"><span>        }
+</span></span></code></pre></div><p>可见，返回的就是 sample 的index，当前句子对应token的索引，还有就是segment type ids，前两者是BERT用到的数据，后面的就是MLM、SBO任务对应的标签数据了，分别是lm target 以及 pair targets。</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">mask</span>(<span style="color:#999">self</span>, sentence, tagmap<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">None</span>):
+</span></span><span style="display:flex;"><span>        sent_length <span style="color:#000;font-weight:bold">=</span> <span style="color:#0086b3">len</span>(sentence)
+</span></span><span style="display:flex;"><span>        mask_num <span style="color:#000;font-weight:bold">=</span> math<span style="color:#000;font-weight:bold">.</span>ceil(sent_length <span style="color:#000;font-weight:bold">*</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>mask_ratio)
+</span></span><span style="display:flex;"><span>        mask <span style="color:#000;font-weight:bold">=</span> <span style="color:#0086b3">set</span>()
+</span></span><span style="display:flex;"><span>        word_piece_map <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>paragraph_info<span style="color:#000;font-weight:bold">.</span>get_word_piece_map(sentence)
+</span></span><span style="display:flex;"><span>        spans <span style="color:#000;font-weight:bold">=</span> []
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">while</span> <span style="color:#0086b3">len</span>(mask) <span style="color:#000;font-weight:bold">&lt;</span> mask_num:
+</span></span><span style="display:flex;"><span>            span_len <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>random<span style="color:#000;font-weight:bold">.</span>choice(<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>lens, p<span style="color:#000;font-weight:bold">=</span><span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>len_distrib)
+</span></span><span style="display:flex;"><span>            tagged_indices <span style="color:#000;font-weight:bold">=</span> <span style="color:#000;font-weight:bold">None</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#000;font-weight:bold">if</span> tagmap <span style="color:#000;font-weight:bold">is</span> <span style="color:#000;font-weight:bold">not</span> <span style="color:#000;font-weight:bold">None</span>:
+</span></span><span style="display:flex;"><span>                tagged_indices <span style="color:#000;font-weight:bold">=</span> [<span style="color:#0086b3">max</span>(<span style="color:#099">0</span>, i <span style="color:#000;font-weight:bold">-</span> np<span style="color:#000;font-weight:bold">.</span>random<span style="color:#000;font-weight:bold">.</span>randint(<span style="color:#099">0</span>, span_len)) <span style="color:#000;font-weight:bold">for</span> i <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(tagmap<span style="color:#000;font-weight:bold">.</span>length()) <span style="color:#000;font-weight:bold">if</span> tagmap[i]]
+</span></span><span style="display:flex;"><span>                tagged_indices <span style="color:#000;font-weight:bold">+=</span> [np<span style="color:#000;font-weight:bold">.</span>random<span style="color:#000;font-weight:bold">.</span>choice(sent_length)] <span style="color:#000;font-weight:bold">*</span> <span style="color:#0086b3">int</span>(<span style="color:#0086b3">len</span>(tagged_indices) <span style="color:#000;font-weight:bold">==</span> <span style="color:#099">0</span>)
+</span></span><span style="display:flex;"><span>            anchor  <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>random<span style="color:#000;font-weight:bold">.</span>choice(sent_length) <span style="color:#000;font-weight:bold">if</span> np<span style="color:#000;font-weight:bold">.</span>random<span style="color:#000;font-weight:bold">.</span>rand() <span style="color:#000;font-weight:bold">&gt;=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>args<span style="color:#000;font-weight:bold">.</span>tagged_anchor_prob <span style="color:#000;font-weight:bold">else</span> np<span style="color:#000;font-weight:bold">.</span>random<span style="color:#000;font-weight:bold">.</span>choice(tagged_indices)
+</span></span><span style="display:flex;"><span>            <span style="color:#000;font-weight:bold">if</span> anchor <span style="color:#000;font-weight:bold">in</span> mask:
+</span></span><span style="display:flex;"><span>                <span style="color:#000;font-weight:bold">continue</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#998;font-style:italic"># find word start, end</span>
+</span></span><span style="display:flex;"><span>            left1, right1 <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>paragraph_info<span style="color:#000;font-weight:bold">.</span>get_word_start(sentence, anchor, word_piece_map), <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>paragraph_info<span style="color:#000;font-weight:bold">.</span>get_word_end(sentence, anchor, word_piece_map)
+</span></span><span style="display:flex;"><span>            spans<span style="color:#000;font-weight:bold">.</span>append([left1, left1])
+</span></span><span style="display:flex;"><span>            <span style="color:#000;font-weight:bold">for</span> i <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(left1, right1):
+</span></span><span style="display:flex;"><span>                <span style="color:#000;font-weight:bold">if</span> <span style="color:#0086b3">len</span>(mask) <span style="color:#000;font-weight:bold">&gt;=</span> mask_num:
+</span></span><span style="display:flex;"><span>                    <span style="color:#000;font-weight:bold">break</span>
+</span></span><span style="display:flex;"><span>                mask<span style="color:#000;font-weight:bold">.</span>add(i)
+</span></span><span style="display:flex;"><span>                spans[<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>][<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>] <span style="color:#000;font-weight:bold">=</span> i
+</span></span><span style="display:flex;"><span>            num_words <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">1</span>
+</span></span><span style="display:flex;"><span>            right2 <span style="color:#000;font-weight:bold">=</span> right1
+</span></span><span style="display:flex;"><span>            <span style="color:#000;font-weight:bold">while</span> num_words <span style="color:#000;font-weight:bold">&lt;</span> span_len <span style="color:#000;font-weight:bold">and</span> right2 <span style="color:#000;font-weight:bold">&lt;</span> <span style="color:#0086b3">len</span>(sentence) <span style="color:#000;font-weight:bold">and</span> <span style="color:#0086b3">len</span>(mask) <span style="color:#000;font-weight:bold">&lt;</span> mask_num:
+</span></span><span style="display:flex;"><span>                <span style="color:#998;font-style:italic"># complete current word</span>
+</span></span><span style="display:flex;"><span>                left2 <span style="color:#000;font-weight:bold">=</span> right2
+</span></span><span style="display:flex;"><span>                right2 <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>paragraph_info<span style="color:#000;font-weight:bold">.</span>get_word_end(sentence, right2, word_piece_map)
+</span></span><span style="display:flex;"><span>                num_words <span style="color:#000;font-weight:bold">+=</span> <span style="color:#099">1</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#000;font-weight:bold">for</span> i <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(left2, right2):
+</span></span><span style="display:flex;"><span>                    <span style="color:#000;font-weight:bold">if</span> <span style="color:#0086b3">len</span>(mask) <span style="color:#000;font-weight:bold">&gt;=</span> mask_num:
+</span></span><span style="display:flex;"><span>                        <span style="color:#000;font-weight:bold">break</span>
+</span></span><span style="display:flex;"><span>                    mask<span style="color:#000;font-weight:bold">.</span>add(i)
+</span></span><span style="display:flex;"><span>                    spans[<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>][<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>] <span style="color:#000;font-weight:bold">=</span> i
+</span></span><span style="display:flex;"><span>        sentence, target, pair_targets <span style="color:#000;font-weight:bold">=</span> span_masking(sentence, spans, <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>tokens, <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>pad, <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>mask_id, <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>max_pair_targets, mask, replacement<span style="color:#000;font-weight:bold">=</span><span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>args<span style="color:#000;font-weight:bold">.</span>replacement_method, endpoints<span style="color:#000;font-weight:bold">=</span><span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>args<span style="color:#000;font-weight:bold">.</span>endpoints)
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">if</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>args<span style="color:#000;font-weight:bold">.</span>return_only_spans:
+</span></span><span style="display:flex;"><span>            pair_targets <span style="color:#000;font-weight:bold">=</span> <span style="color:#000;font-weight:bold">None</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">return</span> sentence, target, pair_targets
+</span></span></code></pre></div><p>变量<code>sentence</code>里面包含的就是所有的token元素，<code>get_word_piece_map()</code>函数将输入的对应位置tokens判断是否是词首还是非词首。外面的 <code>while</code> 循环主要就是生成 span 范围，这里每次生成 span 范围作为一个<code>[left, right]</code>保存到 span 变量里面。生成所有的 span 信息之后，就作为参数传入到 <code>span_masking()</code>函数里了，也是一个非常重要的函数。</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">span_masking</span>(sentence, spans, tokens, pad, mask_id, pad_len, mask, replacement<span style="color:#000;font-weight:bold">=</span><span style="color:#d14">&#39;word_piece&#39;</span>, endpoints<span style="color:#000;font-weight:bold">=</span><span style="color:#d14">&#39;external&#39;</span>):
+</span></span><span style="display:flex;"><span>    sentence <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>copy(sentence)
+</span></span><span style="display:flex;"><span>    sent_length <span style="color:#000;font-weight:bold">=</span> <span style="color:#0086b3">len</span>(sentence)
+</span></span><span style="display:flex;"><span>    target <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>full(sent_length, pad)
+</span></span><span style="display:flex;"><span>    pair_targets <span style="color:#000;font-weight:bold">=</span> []
+</span></span><span style="display:flex;"><span>    spans <span style="color:#000;font-weight:bold">=</span> merge_intervals(spans)
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">assert</span> <span style="color:#0086b3">len</span>(mask) <span style="color:#000;font-weight:bold">==</span> <span style="color:#0086b3">sum</span>([e <span style="color:#000;font-weight:bold">-</span> s <span style="color:#000;font-weight:bold">+</span> <span style="color:#099">1</span> <span style="color:#000;font-weight:bold">for</span> s,e <span style="color:#000;font-weight:bold">in</span> spans])
+</span></span><span style="display:flex;"><span>    <span style="color:#998;font-style:italic"># print(list(enumerate(sentence)))</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">for</span> start, end <span style="color:#000;font-weight:bold">in</span> spans:
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># endpoints = `external`</span>
+</span></span><span style="display:flex;"><span>        lower_limit <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">0</span> <span style="color:#000;font-weight:bold">if</span> endpoints <span style="color:#000;font-weight:bold">==</span> <span style="color:#d14">&#39;external&#39;</span> <span style="color:#000;font-weight:bold">else</span> <span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>
+</span></span><span style="display:flex;"><span>        upper_limit <span style="color:#000;font-weight:bold">=</span> sent_length <span style="color:#000;font-weight:bold">-</span> <span style="color:#099">1</span> <span style="color:#000;font-weight:bold">if</span> endpoints <span style="color:#000;font-weight:bold">==</span> <span style="color:#d14">&#39;external&#39;</span> <span style="color:#000;font-weight:bold">else</span> sent_length
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">if</span> start <span style="color:#000;font-weight:bold">&gt;</span> lower_limit <span style="color:#000;font-weight:bold">and</span> end <span style="color:#000;font-weight:bold">&lt;</span> upper_limit:
+</span></span><span style="display:flex;"><span>            <span style="color:#000;font-weight:bold">if</span> endpoints <span style="color:#000;font-weight:bold">==</span> <span style="color:#d14">&#39;external&#39;</span>:
+</span></span><span style="display:flex;"><span>                pair_targets <span style="color:#000;font-weight:bold">+=</span> [[start <span style="color:#000;font-weight:bold">-</span> <span style="color:#099">1</span>, end <span style="color:#000;font-weight:bold">+</span> <span style="color:#099">1</span>]]
+</span></span><span style="display:flex;"><span>            <span style="color:#000;font-weight:bold">else</span>:
+</span></span><span style="display:flex;"><span>                pair_targets <span style="color:#000;font-weight:bold">+=</span> [[start, end]]
+</span></span><span style="display:flex;"><span>            <span style="color:#998;font-style:italic"># pair_targets[-1]元素的结构是: [s-1, e+1, x_s, x_{s+1} ... x_{e}]，元素个数是 2 + （e - s)</span>
+</span></span><span style="display:flex;"><span>            pair_targets[<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>] <span style="color:#000;font-weight:bold">+=</span> [sentence[i] <span style="color:#000;font-weight:bold">for</span> i <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(start, end <span style="color:#000;font-weight:bold">+</span> <span style="color:#099">1</span>)]
+</span></span><span style="display:flex;"><span>        rand <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>random<span style="color:#000;font-weight:bold">.</span>random()       <span style="color:#998;font-style:italic"># 整个 span 只用一种替换方式，比如 mask 或者随机其它 token 或者 全保持不变</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">for</span> i <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(start, end <span style="color:#000;font-weight:bold">+</span> <span style="color:#099">1</span>):
+</span></span><span style="display:flex;"><span>            <span style="color:#000;font-weight:bold">assert</span> i <span style="color:#000;font-weight:bold">in</span> mask
+</span></span><span style="display:flex;"><span>            target[i] <span style="color:#000;font-weight:bold">=</span> sentence[i]
+</span></span><span style="display:flex;"><span>            <span style="color:#000;font-weight:bold">if</span> replacement <span style="color:#000;font-weight:bold">==</span> <span style="color:#d14">&#39;word_piece&#39;</span>:
+</span></span><span style="display:flex;"><span>                rand <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>random<span style="color:#000;font-weight:bold">.</span>random()
+</span></span><span style="display:flex;"><span>            <span style="color:#000;font-weight:bold">if</span> rand <span style="color:#000;font-weight:bold">&lt;</span> <span style="color:#099">0.8</span>:
+</span></span><span style="display:flex;"><span>                sentence[i] <span style="color:#000;font-weight:bold">=</span> mask_id
+</span></span><span style="display:flex;"><span>            <span style="color:#000;font-weight:bold">elif</span> rand <span style="color:#000;font-weight:bold">&lt;</span> <span style="color:#099">0.9</span>:
+</span></span><span style="display:flex;"><span>                <span style="color:#998;font-style:italic"># sample random token according to input distribution</span>
+</span></span><span style="display:flex;"><span>                sentence[i] <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>random<span style="color:#000;font-weight:bold">.</span>choice(tokens)
+</span></span><span style="display:flex;"><span>    <span style="color:#998;font-style:italic"># pair_targets 的维度是：(pair nums, 2 + (e - s))</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#998;font-style:italic"># + 2 表示的是 s - 1, e + 1 这两个位置信息</span>
+</span></span><span style="display:flex;"><span>    pair_targets <span style="color:#000;font-weight:bold">=</span> pad_to_len(pair_targets, pad, pad_len <span style="color:#000;font-weight:bold">+</span> <span style="color:#099">2</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#998;font-style:italic"># if pair_targets is None:</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">return</span> sentence, target, pair_targets
+</span></span></code></pre></div><p>这个函数，首先调用<code>merge_intervals()</code>函数合并那些有重叠的span区域，可以参考源代码，比较简单。<code>mask</code>参数保存的是那些位于 span 掩膜下面的位置信息。然后<code>for</code>循环里面可以分为两个部分，上面一部分生成SBO的标签，下面的<code>for</code>循环生成MLM的标签，这里<code>endpoints</code>的参数是<code>external</code>，对应的上面原理部分的$x_{s-1}, x_{e+1}$两个 token 对应的位置。SBO标签信息保存在<code>pair_targets</code>里面，这是一个二维list，里面的每个 list 表示一个 span 范围，并且元素的结构是<code>[s-1, e+1, x_{s}, x_{s+1} ... x_{e}]</code>，这里<code>x</code>表示真是的token字符。然后第二部分就体现了论文中提到的只用一个掩膜方式进行掩码，也就是有一个全局的<code>rand</code>参数存在，<code>for</code>循环里面就是正常的 MLM 标签生成过程了。注意送入<code>pad_to_len</code>中最大长度 + 2 了，<code>pad_len</code>对应模型实现部分的<code>max_targets</code>参数。</p>
+<p>最后的<code>pad_to_len()</code>函数将<code>pair_targets</code>参数扩展到<code>pad_len + 2</code>的形式，产生的结果会直接用于Loss的计算，所以这里给出具体实现，函数如下。</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">pad_to_len</span>(pair_targets, pad, max_pair_target_len):
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">for</span> i <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(<span style="color:#0086b3">len</span>(pair_targets)):
+</span></span><span style="display:flex;"><span>        pair_targets[i] <span style="color:#000;font-weight:bold">=</span> pair_targets[i][:max_pair_target_len]
+</span></span><span style="display:flex;"><span>        this_len <span style="color:#000;font-weight:bold">=</span> <span style="color:#0086b3">len</span>(pair_targets[i])
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># 补全</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">for</span> j <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(max_pair_target_len <span style="color:#000;font-weight:bold">-</span> this_len):
+</span></span><span style="display:flex;"><span>            pair_targets[i]<span style="color:#000;font-weight:bold">.</span>append(pad)
+</span></span><span style="display:flex;"><span>    <span style="color:#998;font-style:italic"># 返回的数据尺寸是（pair nums, max_pair_target_len）</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">return</span> pair_targets
+</span></span></code></pre></div><p>这个函数做的事情就是截断 &amp; 补全，返回的数据尺寸见注释。至此，就分析完了数据加载过程，送给模型输入的数据就是上面<code>__getitem__</code>函数的返回结果了。那么怎么组成一个 batch 数据呢，毕竟每个sample可能的mask长度以及 span pair 的个数不一定相同。具体的<code>collector</code>函数实现如下。</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">_collate</span>(<span style="color:#999">self</span>, samples, pad_idx):
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">if</span> <span style="color:#0086b3">len</span>(samples) <span style="color:#000;font-weight:bold">==</span> <span style="color:#099">0</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#000;font-weight:bold">return</span> {}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">merge</span>(key):
+</span></span><span style="display:flex;"><span>            <span style="color:#000;font-weight:bold">return</span> data_utils<span style="color:#000;font-weight:bold">.</span>collate_tokens(
+</span></span><span style="display:flex;"><span>                [s[key] <span style="color:#000;font-weight:bold">for</span> s <span style="color:#000;font-weight:bold">in</span> samples], pad_idx, left_pad<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">False</span>,
+</span></span><span style="display:flex;"><span>            )
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">merge_2d</span>(key):
+</span></span><span style="display:flex;"><span>            <span style="color:#000;font-weight:bold">return</span> data_utils<span style="color:#000;font-weight:bold">.</span>collate_2d(
+</span></span><span style="display:flex;"><span>                [s[key] <span style="color:#000;font-weight:bold">for</span> s <span style="color:#000;font-weight:bold">in</span> samples], pad_idx, left_pad<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">False</span>,
+</span></span><span style="display:flex;"><span>            )
+</span></span><span style="display:flex;"><span>        pair_targets <span style="color:#000;font-weight:bold">=</span> merge_2d(<span style="color:#d14">&#39;pair_targets&#39;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">return</span> {
+</span></span><span style="display:flex;"><span>            <span style="color:#d14">&#39;id&#39;</span>: torch<span style="color:#000;font-weight:bold">.</span>LongTensor([s[<span style="color:#d14">&#39;id&#39;</span>] <span style="color:#000;font-weight:bold">for</span> s <span style="color:#000;font-weight:bold">in</span> samples]),
+</span></span><span style="display:flex;"><span>            <span style="color:#d14">&#39;ntokens&#39;</span>: <span style="color:#0086b3">sum</span>(<span style="color:#0086b3">len</span>(s[<span style="color:#d14">&#39;source&#39;</span>]) <span style="color:#000;font-weight:bold">for</span> s <span style="color:#000;font-weight:bold">in</span> samples),
+</span></span><span style="display:flex;"><span>            <span style="color:#d14">&#39;net_input&#39;</span>: {
+</span></span><span style="display:flex;"><span>                <span style="color:#d14">&#39;src_tokens&#39;</span>: merge(<span style="color:#d14">&#39;source&#39;</span>),
+</span></span><span style="display:flex;"><span>                <span style="color:#d14">&#39;segment_labels&#39;</span>: merge(<span style="color:#d14">&#39;segment_labels&#39;</span>),
+</span></span><span style="display:flex;"><span>                <span style="color:#d14">&#39;pairs&#39;</span>: pair_targets[:, :, :<span style="color:#099">2</span>]
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>            <span style="color:#d14">&#39;lm_target&#39;</span>: merge(<span style="color:#d14">&#39;lm_target&#39;</span>),
+</span></span><span style="display:flex;"><span>            <span style="color:#d14">&#39;nsentences&#39;</span>: samples[<span style="color:#099">0</span>][<span style="color:#d14">&#39;source&#39;</span>]<span style="color:#000;font-weight:bold">.</span>size(<span style="color:#099">0</span>),
+</span></span><span style="display:flex;"><span>            <span style="color:#d14">&#39;pair_targets&#39;</span>: pair_targets[:, :, <span style="color:#099">2</span>:]      <span style="color:#998;font-style:italic"># (pair nums, max pair target len)</span>
+</span></span><span style="display:flex;"><span>        }
+</span></span></code></pre></div><p>以及对应的<code>merge_2d()</code>函数，这个函数的实现如下。</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">merge_2d</span>(key):
+</span></span><span style="display:flex;"><span>            <span style="color:#000;font-weight:bold">return</span> data_utils<span style="color:#000;font-weight:bold">.</span>collate_2d(
+</span></span><span style="display:flex;"><span>                [s[key] <span style="color:#000;font-weight:bold">for</span> s <span style="color:#000;font-weight:bold">in</span> samples], pad_idx, left_pad<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">False</span>,
+</span></span><span style="display:flex;"><span>            )
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">collate_2d</span>(values, pad_idx, left_pad, move_eos_to_beginning<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">False</span>):
+</span></span><span style="display:flex;"><span>    <span style="color:#d14">&#34;&#34;&#34;Convert a list of 1d tensors into a padded 2d tensor.&#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    size_0 <span style="color:#000;font-weight:bold">=</span> <span style="color:#0086b3">max</span>(v<span style="color:#000;font-weight:bold">.</span>size(<span style="color:#099">0</span>) <span style="color:#000;font-weight:bold">for</span> v <span style="color:#000;font-weight:bold">in</span> values)
+</span></span><span style="display:flex;"><span>    size_1 <span style="color:#000;font-weight:bold">=</span> <span style="color:#0086b3">max</span>(v<span style="color:#000;font-weight:bold">.</span>size(<span style="color:#099">1</span>) <span style="color:#000;font-weight:bold">for</span> v <span style="color:#000;font-weight:bold">in</span> values)
+</span></span><span style="display:flex;"><span>    res <span style="color:#000;font-weight:bold">=</span> values[<span style="color:#099">0</span>]<span style="color:#000;font-weight:bold">.</span>new(<span style="color:#0086b3">len</span>(values), size_0, size_1)<span style="color:#000;font-weight:bold">.</span>fill_(pad_idx)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">copy_tensor</span>(src, dst):
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">assert</span> dst<span style="color:#000;font-weight:bold">.</span>numel() <span style="color:#000;font-weight:bold">==</span> src<span style="color:#000;font-weight:bold">.</span>numel()
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">if</span> move_eos_to_beginning:
+</span></span><span style="display:flex;"><span>            <span style="color:#000;font-weight:bold">assert</span> src[<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>] <span style="color:#000;font-weight:bold">==</span> eos_idx
+</span></span><span style="display:flex;"><span>            dst[<span style="color:#099">0</span>] <span style="color:#000;font-weight:bold">=</span> eos_idx
+</span></span><span style="display:flex;"><span>            dst[<span style="color:#099">1</span>:] <span style="color:#000;font-weight:bold">=</span> src[:<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>]
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">else</span>:
+</span></span><span style="display:flex;"><span>            dst<span style="color:#000;font-weight:bold">.</span>copy_(src)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">for</span> i, v <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">enumerate</span>(values):
+</span></span><span style="display:flex;"><span>        copy_tensor(v, res[i, size_0 <span style="color:#000;font-weight:bold">-</span> v<span style="color:#000;font-weight:bold">.</span>size(<span style="color:#099">0</span>):, size_1 <span style="color:#000;font-weight:bold">-</span> v<span style="color:#000;font-weight:bold">.</span>size(<span style="color:#099">1</span>):] <span style="color:#000;font-weight:bold">if</span> left_pad <span style="color:#000;font-weight:bold">else</span> res[i, :v<span style="color:#000;font-weight:bold">.</span>size(<span style="color:#099">0</span>), :v<span style="color:#000;font-weight:bold">.</span>size(<span style="color:#099">1</span>)])
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">return</span> res
+</span></span></code></pre></div><p>可以看出，这里将<code>pair_targets</code>进行了分离，分别用于模型前向 &amp; 损失计算。</p>
+<p>然后再看模型结构。模型构成主要分为两部分，一个是底层的由正常 transformer 层构成的backbone，然后另一个就是在其上的 Head 部分，这里主要就是SBO任务对应的Head 的实现，这部分实现在<code>BertPairTargetPredictionHead</code>类中。</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">BertPairTargetPredictionHead</span>(nn<span style="color:#000;font-weight:bold">.</span>Module):
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">def</span> __init__(<span style="color:#999">self</span>, config, bert_model_embedding_weights, max_targets<span style="color:#000;font-weight:bold">=</span><span style="color:#099">20</span>, position_embedding_size<span style="color:#000;font-weight:bold">=</span><span style="color:#099">200</span>):
+</span></span><span style="display:flex;"><span>        <span style="color:#0086b3">super</span>(BertPairTargetPredictionHead, <span style="color:#999">self</span>)<span style="color:#000;font-weight:bold">.</span>__init__()
+</span></span><span style="display:flex;"><span>        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>position_embeddings <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Embedding(max_targets, position_embedding_size)
+</span></span><span style="display:flex;"><span>        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>mlp_layer_norm <span style="color:#000;font-weight:bold">=</span> MLPWithLayerNorm(config, config<span style="color:#000;font-weight:bold">.</span>hidden_size <span style="color:#000;font-weight:bold">*</span> <span style="color:#099">2</span> <span style="color:#000;font-weight:bold">+</span> position_embedding_size)
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># The output weights are the same as the input embeddings, but there is</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># an output-only bias for each token.</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>decoder <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Linear(bert_model_embedding_weights<span style="color:#000;font-weight:bold">.</span>size(<span style="color:#099">1</span>),      <span style="color:#998;font-style:italic"># hidden size</span>
+</span></span><span style="display:flex;"><span>                                 bert_model_embedding_weights<span style="color:#000;font-weight:bold">.</span>size(<span style="color:#099">0</span>),      <span style="color:#998;font-style:italic"># vocab size</span>
+</span></span><span style="display:flex;"><span>                                 bias<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">False</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>decoder<span style="color:#000;font-weight:bold">.</span>weight <span style="color:#000;font-weight:bold">=</span> bert_model_embedding_weights
+</span></span><span style="display:flex;"><span>        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>bias <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>Parameter(torch<span style="color:#000;font-weight:bold">.</span>zeros(bert_model_embedding_weights<span style="color:#000;font-weight:bold">.</span>size(<span style="color:#099">0</span>)))
+</span></span><span style="display:flex;"><span>        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>max_targets <span style="color:#000;font-weight:bold">=</span> max_targets
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">forward</span>(<span style="color:#999">self</span>, hidden_states, pairs):
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic">## 整体思路是使用 Span 边界的两个 token，预测被 mask 掉的 token 对应的 word</span>
+</span></span><span style="display:flex;"><span>        bs, num_pairs, _ <span style="color:#000;font-weight:bold">=</span> pairs<span style="color:#000;font-weight:bold">.</span>size()
+</span></span><span style="display:flex;"><span>        bs, seq_len, dim <span style="color:#000;font-weight:bold">=</span> hidden_states<span style="color:#000;font-weight:bold">.</span>size()
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># pair indices: (bs, num_pairs)</span>
+</span></span><span style="display:flex;"><span>        left, right <span style="color:#000;font-weight:bold">=</span> pairs[:,:, <span style="color:#099">0</span>], pairs[:, :, <span style="color:#099">1</span>]
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># (bs, num_pairs, dim)</span>
+</span></span><span style="display:flex;"><span>        left_hidden <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>gather(hidden_states, <span style="color:#099">1</span>, left<span style="color:#000;font-weight:bold">.</span>unsqueeze(<span style="color:#099">2</span>)<span style="color:#000;font-weight:bold">.</span>repeat(<span style="color:#099">1</span>, <span style="color:#099">1</span>, dim))
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># pair states: bs * num_pairs, max_targets, dim</span>
+</span></span><span style="display:flex;"><span>        left_hidden <span style="color:#000;font-weight:bold">=</span> left_hidden<span style="color:#000;font-weight:bold">.</span>contiguous()<span style="color:#000;font-weight:bold">.</span>view(bs <span style="color:#000;font-weight:bold">*</span> num_pairs, dim)<span style="color:#000;font-weight:bold">.</span>unsqueeze(<span style="color:#099">1</span>)<span style="color:#000;font-weight:bold">.</span>repeat(<span style="color:#099">1</span>, <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>max_targets, <span style="color:#099">1</span>)
+</span></span><span style="display:flex;"><span>        right_hidden <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>gather(hidden_states, <span style="color:#099">1</span>, right<span style="color:#000;font-weight:bold">.</span>unsqueeze(<span style="color:#099">2</span>)<span style="color:#000;font-weight:bold">.</span>repeat(<span style="color:#099">1</span>, <span style="color:#099">1</span>, dim))
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># bs * num_pairs, max_targets, dim</span>
+</span></span><span style="display:flex;"><span>        right_hidden <span style="color:#000;font-weight:bold">=</span> right_hidden<span style="color:#000;font-weight:bold">.</span>contiguous()<span style="color:#000;font-weight:bold">.</span>view(bs <span style="color:#000;font-weight:bold">*</span> num_pairs, dim)<span style="color:#000;font-weight:bold">.</span>unsqueeze(<span style="color:#099">1</span>)<span style="color:#000;font-weight:bold">.</span>repeat(<span style="color:#099">1</span>, <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>max_targets, <span style="color:#099">1</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># (max_targets, dim)</span>
+</span></span><span style="display:flex;"><span>        position_embeddings <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>position_embeddings<span style="color:#000;font-weight:bold">.</span>weight
+</span></span><span style="display:flex;"><span>        hidden_states <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>mlp_layer_norm(torch<span style="color:#000;font-weight:bold">.</span>cat((left_hidden, right_hidden, position_embeddings<span style="color:#000;font-weight:bold">.</span>unsqueeze(<span style="color:#099">0</span>)<span style="color:#000;font-weight:bold">.</span>repeat(bs <span style="color:#000;font-weight:bold">*</span> num_pairs, <span style="color:#099">1</span>, <span style="color:#099">1</span>)), <span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>))
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># target scores : bs * num_pairs, max_targets, vocab_size</span>
+</span></span><span style="display:flex;"><span>        target_scores <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>decoder(hidden_states) <span style="color:#000;font-weight:bold">+</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>bias
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">return</span> target_scores
+</span></span></code></pre></div><p>可以看出，主要过程就是将左边边界的token以及右边边界的 token 取出来，与相对位置编码<code>self.position_embedding</code>拼接起来送入前向计算网络。值得注意的是这里返回的数据尺寸是<code>(bs * num_pairs, max targets, vocab size)</code>。</p>
+<p>提到的损失函数的实现如下。</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#3c5d5d;font-weight:bold">@register_criterion</span>(<span style="color:#d14">&#39;span_bert_loss&#39;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">NoNSPPairLoss</span>(FairseqCriterion):
+</span></span><span style="display:flex;"><span>    <span style="color:#d14">&#34;&#34;&#34;Implementation for loss of SpanBert
+</span></span></span><span style="display:flex;"><span><span style="color:#d14">        Combine masked language model loss with the SBO loss. 
+</span></span></span><span style="display:flex;"><span><span style="color:#d14">    &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">def</span> __init__(<span style="color:#999">self</span>, args, task):
+</span></span><span style="display:flex;"><span>        <span style="color:#0086b3">super</span>()<span style="color:#000;font-weight:bold">.</span>__init__(args, task)
+</span></span><span style="display:flex;"><span>        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>args <span style="color:#000;font-weight:bold">=</span> args
+</span></span><span style="display:flex;"><span>        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>aux_loss_weight <span style="color:#000;font-weight:bold">=</span> <span style="color:#0086b3">getattr</span>(args, <span style="color:#d14">&#39;pair_loss_weight&#39;</span>, <span style="color:#099">0</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">forward</span>(<span style="color:#999">self</span>, model, sample, reduce<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">True</span>):
+</span></span><span style="display:flex;"><span>        net_output <span style="color:#000;font-weight:bold">=</span> model(<span style="color:#000;font-weight:bold">**</span>sample[<span style="color:#d14">&#39;net_input&#39;</span>])
+</span></span><span style="display:flex;"><span>        lm_targets <span style="color:#000;font-weight:bold">=</span> sample[<span style="color:#d14">&#39;lm_target&#39;</span>]<span style="color:#000;font-weight:bold">.</span>view(<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># mlm loss</span>
+</span></span><span style="display:flex;"><span>        lm_logits <span style="color:#000;font-weight:bold">=</span> net_output[<span style="color:#099">0</span>]
+</span></span><span style="display:flex;"><span>        lm_logits <span style="color:#000;font-weight:bold">=</span> lm_logits<span style="color:#000;font-weight:bold">.</span>view(<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>, lm_logits<span style="color:#000;font-weight:bold">.</span>size(<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>))
+</span></span><span style="display:flex;"><span>        lm_loss <span style="color:#000;font-weight:bold">=</span> F<span style="color:#000;font-weight:bold">.</span>cross_entropy(
+</span></span><span style="display:flex;"><span>            lm_logits,      <span style="color:#998;font-style:italic"># (bs * seq_len, )</span>
+</span></span><span style="display:flex;"><span>            lm_targets,     <span style="color:#998;font-style:italic"># (bs * seq_len, )</span>
+</span></span><span style="display:flex;"><span>            size_average<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">False</span>,
+</span></span><span style="display:flex;"><span>            ignore_index<span style="color:#000;font-weight:bold">=</span><span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>padding_idx,
+</span></span><span style="display:flex;"><span>            reduce<span style="color:#000;font-weight:bold">=</span>reduce
+</span></span><span style="display:flex;"><span>        )
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># SBO loss</span>
+</span></span><span style="display:flex;"><span>        pair_target_logits <span style="color:#000;font-weight:bold">=</span> net_output[<span style="color:#099">2</span>]
+</span></span><span style="display:flex;"><span>        pair_target_logits <span style="color:#000;font-weight:bold">=</span> pair_target_logits<span style="color:#000;font-weight:bold">.</span>view(<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>, pair_target_logits<span style="color:#000;font-weight:bold">.</span>size(<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>))
+</span></span><span style="display:flex;"><span>        pair_targets <span style="color:#000;font-weight:bold">=</span> sample[<span style="color:#d14">&#39;pair_targets&#39;</span>]<span style="color:#000;font-weight:bold">.</span>view(<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>)
+</span></span><span style="display:flex;"><span>        pair_loss <span style="color:#000;font-weight:bold">=</span> F<span style="color:#000;font-weight:bold">.</span>cross_entropy(
+</span></span><span style="display:flex;"><span>            pair_target_logits,     <span style="color:#998;font-style:italic"># (bs * pair_nums * max_target, vocab size)</span>
+</span></span><span style="display:flex;"><span>            pair_targets,           <span style="color:#998;font-style:italic"># (bs * pair_nums * max_target, )</span>
+</span></span><span style="display:flex;"><span>            size_average<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">False</span>,
+</span></span><span style="display:flex;"><span>            ignore_index<span style="color:#000;font-weight:bold">=</span><span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>padding_idx,
+</span></span><span style="display:flex;"><span>            reduce<span style="color:#000;font-weight:bold">=</span>reduce
+</span></span><span style="display:flex;"><span>        )
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        nsentences <span style="color:#000;font-weight:bold">=</span> sample[<span style="color:#d14">&#39;lm_target&#39;</span>]<span style="color:#000;font-weight:bold">.</span>size(<span style="color:#099">0</span>)
+</span></span><span style="display:flex;"><span>        ntokens <span style="color:#000;font-weight:bold">=</span> utils<span style="color:#000;font-weight:bold">.</span>strip_pad(lm_targets, <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>padding_idx)<span style="color:#000;font-weight:bold">.</span>numel()
+</span></span><span style="display:flex;"><span>        npairs <span style="color:#000;font-weight:bold">=</span> utils<span style="color:#000;font-weight:bold">.</span>strip_pad(pair_targets, <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>padding_idx)<span style="color:#000;font-weight:bold">.</span>numel() <span style="color:#000;font-weight:bold">+</span> <span style="color:#099">1</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        sample_size <span style="color:#000;font-weight:bold">=</span> nsentences <span style="color:#000;font-weight:bold">if</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>args<span style="color:#000;font-weight:bold">.</span>sentence_avg <span style="color:#000;font-weight:bold">else</span> ntokens
+</span></span><span style="display:flex;"><span>        loss <span style="color:#000;font-weight:bold">=</span> lm_loss <span style="color:#000;font-weight:bold">/</span> ntokens <span style="color:#000;font-weight:bold">+</span> (<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>aux_loss_weight <span style="color:#000;font-weight:bold">*</span> pair_loss <span style="color:#000;font-weight:bold">/</span> npairs)
+</span></span><span style="display:flex;"><span>        logging_output <span style="color:#000;font-weight:bold">=</span> {
+</span></span><span style="display:flex;"><span>            <span style="color:#d14">&#39;loss&#39;</span>: utils<span style="color:#000;font-weight:bold">.</span>item(loss<span style="color:#000;font-weight:bold">.</span>data) <span style="color:#000;font-weight:bold">if</span> reduce <span style="color:#000;font-weight:bold">else</span> loss<span style="color:#000;font-weight:bold">.</span>data,
+</span></span><span style="display:flex;"><span>            <span style="color:#d14">&#39;lm_loss&#39;</span>: utils<span style="color:#000;font-weight:bold">.</span>item(lm_loss<span style="color:#000;font-weight:bold">.</span>data) <span style="color:#000;font-weight:bold">if</span> reduce <span style="color:#000;font-weight:bold">else</span> lm_loss<span style="color:#000;font-weight:bold">.</span>data,
+</span></span><span style="display:flex;"><span>            <span style="color:#d14">&#39;pair_loss&#39;</span>:  utils<span style="color:#000;font-weight:bold">.</span>item(pair_loss<span style="color:#000;font-weight:bold">.</span>data) <span style="color:#000;font-weight:bold">if</span> reduce <span style="color:#000;font-weight:bold">else</span> pair_loss<span style="color:#000;font-weight:bold">.</span>data,
+</span></span><span style="display:flex;"><span>            <span style="color:#d14">&#39;ntokens&#39;</span>: ntokens,
+</span></span><span style="display:flex;"><span>            <span style="color:#d14">&#39;npairs&#39;</span>: npairs,
+</span></span><span style="display:flex;"><span>            <span style="color:#d14">&#39;nsentences&#39;</span>: nsentences,
+</span></span><span style="display:flex;"><span>            <span style="color:#d14">&#39;sample_size&#39;</span>: sample_size,
+</span></span><span style="display:flex;"><span>            <span style="color:#d14">&#39;aux_loss_weight&#39;</span>: <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>aux_loss_weight
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">return</span> loss, sample_size, logging_output
+</span></span></code></pre></div><p><code>forward</code>函数里面就是对应的MLM / SBO 两个Loss 的计算过程，两个计算过程没啥区别，都是分类任务预测被掩膜的token的具体是啥word。</p>
+<p>需要在整理一下SBO任务的模型输出 &amp; 损失计算。首先模型输出的尺寸是(bs * pair num * max pair target len, vocab size)，对应的label的尺寸是(bs * pair num * max pair target len, )，所以尺寸上没有问题，但是相对位置编码的对应关系该如何呢？这里需要在提醒一下，模型实现中的这个position embedding是<strong>相对位置</strong>信息，不是绝对位置信息，所以<code>BertPairTargetPredictionHead</code>中使用<code>.repeat(1, self.max_targets, 1)</code>没有问题，在与pair target计算损失的时候，预测的数据就是根据相对位置编码预测出来的，然后与对应标签计算分类loss，也就是没有错了！（理解能力真是够了）</p>
+<p>至此，就分析完SpanBERT的实现细节了。</p>
+<h2 id="macbert">MacBERT</h2>
+<p>与WWM类似，该作者又提出了 Mac (MLM As Correction) 方式的掩码生成过程。实现细节有以下三点。</p>
+<ul>
+<li>引入类似 SpanBERT 的 N-Gram 掩膜，N 由 1 - 4 的概率分别为 40%, 30%, 20%, 10%，注意N这个长度是指词组的个数，而不是字的个数，相当于在 WWM 基础上配合 Span 来实现(当N=1时即为WWM)，起始由上面 SpanBERT 的实现可以看出来，SpanBERT 就是英文版的 N-Gram Masking 了</li>
+<li>使用<a href="https://github.com/chatopera/Synonyms">Synonyms</a>来得到相似字来作为掩码，但如果没有找到相似词，那么就降级为 Random Masking，即随机token替换，这一步称为 Mac，也就是 MLM As Correction。</li>
+<li>掩码方式80%的用相似字替换、10%的随机替换、10%保持不变，总的掩码占比是 15%</li>
+</ul>
+<p>在分析阶段，作者给出了MacBERT各个部分对效果的影响，包括N-Gram掩膜、相似词替换，并且发现 NSP 不如 SOP 效果好，所以作者实际使用的是 SOP 预训练任务。</p>
+<p><figure>
+    <center>
+    <img src="/imgs/mlm-related/mac2.png" alt="图 - 2 MacBERT中各个trick的影响">
+    <figcaption>图 - 2 MacBERT中各个trick的影响</figcaption>
+    </center>
+</figure></p>
+<p>作者与XLNet的作者也都提到<code>[MASK]</code>字符只在预训练阶段存在，在实际推理阶段并不存在，这种差别会导致效果变差，MacBERT作者实验了以下几个设置用于研究对效果的影响到底有多大。首先需要说明的是，BERT中的预训练任务包括 MLM / NSP，已经很多人发现这个MLM任务比 NSP 任务更重要，但是对于 MLM 任务，需要解答两个问题，首先是怎么选择被掩码的tokens，然后是这些被选出来的token应该用什么被替换，也就是掩码是什么。</p>
+<p>下面四种情况都是，句子长度的 15 % 的字符被掩膜，并且15%中的10%部分保持不变，剩下的区别如下。</p>
+<ul>
+<li>MacBERT: 80% 的tokens被替换成相似tokens，10%被随机替换</li>
+<li>Random Replace: 90% 的tokens都使用随机替换</li>
+<li>Partial Mask: 也是 BERT 使用的方式，80% 的tokens被替换成<code>[MASK]</code>，10%的被随机替换</li>
+<li>All Mask: 也就是90%的tokens都被替换成<code>[MASK]</code></li>
+</ul>
+<p>效果如下，这是在CMRC任务上的结果。</p>
+<p><figure>
+    <center>
+    <img src="/imgs/mlm-related/mac1.png" alt="图 - 2 MacBERT几种MLM的效果">
+    <figcaption>图 - 2 MacBERT几种MLM的效果</figcaption>
+    </center>
+</figure></p>
+<p>可以发现，即使使用 Random Replace 效果都比BERT的Partial Mask方式更好。</p>
+<p>当batch size大于1024时，作者选择使用 LAMB 优化器，而小于1024时，采用AdamW，又一个使用LAMB训练大Batch的论文。</p>
+<p>作者也提到，不论是 WWM / SpanBERT / MacBERT 都仅仅设计到训练阶段MLM任务中Mask的生成有关，对其他部分都没有影响。所以这里就给出关键的 N-Gram Masking &amp; Mac 数据的生成过程。</p>
+<p>但是现在就只有一个疑问，如果返回的近义词跟原词的长度不一致怎么办？一种办法是直接截断；另一种是如果没有长度相等的词组，那么就随机替换token，类似 WWM 中以 wordpiece 为单位进行随机替换总可以了吧。本来想根据代码里实现找到答案的，但奈何没有看到预训练时数据生成用到的脚本。难办。</p>
+<h2 id="后记">后记</h2>
+<p>阅读这个论文真正体现了英语能力限制论文理解层次，一直以为SpanBERT中的这句话</p>
+<blockquote>
+<p>However, we perform this replacement at the span level and not for each token individually.</p>
+</blockquote>
+<p>说的是将一个任意长度的文本只用一个 <code>[MASK]</code> 替换，然后对应的 SBO 任务是预测出这个<code>[MASK]</code>到底代表了几个 token，并且这些 token 的起始位置在哪里！想了半天、看了几天代码才弄明白。</p>
+<p>不过按照之前的想法，是否可行呢，是否可以让模型学习到更深入层次的语言结构信息呢？未知、未验证。</p>
+
+		
+	</div>
+
+	<div class="pagination">
+		<a href="/posts/moe-original-paper/" class="left arrow">&#8592;</a>
+		<a href="/posts/dali-intro/" class="right arrow">&#8594;</a>
+
+		<a href="#" class="top">Top</a>
+	</div>
+</main>
+
+
+        		<footer>
+			
+			<span>
+			&copy; <time datetime="2022-07-25 12:50:02.761797628 &#43;0800 CST m=&#43;0.168991691">2022</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
+			</span>
+		</footer>
+
+    </body>
+</html>
