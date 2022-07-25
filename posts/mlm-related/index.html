@@ -11,60 +11,21 @@
 		
 		<link rel="stylesheet" href="/css/style.css">
 		<link rel="stylesheet" href="/css/fonts.css">
-<<<<<<< HEAD
 		<link rel="stylesheet" href="/css/custom.css">
 		
 		<link rel="icon" href="/favicon.ico"/>
-=======
-        <link rel="stylesheet" href="/css/custom.css">
-		
-		<link rel="icon" href="favicon.ico" />
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 		<link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
 		<link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
 		<link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
 
 		
 		<link href="" rel="alternate" type="application/rss+xml" title="Triloon" />
-<<<<<<< HEAD
 
 		<script src="/js/darkmode.js"></script>
 	</head>
 
     <body>
         		<nav class="nav">
-=======
-	</head>
-
-    <body>
-        <script type="text/javascript" async
-  src="https://cdn.jsdelivr.net/npm/mathjax@2.7.4/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
-</script>
-<script type="text/x-mathjax-config">
-MathJax.Hub.Config({
-  tex2jax: {
-    inlineMath: [['$','$'], ['\\(','\\)']],
-    displayMath: [['$$','$$'], ['\[','\]']],
-    processEscapes: true,
-    processEnvironments: true,
-    skipTags: ['script', 'noscript', 'style', 'textarea', 'pre','code'],
-    TeX: { equationNumbers: { autoNumber: "AMS" },
-         extensions: ["AMSmath.js", "AMSsymbols.js"] }
-  }
-});
-</script>
-
-<style>
-    code.has-jax {
-        font: inherit;
-        font-size: 100%;
-        background: inherit;
-        border: inherit;
-        color: #515151;
-    }
-</style>
-		<nav class="nav">
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 			<div class="nav-container">
 				<a href="/">
 					
@@ -94,28 +55,17 @@ MathJax.Hub.Config({
 			</div>
 		</nav>
 
-<<<<<<< HEAD
         <div id="darkModeToggle" onclick="toggleDarkMode()">
   &#9680; 
 </div>
-=======
-        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-        <link rel="manifest" href="/site.webmanifest">
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 
         
 
 <main>
-<<<<<<< HEAD
 	
 
 
         <div class="post">
-=======
-	<div class="post">
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 		<div class="post-info">
     <span>Written by</span>
         triloon
@@ -156,7 +106,6 @@ MathJax.Hub.Config({
 <p>或者Transformer库里对应的<code>run_chinese_ref.py</code>以及<code>data_collator.py</code>文件中的<code>DataCollatorForWholeWordMask</code>类的实现。</p>
 <p>代码分成两个主要部分。第一部分是根据LTP分词结果来为词语非第一个字的前面加上<code>##</code>符号；然后第二部分实现对应的 Mask 过程，注意Mask的最大长度不会超过 15% 的阈值。</p>
 <p>第一部分根据 LTP 分词结果 配合最长词长度为3开始贪婪尝试。</p>
-<<<<<<< HEAD
 <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">get_new_segment</span>(segment):
 </span></span><span style="display:flex;"><span>    seq_cws <span style="color:#000;font-weight:bold">=</span> jieba<span style="color:#000;font-weight:bold">.</span>lcut(<span style="color:#d14">&#34;&#34;</span><span style="color:#000;font-weight:bold">.</span>join(segment)) <span style="color:#998;font-style:italic"># 分词</span>
 </span></span><span style="display:flex;"><span>    seq_cws_dict <span style="color:#000;font-weight:bold">=</span> {x: <span style="color:#099">1</span> <span style="color:#000;font-weight:bold">for</span> x <span style="color:#000;font-weight:bold">in</span> seq_cws} <span style="color:#998;font-style:italic"># 分词后的词加入到词典dict</span>
@@ -185,36 +134,6 @@ MathJax.Hub.Config({
 </span></span><span style="display:flex;"><span>    <span style="color:#998;font-style:italic"># print(&#34;get_new_segment.wwm.get_new_segment:&#34;,new_segment)</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">return</span> new_segment
 </span></span></code></pre></div><p>第二部分，根据第一步的结果进行Mask，具体的函数是第一个参考代码里的<code>create_masked_lm_predictions()</code>函数。代码省略，但是思路大体就是将属于同一个词组（以<code>#</code>开头）放到同一个列表中，然后所有的词组又放在额外一层列表中，至此构成一个两层的列表。接下来就是将这个列表随机打乱，然后从左到右依次mask，直到总的 mask 的长度大于 15% 了，注意这里是随机打乱，然后从左到右依次mask！至于Mask的过程就是以分字为单位进行的。另外一点是，代码里保证总的 mask 掉的长度小于15%，如果mask 掉下一个词组的话，那么就略过；还有一点是，最后通过一个 sort 函数来恢复被打乱的顺序，这个顺序信息是给每个 token 做了个索引。</p>
-=======
-<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">get_new_segment</span>(segment):
-    seq_cws <span style="color:#000;font-weight:bold">=</span> jieba<span style="color:#000;font-weight:bold">.</span>lcut(<span style="color:#d14">&#34;&#34;</span><span style="color:#000;font-weight:bold">.</span>join(segment)) <span style="color:#998;font-style:italic"># 分词</span>
-    seq_cws_dict <span style="color:#000;font-weight:bold">=</span> {x: <span style="color:#099">1</span> <span style="color:#000;font-weight:bold">for</span> x <span style="color:#000;font-weight:bold">in</span> seq_cws} <span style="color:#998;font-style:italic"># 分词后的词加入到词典dict</span>
-    new_segment <span style="color:#000;font-weight:bold">=</span> []
-    i <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">0</span>
-    <span style="color:#000;font-weight:bold">while</span> i <span style="color:#000;font-weight:bold">&lt;</span> <span style="color:#0086b3">len</span>(segment): <span style="color:#998;font-style:italic"># 从句子的第一个字开始处理，知道处理完整个句子</span>
-      <span style="color:#000;font-weight:bold">if</span> <span style="color:#0086b3">len</span>(re<span style="color:#000;font-weight:bold">.</span>findall(<span style="color:#d14">&#39;[</span><span style="color:#d14">\u4E00</span><span style="color:#d14">-</span><span style="color:#d14">\u9FA5</span><span style="color:#d14">]&#39;</span>, segment[i])) <span style="color:#000;font-weight:bold">==</span> <span style="color:#099">0</span>:  <span style="color:#998;font-style:italic"># 如果找不到中文的，原文加进去即不用特殊处理。</span>
-        new_segment<span style="color:#000;font-weight:bold">.</span>append(segment[i])
-        i <span style="color:#000;font-weight:bold">+=</span> <span style="color:#099">1</span>
-        <span style="color:#000;font-weight:bold">continue</span>
-
-      has_add <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">False</span>
-      <span style="color:#000;font-weight:bold">for</span> length <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(<span style="color:#099">3</span>, <span style="color:#099">0</span>, <span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>):
-        <span style="color:#000;font-weight:bold">if</span> i <span style="color:#000;font-weight:bold">+</span> length <span style="color:#000;font-weight:bold">&gt;</span> <span style="color:#0086b3">len</span>(segment):
-          <span style="color:#000;font-weight:bold">continue</span>
-        <span style="color:#000;font-weight:bold">if</span> <span style="color:#d14">&#39;&#39;</span><span style="color:#000;font-weight:bold">.</span>join(segment[i:i <span style="color:#000;font-weight:bold">+</span> length]) <span style="color:#000;font-weight:bold">in</span> seq_cws_dict:
-          new_segment<span style="color:#000;font-weight:bold">.</span>append(segment[i])
-          <span style="color:#000;font-weight:bold">for</span> l <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(<span style="color:#099">1</span>, length):
-            new_segment<span style="color:#000;font-weight:bold">.</span>append(<span style="color:#d14">&#39;##&#39;</span> <span style="color:#000;font-weight:bold">+</span> segment[i <span style="color:#000;font-weight:bold">+</span> l])
-          i <span style="color:#000;font-weight:bold">+=</span> length
-          has_add <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">True</span>
-          <span style="color:#000;font-weight:bold">break</span>
-      <span style="color:#000;font-weight:bold">if</span> <span style="color:#000;font-weight:bold">not</span> has_add:
-        new_segment<span style="color:#000;font-weight:bold">.</span>append(segment[i])
-        i <span style="color:#000;font-weight:bold">+=</span> <span style="color:#099">1</span>
-    <span style="color:#998;font-style:italic"># print(&#34;get_new_segment.wwm.get_new_segment:&#34;,new_segment)</span>
-    <span style="color:#000;font-weight:bold">return</span> new_segment
-</code></pre></div><p>第二部分，根据第一步的结果进行Mask，具体的函数是第一个参考代码里的<code>create_masked_lm_predictions()</code>函数。代码省略，但是思路大体就是将属于同一个词组（以<code>#</code>开头）放到同一个列表中，然后所有的词组又放在额外一层列表中，至此构成一个两层的列表。接下来就是将这个列表随机打乱，然后从左到右依次mask，直到总的 mask 的长度大于 15% 了，注意这里是随机打乱，然后从左到右依次mask！至于Mask的过程就是以分字为单位进行的。另外一点是，代码里保证总的 mask 掉的长度小于15%，如果mask 掉下一个词组的话，那么就略过；还有一点是，最后通过一个 sort 函数来恢复被打乱的顺序，这个顺序信息是给每个 token 做了个索引。</p>
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 <p>另一种实现是 transformer 里面的实现，生成 mask 的主要过程在 <code>_whole_word_mask()</code> 函数里，主要思路与 Bert-wwm 的实现思路一致，也是随机打乱，然后从头向后一次生成掩膜，不过这里借助额外的单独文件离线生成词组信息。</p>
 <h2 id="ernie">ERNIE</h2>
 <p>百度 ERNIE 的主要思路是将phrase-level strategy &amp; entity-level strategy两种知识引入到模型训练中，具体对应的是 phrase-level masking &amp; entity-level masking，命名实体包括人物、地点、组织、产品等。示意图如图 - 3所示。</p>
@@ -227,7 +146,6 @@ MathJax.Hub.Config({
 <p>对于实现，<a href="https://github.com/lonePatient/ERNIE-text-classification-pytorch">ERNIE-text-classification-pytorch</a>仓库里的代码只适合微调训练，不支持预训练任务。</p>
 <p>这里以 paddlepaddle 官方库中 ERNIE v1.0 的实现为例进行说明，模型的前向计算以及 Loss 的计算方面与普通 BERT 相同，所以重点在于<code>ErnieDataReader</code> 类的实现。</p>
 <p>根据<a href="https://github.com/PaddlePaddle/ERNIE/blob/repro/README.zh.md#%E6%95%B0%E6%8D%AE%E9%A2%84%E5%A4%84%E7%90%86">PaddlePaddle-ERNIE-github</a>文档里的说法，输入数据的一个示例如下:</p>
-<<<<<<< HEAD
 <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>1 1048 492 1333 1361 1051 326 2508 5 1803 1827 98 164 133 2777 2696 983 121 4 19 9 634 551 844 85 14 2476 1895 33 13 983 121 23 7 1093 24 46 660 12043 2 1263 6 328 33 121 126 398 276 315 5 63 44 35 25 12043 2;0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1;0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55;-1 0 0 0 0 1 0 1 0 0 1 0 0 1 0 1 0 0 0 0 0 0 1 0 1 0 0 1 0 1 0 0 0 0 1 0 0 0 0 -1 0 0 0 1 0 0 1 0 1 0 0 1 0 1 0 -1;0
 </span></span></code></pre></div><p>每个样本由5个 &lsquo;;&rsquo; 分隔的字段组成，数据格式: token_ids; sentence_type_ids; position_ids; seg_labels; next_sentence_label；其中 seg_labels 表示分词边界信息: 0表示词首、1表示非词首、-1为占位符, 占位符对应的词为 CLS 或者 SEP。代码中生成 mask 的主要逻辑在<code>mask()</code>函数内，这里仅给出实体词级的掩膜，忽略汉字 word piece级别的掩膜生成。</p>
 <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">mask</span>(batch_tokens,
@@ -302,82 +220,6 @@ MathJax.Hub.Config({
 </span></span><span style="display:flex;"><span>    mask_pos <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>array(mask_pos)<span style="color:#000;font-weight:bold">.</span>astype(<span style="color:#d14">&#34;int64&#34;</span>)<span style="color:#000;font-weight:bold">.</span>reshape([<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>, <span style="color:#099">1</span>])
 </span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">return</span> batch_tokens, mask_label, mask_pos
 </span></span></code></pre></div><p>其中，<code>mask_pos</code>是用于提取出那些被mask掉的token计算 Loss，所以跟具体实现有关系，transformer 里的那种做法是不需要这个信息的。<code>mask_word</code>表示当前的句子是否以词组为单位进行掩膜，所以这里也保留了一定的概率进行 WordPiece 掩膜。<code>if beg == 0</code>对应的代码块里保证<code>beg</code>的取值范围是$[0, token_index)$，所以可以取到完整的一个词组；然后就是掩膜部分的计算了，这里每个字只有80%的概率用 <code>MASK</code> 替换，然后10%的概率随机Token替换，剩下的10%的概率保持不变，值得注意的地方在于首字的概率用来决定是否进行对词组进行掩膜，并且对应的调整<code>base_prob</code>为首字的最大概率，而非首字的最大概率仍为1.0。</p>
-=======
-<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">1 1048 492 1333 1361 1051 326 2508 5 1803 1827 98 164 133 2777 2696 983 121 4 19 9 634 551 844 85 14 2476 1895 33 13 983 121 23 7 1093 24 46 660 12043 2 1263 6 328 33 121 126 398 276 315 5 63 44 35 25 12043 2;0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1;0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55;-1 0 0 0 0 1 0 1 0 0 1 0 0 1 0 1 0 0 0 0 0 0 1 0 1 0 0 1 0 1 0 0 0 0 1 0 0 0 0 -1 0 0 0 1 0 0 1 0 1 0 0 1 0 1 0 -1;0
-</code></pre></div><p>每个样本由5个 &lsquo;;&rsquo; 分隔的字段组成，数据格式: token_ids; sentence_type_ids; position_ids; seg_labels; next_sentence_label；其中 seg_labels 表示分词边界信息: 0表示词首、1表示非词首、-1为占位符, 占位符对应的词为 CLS 或者 SEP。代码中生成 mask 的主要逻辑在<code>mask()</code>函数内，这里仅给出实体词级的掩膜，忽略汉字 word piece级别的掩膜生成。</p>
-<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">mask</span>(batch_tokens,
-         seg_labels,
-         mask_word_tags,
-         total_token_num,
-         vocab_size,
-         CLS<span style="color:#000;font-weight:bold">=</span><span style="color:#099">1</span>,
-         SEP<span style="color:#000;font-weight:bold">=</span><span style="color:#099">2</span>,
-         MASK<span style="color:#000;font-weight:bold">=</span><span style="color:#099">3</span>):
-    <span style="color:#d14">&#34;&#34;&#34;
-</span><span style="color:#d14">    Add mask for batch_tokens, return out, mask_label, mask_pos;
-</span><span style="color:#d14">    Note: mask_pos responding the batch_tokens after padded;
-</span><span style="color:#d14">    &#34;&#34;&#34;</span>
-    max_len <span style="color:#000;font-weight:bold">=</span> <span style="color:#0086b3">max</span>([<span style="color:#0086b3">len</span>(sent) <span style="color:#000;font-weight:bold">for</span> sent <span style="color:#000;font-weight:bold">in</span> batch_tokens])
-    mask_label <span style="color:#000;font-weight:bold">=</span> []
-    mask_pos <span style="color:#000;font-weight:bold">=</span> []
-    prob_mask <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>random<span style="color:#000;font-weight:bold">.</span>rand(total_token_num)
-    <span style="color:#998;font-style:italic"># Note: the first token is [CLS], so [low=1]</span>
-    replace_ids <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>random<span style="color:#000;font-weight:bold">.</span>randint(<span style="color:#099">1</span>, high<span style="color:#000;font-weight:bold">=</span>vocab_size, size<span style="color:#000;font-weight:bold">=</span>total_token_num)
-    pre_sent_len <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">0</span>
-    prob_index <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">0</span>
-<span style="color:#998;font-style:italic"># [[sentence 0], [sentence 1], [sentence 2] ... [sentence N-1]], batch size = N</span>
-    <span style="color:#000;font-weight:bold">for</span> sent_index, sent <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">enumerate</span>(batch_tokens):        <span style="color:#998;font-style:italic"># sent: current sentence</span>
-        mask_flag <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">False</span>
-        mask_word <span style="color:#000;font-weight:bold">=</span> mask_word_tags[sent_index]
-        prob_index <span style="color:#000;font-weight:bold">+=</span> pre_sent_len
-        <span style="color:#000;font-weight:bold">if</span> mask_word:
-            beg <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">0</span>
-            <span style="color:#000;font-weight:bold">for</span> token_index, token <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">enumerate</span>(sent):      <span style="color:#998;font-style:italic"># tokens in current sentence</span>
-                seg_label <span style="color:#000;font-weight:bold">=</span> seg_labels[sent_index][token_index]     <span style="color:#998;font-style:italic"># 表示分词边界信息</span>
-                <span style="color:#000;font-weight:bold">if</span> seg_label <span style="color:#000;font-weight:bold">==</span> <span style="color:#099">1</span>:                                  <span style="color:#998;font-style:italic"># 非词首</span>
-                    <span style="color:#000;font-weight:bold">continue</span>
-                <span style="color:#000;font-weight:bold">if</span> beg <span style="color:#000;font-weight:bold">==</span> <span style="color:#099">0</span>:                                        <span style="color:#998;font-style:italic"># 从 3th token 开始</span>
-                    <span style="color:#000;font-weight:bold">if</span> seg_label <span style="color:#000;font-weight:bold">!=</span> <span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>:
-                        beg <span style="color:#000;font-weight:bold">=</span> token_index
-                    <span style="color:#000;font-weight:bold">continue</span>
-
-                prob <span style="color:#000;font-weight:bold">=</span> prob_mask[prob_index <span style="color:#000;font-weight:bold">+</span> beg]                  <span style="color:#998;font-style:italic"># 当前词被掩膜的概率</span>
-                <span style="color:#000;font-weight:bold">if</span> prob <span style="color:#000;font-weight:bold">&gt;</span> <span style="color:#099">0.15</span>:
-                    <span style="color:#000;font-weight:bold">pass</span>
-                <span style="color:#000;font-weight:bold">else</span>:
-                    <span style="color:#000;font-weight:bold">for</span> index <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">xrange</span>(beg, token_index):          <span style="color:#998;font-style:italic"># 对每个词里的所有 word 都进行掩膜</span>
-                        prob <span style="color:#000;font-weight:bold">=</span> prob_mask[prob_index <span style="color:#000;font-weight:bold">+</span> index]
-                        base_prob <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">1.0</span>
-                        <span style="color:#000;font-weight:bold">if</span> index <span style="color:#000;font-weight:bold">==</span> beg:            <span style="color:#998;font-style:italic"># 词组的首字</span>
-                            base_prob <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">0.15</span>
-                        <span style="color:#000;font-weight:bold">if</span> base_prob <span style="color:#000;font-weight:bold">*</span> <span style="color:#099">0.2</span> <span style="color:#000;font-weight:bold">&lt;</span> prob <span style="color:#000;font-weight:bold">&lt;=</span> base_prob:
-                            mask_label<span style="color:#000;font-weight:bold">.</span>append(sent[index])
-                            sent[index] <span style="color:#000;font-weight:bold">=</span> MASK      <span style="color:#998;font-style:italic"># 用 Mask 掩膜</span>
-                            mask_flag <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">True</span>
-                            mask_pos<span style="color:#000;font-weight:bold">.</span>append(sent_index <span style="color:#000;font-weight:bold">*</span> max_len <span style="color:#000;font-weight:bold">+</span> index)
-                        <span style="color:#000;font-weight:bold">elif</span> base_prob <span style="color:#000;font-weight:bold">*</span> <span style="color:#099">0.1</span> <span style="color:#000;font-weight:bold">&lt;</span> prob <span style="color:#000;font-weight:bold">&lt;=</span> base_prob <span style="color:#000;font-weight:bold">*</span> <span style="color:#099">0.2</span>:
-                            mask_label<span style="color:#000;font-weight:bold">.</span>append(sent[index])
-                            sent[index] <span style="color:#000;font-weight:bold">=</span> replace_ids[prob_index <span style="color:#000;font-weight:bold">+</span> index]       <span style="color:#998;font-style:italic"># 随机替换其它 token </span>
-                            mask_flag <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">True</span>
-                            mask_pos<span style="color:#000;font-weight:bold">.</span>append(sent_index <span style="color:#000;font-weight:bold">*</span> max_len <span style="color:#000;font-weight:bold">+</span> index)
-                        <span style="color:#000;font-weight:bold">else</span>:
-                            mask_label<span style="color:#000;font-weight:bold">.</span>append(sent[index])                      <span style="color:#998;font-style:italic"># 保持不变</span>
-                            mask_pos<span style="color:#000;font-weight:bold">.</span>append(sent_index <span style="color:#000;font-weight:bold">*</span> max_len <span style="color:#000;font-weight:bold">+</span> index)
-
-                <span style="color:#000;font-weight:bold">if</span> seg_label <span style="color:#000;font-weight:bold">==</span> <span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>:
-                    beg <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">0</span>
-                <span style="color:#000;font-weight:bold">else</span>:
-                    beg <span style="color:#000;font-weight:bold">=</span> token_index
-        <span style="color:#000;font-weight:bold">else</span>:
-            <span style="color:#998;font-style:italic"># do wordpiece masking</span>
-
-        pre_sent_len <span style="color:#000;font-weight:bold">=</span> <span style="color:#0086b3">len</span>(sent)
-
-    mask_label <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>array(mask_label)<span style="color:#000;font-weight:bold">.</span>astype(<span style="color:#d14">&#34;int64&#34;</span>)<span style="color:#000;font-weight:bold">.</span>reshape([<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>, <span style="color:#099">1</span>])
-    mask_pos <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>array(mask_pos)<span style="color:#000;font-weight:bold">.</span>astype(<span style="color:#d14">&#34;int64&#34;</span>)<span style="color:#000;font-weight:bold">.</span>reshape([<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>, <span style="color:#099">1</span>])
-    <span style="color:#000;font-weight:bold">return</span> batch_tokens, mask_label, mask_pos
-</code></pre></div><p>其中，<code>mask_pos</code>是用于提取出那些被mask掉的token计算 Loss，所以跟具体实现有关系，transformer 里的那种做法是不需要这个信息的。<code>mask_word</code>表示当前的句子是否以词组为单位进行掩膜，所以这里也保留了一定的概率进行 WordPiece 掩膜。<code>if beg == 0</code>对应的代码块里保证<code>beg</code>的取值范围是$[0, token_index)$，所以可以取到完整的一个词组；然后就是掩膜部分的计算了，这里每个字只有80%的概率用 <code>MASK</code> 替换，然后10%的概率随机Token替换，剩下的10%的概率保持不变，值得注意的地方在于首字的概率用来决定是否进行对词组进行掩膜，并且对应的调整<code>base_prob</code>为首字的最大概率，而非首字的最大概率仍为1.0。</p>
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 <p>至此，一方面是mask的生成过程，另一方面就是生成输入数据中的<code>seg_labels</code>这个信息了，只要掌握了算法思想，实现起来还是有很多种方法的。</p>
 <h2 id="其它">其它</h2>
 <p>分析完上述几个简单的掩膜方法，一个很直接的思路就是结合 ERNIE 的词组掩膜 + Span 思路，就是说用一个<code>[MASK]</code>来代替一个实体词组，然后借鉴 Span 的做法，也让模型预测这个词组的 SBO 任务！效果待验证。</p>
@@ -398,11 +240,7 @@ MathJax.Hub.Config({
         		<footer>
 			
 			<span>
-<<<<<<< HEAD
-			&copy; <time datetime="2022-07-25 12:50:02.72421751 &#43;0800 CST m=&#43;0.131411585">2022</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
-=======
-			&copy; <time datetime="2022-01-26 22:10:54.732252 &#43;0800 CST m=&#43;0.077075727">2022</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
+			&copy; <time datetime="2022-07-25 13:11:53.249094321 &#43;0800 CST m=&#43;0.128186200">2022</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
 			</span>
 		</footer>
 

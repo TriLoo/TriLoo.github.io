@@ -11,60 +11,21 @@
 		
 		<link rel="stylesheet" href="/css/style.css">
 		<link rel="stylesheet" href="/css/fonts.css">
-<<<<<<< HEAD
 		<link rel="stylesheet" href="/css/custom.css">
 		
 		<link rel="icon" href="/favicon.ico"/>
-=======
-        <link rel="stylesheet" href="/css/custom.css">
-		
-		<link rel="icon" href="favicon.ico" />
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 		<link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
 		<link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
 		<link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
 
 		
 		<link href="" rel="alternate" type="application/rss+xml" title="Triloon" />
-<<<<<<< HEAD
 
 		<script src="/js/darkmode.js"></script>
 	</head>
 
     <body>
         		<nav class="nav">
-=======
-	</head>
-
-    <body>
-        <script type="text/javascript" async
-  src="https://cdn.jsdelivr.net/npm/mathjax@2.7.4/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
-</script>
-<script type="text/x-mathjax-config">
-MathJax.Hub.Config({
-  tex2jax: {
-    inlineMath: [['$','$'], ['\\(','\\)']],
-    displayMath: [['$$','$$'], ['\[','\]']],
-    processEscapes: true,
-    processEnvironments: true,
-    skipTags: ['script', 'noscript', 'style', 'textarea', 'pre','code'],
-    TeX: { equationNumbers: { autoNumber: "AMS" },
-         extensions: ["AMSmath.js", "AMSsymbols.js"] }
-  }
-});
-</script>
-
-<style>
-    code.has-jax {
-        font: inherit;
-        font-size: 100%;
-        background: inherit;
-        border: inherit;
-        color: #515151;
-    }
-</style>
-		<nav class="nav">
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 			<div class="nav-container">
 				<a href="/">
 					
@@ -94,28 +55,17 @@ MathJax.Hub.Config({
 			</div>
 		</nav>
 
-<<<<<<< HEAD
         <div id="darkModeToggle" onclick="toggleDarkMode()">
   &#9680; 
 </div>
-=======
-        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-        <link rel="manifest" href="/site.webmanifest">
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 
         
 
 <main>
-<<<<<<< HEAD
 	
 
 
         <div class="post">
-=======
-	<div class="post">
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 		<div class="post-info">
     <span>Written by</span>
         triloon
@@ -296,7 +246,6 @@ MathJax.Hub.Config({
 </figure></p>
 <p>值得注意的地方在于，Predictior 仅用与计算 Q，K 是直接 $f_k$ 模型的输出结果；Loss的最终计算会乘上一个因子 $2 * \tau$，默认的$\tau=0.2$；在训练过程中，算法中的$m$也随着 epoch 的增加而 cosine 下降；类似 SimCLR 新增了 3 层的 Mlp 层，具体维度的变化可以参考代码；其它具体实现可以参考上面链接中的代码。两个细节，首先是计算 K 的时候使用的更新后的 $f_k$，其次是没有像 SimSiam 中那样使用 fix lr 技巧。</p>
 <p>对于参数 $m$ 的选取，作者对比了 0, 0.9, 0.99, 0.999 等值，发现 m = 0.99 时效果最好，但是实际实现是按照下面一行代码进行更新，并且初始值是0.99。</p>
-<<<<<<< HEAD
 <div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
 <table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
 <pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">0
@@ -312,23 +261,6 @@ MathJax.Hub.Config({
 </span></span><span style="display:flex;"><span>                        <span style="color:#000;font-weight:bold">*</span> (<span style="color:#099">1.</span> <span style="color:#000;font-weight:bold">-</span> args<span style="color:#000;font-weight:bold">.</span>moco_m)
 </span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">return</span> m
 </span></span></code></pre></td></tr></table>
-=======
-<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
-<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
-<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">0
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
-</span></code></pre></td>
-<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
-<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">adjust_moco_momentum</span>(epoch, args):
-    <span style="color:#d14">&#34;&#34;&#34;Adjust moco momentum based on current epoch&#34;&#34;&#34;</span>
-    m <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">1.</span> <span style="color:#000;font-weight:bold">-</span> <span style="color:#099">0.5</span> <span style="color:#000;font-weight:bold">*</span> (<span style="color:#099">1.</span> <span style="color:#000;font-weight:bold">+</span> math<span style="color:#000;font-weight:bold">.</span>cos(math<span style="color:#000;font-weight:bold">.</span>pi <span style="color:#000;font-weight:bold">*</span> epoch <span style="color:#000;font-weight:bold">/</span> args<span style="color:#000;font-weight:bold">.</span>epochs)) 
-                        <span style="color:#000;font-weight:bold">*</span> (<span style="color:#099">1.</span> <span style="color:#000;font-weight:bold">-</span> args<span style="color:#000;font-weight:bold">.</span>moco_m)
-    <span style="color:#000;font-weight:bold">return</span> m
-</code></pre></td></tr></table>
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 </div>
 </div><p>对应的曲线如图-2，其中横轴为epoch的取值，纵轴是对应 epoch 的 momentum 参数。</p>
 <p><figure>
@@ -387,11 +319,7 @@ $$PE(pos, 2i + 1) = \cos \left( \frac{pos}{10000^{2i / d_{model}}} \right)$$</p>
     </center>
 </figure></p>
 <p>在SSL中，Teacher模型的实现包含两个方面，首先是输入数据，然后是模型参数怎么更新。输入数据涉及到了同一幅图片的 Multi-Crops(Views)的实现。在 DINO 中，给定一幅图片 x，产生一个 view 集合，集合中包含两个 global view 以及多个（如6个）Local Views，Local View 具有更小的分辨率。所有的 Views 都会进行 student 网络的前向计算，但是只有两个 Global Views 才会进行 Teacher 网络的前向计算，所以在基于上述 Student / Teancher 模型进行知识蒸馏的时候可以获得 &ldquo;Local-to-Global&rdquo; 的对应。然后用下式对 Student 网络参数进行更新。</p>
-<<<<<<< HEAD
 <p>$$\min_{\theta_s} \sum_{x \in { x_1^g, x_2^g }} \sum_{x&rsquo;\in V, x&rsquo; \neq x} H(P_t(x), P_s(x&rsquo;))$$</p>
-=======
-<p>$$\min_{\theta_s} \sum_{x \in { x_1^g, x_2^g }} \sum_{x'\in V, x' \neq x} H(P_t(x), P_s(x'))$$</p>
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 <p>其中，$H(a, b) = -a \log b$。Teacher / Student 两个网络具有相同的结构但是不同的参数。为了处理不同的输入分辨率（这里为224，96两种），代码中借助 XCiT 的思路进行实现。</p>
 <p>与 Knowledge Distillation 不同的是，SSL 中没有Label 来训练 Teacher 模型，那么Teacher 模型的权重怎么更新呢？直观的方案有以下两种方案。</p>
 <ul>
@@ -435,7 +363,6 @@ $$PE(pos, 2i + 1) = \cos \left( \frac{pos}{10000^{2i / d_{model}}} \right)$$</p>
 <h3 id="position-embedding-的生成">Position Embedding 的生成</h3>
 <p>与 MoCoV3 中使用 sin-cos 的位置编码不同，DINO 针对不同的分辨率采用的是对 position embedding 利用 bicubic 的方式进行上/下采样。</p>
 <p>具体实现代码如下，可以看出主要是将 Patch 恢复成 $(B, C, H, W)$ 格式，然后借助<code>torch.nn.functional.interpolate()</code>函数进行下采样。</p>
-<<<<<<< HEAD
 <div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
 <table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
 <pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 0
@@ -483,55 +410,6 @@ $$PE(pos, 2i + 1) = \cos \left( \frac{pos}{10000^{2i / d_{model}}} \right)$$</p>
 </span></span><span style="display:flex;"><span>    patch_pos_embed <span style="color:#000;font-weight:bold">=</span> patch_pos_embed<span style="color:#000;font-weight:bold">.</span>permute(<span style="color:#099">0</span>, <span style="color:#099">2</span>, <span style="color:#099">3</span>, <span style="color:#099">1</span>)<span style="color:#000;font-weight:bold">.</span>view(<span style="color:#099">1</span>, <span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>, dim)
 </span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">return</span> torch<span style="color:#000;font-weight:bold">.</span>cat((class_pos_embed<span style="color:#000;font-weight:bold">.</span>unsqueeze(<span style="color:#099">0</span>), patch_pos_embed), dim<span style="color:#000;font-weight:bold">=</span><span style="color:#099">1</span>)
 </span></span></code></pre></td></tr></table>
-=======
-<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
-<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
-<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 0
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
-</span></code></pre></td>
-<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
-<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">interpolate_pos_encoding</span>(<span style="color:#999">self</span>, x, w, h):
-    npatch <span style="color:#000;font-weight:bold">=</span> x<span style="color:#000;font-weight:bold">.</span>shape[<span style="color:#099">1</span>] <span style="color:#000;font-weight:bold">-</span> <span style="color:#099">1</span>
-    N <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>pos_embed<span style="color:#000;font-weight:bold">.</span>shape[<span style="color:#099">1</span>] <span style="color:#000;font-weight:bold">-</span> <span style="color:#099">1</span>
-    <span style="color:#000;font-weight:bold">if</span> npatch <span style="color:#000;font-weight:bold">==</span> N <span style="color:#000;font-weight:bold">and</span> w <span style="color:#000;font-weight:bold">==</span> h:
-        <span style="color:#000;font-weight:bold">return</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>pos_embed
-    class_pos_embed <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>pos_embed[:, <span style="color:#099">0</span>]
-    patch_pos_embed <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>pos_embed[:, <span style="color:#099">1</span>:]
-    dim <span style="color:#000;font-weight:bold">=</span> x<span style="color:#000;font-weight:bold">.</span>shape[<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>]
-    w0 <span style="color:#000;font-weight:bold">=</span> w <span style="color:#000;font-weight:bold">//</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>patch_embed<span style="color:#000;font-weight:bold">.</span>patch_size
-    h0 <span style="color:#000;font-weight:bold">=</span> h <span style="color:#000;font-weight:bold">//</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>patch_embed<span style="color:#000;font-weight:bold">.</span>patch_size
-    <span style="color:#998;font-style:italic"># we add a small number to avoid floating point error in the interpolation</span>
-    <span style="color:#998;font-style:italic"># see discussion at https://github.com/facebookresearch/dino/issues/8</span>
-    w0, h0 <span style="color:#000;font-weight:bold">=</span> w0 <span style="color:#000;font-weight:bold">+</span> <span style="color:#099">0.1</span>, h0 <span style="color:#000;font-weight:bold">+</span> <span style="color:#099">0.1</span>
-    patch_pos_embed <span style="color:#000;font-weight:bold">=</span> nn<span style="color:#000;font-weight:bold">.</span>functional<span style="color:#000;font-weight:bold">.</span>interpolate(
-        patch_pos_embed<span style="color:#000;font-weight:bold">.</span>reshape(<span style="color:#099">1</span>, <span style="color:#0086b3">int</span>(math<span style="color:#000;font-weight:bold">.</span>sqrt(N)), <span style="color:#0086b3">int</span>(math<span style="color:#000;font-weight:bold">.</span>sqrt(N)), dim)<span style="color:#000;font-weight:bold">.</span>permute(<span style="color:#099">0</span>, <span style="color:#099">3</span>, <span style="color:#099">1</span>, <span style="color:#099">2</span>),
-        scale_factor<span style="color:#000;font-weight:bold">=</span>(w0 <span style="color:#000;font-weight:bold">/</span> math<span style="color:#000;font-weight:bold">.</span>sqrt(N), h0 <span style="color:#000;font-weight:bold">/</span> math<span style="color:#000;font-weight:bold">.</span>sqrt(N)),
-        mode<span style="color:#000;font-weight:bold">=</span><span style="color:#d14">&#39;bicubic&#39;</span>,
-    )
-    <span style="color:#000;font-weight:bold">assert</span> <span style="color:#0086b3">int</span>(w0) <span style="color:#000;font-weight:bold">==</span> patch_pos_embed<span style="color:#000;font-weight:bold">.</span>shape[<span style="color:#000;font-weight:bold">-</span><span style="color:#099">2</span>] <span style="color:#000;font-weight:bold">and</span> <span style="color:#0086b3">int</span>(h0) <span style="color:#000;font-weight:bold">==</span> patch_pos_embed<span style="color:#000;font-weight:bold">.</span>shape[<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>]
-    patch_pos_embed <span style="color:#000;font-weight:bold">=</span> patch_pos_embed<span style="color:#000;font-weight:bold">.</span>permute(<span style="color:#099">0</span>, <span style="color:#099">2</span>, <span style="color:#099">3</span>, <span style="color:#099">1</span>)<span style="color:#000;font-weight:bold">.</span>view(<span style="color:#099">1</span>, <span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>, dim)
-    <span style="color:#000;font-weight:bold">return</span> torch<span style="color:#000;font-weight:bold">.</span>cat((class_pos_embed<span style="color:#000;font-weight:bold">.</span>unsqueeze(<span style="color:#099">0</span>), patch_pos_embed), dim<span style="color:#000;font-weight:bold">=</span><span style="color:#099">1</span>)
-</code></pre></td></tr></table>
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 </div>
 </div><p>其中，$-1$是为了去掉增加的 <code>[CLS]</code> 这个 Token，然后将 <code>patch_pos_embed</code> 恢复空间维度，利用<code>interpolate()</code>函数进行下采样，最后恢复成$(B, SeqLen, Dim)$的格式与CLS的embedding拼接起来做为返回。</p>
 <h3 id="最后一层的处理">最后一层的处理</h3>
@@ -541,7 +419,6 @@ $$PE(pos, 2i + 1) = \cos \left( \frac{pos}{10000^{2i / d_{model}}} \right)$$</p>
 <p>$$w = g \frac{\mathbf{v}}{\parallel \mathbf{v} \parallel}$$</p>
 <p>其中$\mathbf{v}$为表示方向的向量。然后SGD优化的时候，分别优化$g$与$\mathbf{v}$。</p>
 <p>另一个处理是第一个 epoch 内取消最后一层的梯度更新，实现代码其实就是设置<code>grad=None</code>，即。</p>
-<<<<<<< HEAD
 <div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
 <table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
 <pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">0
@@ -559,30 +436,10 @@ $$PE(pos, 2i + 1) = \cos \left( \frac{pos}{10000^{2i / d_{model}}} \right)$$</p>
 </span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">if</span> <span style="color:#d14">&#34;last_layer&#34;</span> <span style="color:#000;font-weight:bold">in</span> n:
 </span></span><span style="display:flex;"><span>            p<span style="color:#000;font-weight:bold">.</span>grad <span style="color:#000;font-weight:bold">=</span> <span style="color:#000;font-weight:bold">None</span>
 </span></span></code></pre></td></tr></table>
-=======
-<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
-<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
-<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">0
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
-</span></code></pre></td>
-<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
-<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">cancel_gradients_last_layer</span>(epoch, model, freeze_last_layer<span style="color:#000;font-weight:bold">=</span><span style="color:#099">1</span>):
-    <span style="color:#000;font-weight:bold">if</span> epoch <span style="color:#000;font-weight:bold">&gt;=</span> freeze_last_layer:
-        <span style="color:#000;font-weight:bold">return</span>
-    <span style="color:#000;font-weight:bold">for</span> n, p <span style="color:#000;font-weight:bold">in</span> model<span style="color:#000;font-weight:bold">.</span>named_parameters():
-        <span style="color:#000;font-weight:bold">if</span> <span style="color:#d14">&#34;last_layer&#34;</span> <span style="color:#000;font-weight:bold">in</span> n:
-            p<span style="color:#000;font-weight:bold">.</span>grad <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">None</span>
-</code></pre></td></tr></table>
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 </div>
 </div><h3 id="dinoloss的实现">DINOLoss的实现</h3>
 <p>论文中提到的 Centering &amp; Sharping 两个做法都体现在这个类里；而且包括对应 Sharping 的参数的调整（前30个epoch由0.04 -&gt; 0.07，即<code>warmup_teacher_temp_epochs=30</code>）提高训练稳定性。</p>
 <p>对应的实现代码如下。</p>
-<<<<<<< HEAD
 <div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
 <table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
 <pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 0
@@ -706,131 +563,6 @@ $$PE(pos, 2i + 1) = \cos \left( \frac{pos}{10000^{2i / d_{model}}} \right)$$</p>
 </span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># ema update</span>
 </span></span><span style="display:flex;"><span>        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>center <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>center <span style="color:#000;font-weight:bold">*</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>center_momentum <span style="color:#000;font-weight:bold">+</span> batch_center <span style="color:#000;font-weight:bold">*</span> (<span style="color:#099">1</span> <span style="color:#000;font-weight:bold">-</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>center_momentum)
 </span></span></code></pre></td></tr></table>
-=======
-<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
-<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
-<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 0
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">23
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">24
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">25
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">26
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">27
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">28
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">29
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">30
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">31
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">32
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">33
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">34
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">35
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">36
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">37
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">38
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">39
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">40
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">41
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">42
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">43
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">44
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">45
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">46
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">47
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">48
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">49
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">50
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">51
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">52
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">53
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">54
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">55
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">56
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">57
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">58
-</span></code></pre></td>
-<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
-<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">DINOLoss</span>(nn<span style="color:#000;font-weight:bold">.</span>Module):
-    <span style="color:#000;font-weight:bold">def</span> __init__(<span style="color:#999">self</span>, out_dim, ncrops, warmup_teacher_temp, teacher_temp,
-                 warmup_teacher_temp_epochs, nepochs, student_temp<span style="color:#000;font-weight:bold">=</span><span style="color:#099">0.1</span>,
-                 center_momentum<span style="color:#000;font-weight:bold">=</span><span style="color:#099">0.9</span>):
-        <span style="color:#0086b3">super</span>()<span style="color:#000;font-weight:bold">.</span>__init__()
-        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>student_temp <span style="color:#000;font-weight:bold">=</span> student_temp
-        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>center_momentum <span style="color:#000;font-weight:bold">=</span> center_momentum
-        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>ncrops <span style="color:#000;font-weight:bold">=</span> ncrops        <span style="color:#998;font-style:italic"># 2 (global crops) + local crop nums</span>
-        <span style="color:#998;font-style:italic"># 注意 Center 尺寸，用于Centering</span>
-        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>register_buffer(<span style="color:#d14">&#34;center&#34;</span>, torch<span style="color:#000;font-weight:bold">.</span>zeros(<span style="color:#099">1</span>, out_dim))
-        <span style="color:#998;font-style:italic"># we apply a warm up for the teacher temperature because</span>
-        <span style="color:#998;font-style:italic"># a too high temperature makes the training instable at the beginning</span>
-        <span style="color:#998;font-style:italic"># Teacher 模型的 Sharping 参数的更新</span>
-        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>teacher_temp_schedule <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>concatenate((
-            np<span style="color:#000;font-weight:bold">.</span>linspace(warmup_teacher_temp,
-                        teacher_temp, warmup_teacher_temp_epochs),
-            np<span style="color:#000;font-weight:bold">.</span>ones(nepochs <span style="color:#000;font-weight:bold">-</span> warmup_teacher_temp_epochs) <span style="color:#000;font-weight:bold">*</span> teacher_temp
-        ))
-
-    <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">forward</span>(<span style="color:#999">self</span>, student_output, teacher_output, epoch):
-        <span style="color:#d14">&#34;&#34;&#34;
-</span><span style="color:#d14">        Cross-entropy between softmax outputs of the teacher and student networks.
-</span><span style="color:#d14">        &#34;&#34;&#34;</span>
-        student_out <span style="color:#000;font-weight:bold">=</span> student_output <span style="color:#000;font-weight:bold">/</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>student_temp
-        <span style="color:#998;font-style:italic"># 分成不同的chunk，一共 ncrops 份，每份对应一个 crops</span>
-        student_out <span style="color:#000;font-weight:bold">=</span> student_out<span style="color:#000;font-weight:bold">.</span>chunk(<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>ncrops)
-
-        <span style="color:#998;font-style:italic"># teacher centering and sharpening</span>
-        <span style="color:#998;font-style:italic">## 论文里提到的思路在这里</span>
-        temp <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>teacher_temp_schedule[epoch]
-        teacher_out <span style="color:#000;font-weight:bold">=</span> F<span style="color:#000;font-weight:bold">.</span>softmax((teacher_output <span style="color:#000;font-weight:bold">-</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>center) <span style="color:#000;font-weight:bold">/</span> temp, dim<span style="color:#000;font-weight:bold">=-</span><span style="color:#099">1</span>)
-        teacher_out <span style="color:#000;font-weight:bold">=</span> teacher_out<span style="color:#000;font-weight:bold">.</span>detach()<span style="color:#000;font-weight:bold">.</span>chunk(<span style="color:#099">2</span>)
-
-        total_loss <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">0</span>
-        n_loss_terms <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">0</span>
-        <span style="color:#000;font-weight:bold">for</span> iq, q <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">enumerate</span>(teacher_out):
-            <span style="color:#000;font-weight:bold">for</span> v <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(<span style="color:#0086b3">len</span>(student_out)):
-                <span style="color:#000;font-weight:bold">if</span> v <span style="color:#000;font-weight:bold">==</span> iq:
-                    <span style="color:#998;font-style:italic"># we skip cases where student and teacher operate on the same view</span>
-                    <span style="color:#000;font-weight:bold">continue</span>
-                loss <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>sum(<span style="color:#000;font-weight:bold">-</span>q <span style="color:#000;font-weight:bold">*</span> F<span style="color:#000;font-weight:bold">.</span>log_softmax(student_out[v], dim<span style="color:#000;font-weight:bold">=-</span><span style="color:#099">1</span>), dim<span style="color:#000;font-weight:bold">=-</span><span style="color:#099">1</span>)
-                total_loss <span style="color:#000;font-weight:bold">+=</span> loss<span style="color:#000;font-weight:bold">.</span>mean()
-                n_loss_terms <span style="color:#000;font-weight:bold">+=</span> <span style="color:#099">1</span>
-        total_loss <span style="color:#000;font-weight:bold">/=</span> n_loss_terms
-        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>update_center(teacher_output)
-        <span style="color:#000;font-weight:bold">return</span> total_loss
-
-    <span style="color:#3c5d5d;font-weight:bold">@torch.no_grad</span>()
-    <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">update_center</span>(<span style="color:#999">self</span>, teacher_output):
-        <span style="color:#d14">&#34;&#34;&#34;
-</span><span style="color:#d14">        Update center used for teacher output.
-</span><span style="color:#d14">        &#34;&#34;&#34;</span>
-        batch_center <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>sum(teacher_output, dim<span style="color:#000;font-weight:bold">=</span><span style="color:#099">0</span>, keepdim<span style="color:#000;font-weight:bold">=</span><span style="color:#999">True</span>)
-        <span style="color:#998;font-style:italic">## 收集teacher 模型的输出并计算平均值</span>
-        dist<span style="color:#000;font-weight:bold">.</span>all_reduce(batch_center)
-        batch_center <span style="color:#000;font-weight:bold">=</span> batch_center <span style="color:#000;font-weight:bold">/</span> (<span style="color:#0086b3">len</span>(teacher_output) <span style="color:#000;font-weight:bold">*</span> dist<span style="color:#000;font-weight:bold">.</span>get_world_size())
-
-        <span style="color:#998;font-style:italic"># ema update</span>
-        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>center <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>center <span style="color:#000;font-weight:bold">*</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>center_momentum <span style="color:#000;font-weight:bold">+</span> batch_center <span style="color:#000;font-weight:bold">*</span> (<span style="color:#099">1</span> <span style="color:#000;font-weight:bold">-</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>center_momentum)
-</code></pre></td></tr></table>
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 </div>
 </div><h3 id="dino实现中的其它一些细节">DINO实现中的其它一些细节</h3>
 <ul>
@@ -1014,11 +746,7 @@ $$PE(pos, 2i + 1) = \cos \left( \frac{pos}{10000^{2i / d_{model}}} \right)$$</p>
         		<footer>
 			
 			<span>
-<<<<<<< HEAD
-			&copy; <time datetime="2022-07-25 12:50:02.73149215 &#43;0800 CST m=&#43;0.138686213">2022</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
-=======
-			&copy; <time datetime="2022-01-26 22:10:54.732566 &#43;0800 CST m=&#43;0.077390217">2022</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
+			&copy; <time datetime="2022-07-25 13:11:53.25471773 &#43;0800 CST m=&#43;0.133809609">2022</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
 			</span>
 		</footer>
 

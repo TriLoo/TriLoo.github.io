@@ -11,60 +11,21 @@
 		
 		<link rel="stylesheet" href="/css/style.css">
 		<link rel="stylesheet" href="/css/fonts.css">
-<<<<<<< HEAD
 		<link rel="stylesheet" href="/css/custom.css">
 		
 		<link rel="icon" href="/favicon.ico"/>
-=======
-        <link rel="stylesheet" href="/css/custom.css">
-		
-		<link rel="icon" href="favicon.ico" />
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 		<link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
 		<link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
 		<link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
 
 		
 		<link href="" rel="alternate" type="application/rss+xml" title="Triloon" />
-<<<<<<< HEAD
 
 		<script src="/js/darkmode.js"></script>
 	</head>
 
     <body>
         		<nav class="nav">
-=======
-	</head>
-
-    <body>
-        <script type="text/javascript" async
-  src="https://cdn.jsdelivr.net/npm/mathjax@2.7.4/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
-</script>
-<script type="text/x-mathjax-config">
-MathJax.Hub.Config({
-  tex2jax: {
-    inlineMath: [['$','$'], ['\\(','\\)']],
-    displayMath: [['$$','$$'], ['\[','\]']],
-    processEscapes: true,
-    processEnvironments: true,
-    skipTags: ['script', 'noscript', 'style', 'textarea', 'pre','code'],
-    TeX: { equationNumbers: { autoNumber: "AMS" },
-         extensions: ["AMSmath.js", "AMSsymbols.js"] }
-  }
-});
-</script>
-
-<style>
-    code.has-jax {
-        font: inherit;
-        font-size: 100%;
-        background: inherit;
-        border: inherit;
-        color: #515151;
-    }
-</style>
-		<nav class="nav">
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 			<div class="nav-container">
 				<a href="/">
 					
@@ -94,28 +55,17 @@ MathJax.Hub.Config({
 			</div>
 		</nav>
 
-<<<<<<< HEAD
         <div id="darkModeToggle" onclick="toggleDarkMode()">
   &#9680; 
 </div>
-=======
-        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-        <link rel="manifest" href="/site.webmanifest">
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 
         
 
 <main>
-<<<<<<< HEAD
 	
 
 
         <div class="post">
-=======
-	<div class="post">
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 		<div class="post-info">
     <span>Written by</span>
         triloon
@@ -165,15 +115,9 @@ MathJax.Hub.Config({
 <p>首先，FreeAT那种在每次更新扰动项$\delta$的时候都会更新模型的权重（梯度下降），这会导致<code>stale gradient</code>的发生，也就是对于第 $t$ 步，扰动的更新不是最大化模型在 $t$ 时刻的参数$\theta_t$，而是基于下式$\nabla_{\delta} L(f_{\theta_{t-1}}(x + \delta_{t-1}), y)$计算得来的(这个梯度计算公式还是以PGD那里的为准)。</p>
 <p>FreeLB算法其实对计算量并没有减少，主要是提出了另一种梯度更新过程。在PGD-K的K次前向-后向计算用于构造adversarial examples时，FreeLB会累加每次后向传播中模型参数的，最后使用这个累加的梯度更新模型的参数。总的来说，前向-后向次数由K + 1次变为 K 次。另一个好处是，这个累加的梯度可以包含更多扰动的信息，可以认为每次模型的梯度更新都使用了更大的Batch的样本计算得到，即$x+\delta_0, \ldots, x + \delta_{K-1}$，而PGD算法只能最小化$x+\delta_{k-1}$位置的扰动损失，理论认为这会比PGD得到更好的泛化性能。</p>
 <p>上述改动等价于在两个高维球里求解最优的扰动：</p>
-<<<<<<< HEAD
 <p>$$\mathcal{I}_ t=\mathcal{B}<em>{x+\delta_0}(\alpha t) \cap \mathcal{B}</em>{x}(\epsilon)$$</p>
 <p>其中$\mathcal{B}_x(\epsilon)$表示半径为$\epsilon$的球。而通过梯度累加移动平均，则等价于优化下面的损失函数。</p>
 <p>$$\min_\theta \mathbb{E}<em>{(z, y) \sim \mathcal{D}} \left[  \frac{1}{K} \sum</em>{t=0}^{K-1} \max_{\delta_t \in \mathcal{I}<em>t} L(f</em>\theta(x + \delta_t), y) \right]$$</p>
-=======
-<p>$$\mathcal{I}_ t=\mathcal{B}_{x+\delta_0}(\alpha t) \cap \mathcal{B}_{x}(\epsilon)$$</p>
-<p>其中$\mathcal{B}_x(\epsilon)$表示半径为$\epsilon$的球。而通过梯度累加移动平均，则等价于优化下面的损失函数。</p>
-<p>$$\min_\theta \mathbb{E}_{(z, y) \sim \mathcal{D}} \left[  \frac{1}{K} \sum_{t=0}^{K-1} \max_{\delta_t \in \mathcal{I}_t} L(f_\theta(x + \delta_t), y) \right]$$</p>
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 <p>使用FreeLB算法需要特别注意的地方在于，在包含Dropout的模型中，需要保证 K 次前向-后向计算时 Dropout 的Mask保持一致，否则的话，得到的扰动就不是针对某一模型的最优扰动了。所以，使用时需要保证在一个Step内，Dropout用到的 Mask 保持不变。</p>
 <p>最终，对应的FreeLB算法伪代码如下。</p>
 <p><figure>
@@ -212,11 +156,7 @@ MathJax.Hub.Config({
 <h3 id="bregman-proximal-point-optimization">Bregman Proximal Point Optimization</h3>
 <p>这一步主要是为了防止模型的参数在每个Step中更新过大。Transformer模型中的小的 lr 本身也是一种正则化，也就是让模型的参数不会变化非常大，提高模型的泛化性能、鲁棒性等。</p>
 <p>Vanilla Bregman Proximal Point (VBPP) 算法定义了模型参数更新过程：</p>
-<<<<<<< HEAD
 <p>$$\theta_{t+1} = \mathrm{ArgMin}<em>{\theta} \mathcal{F}(\theta) + \mu \mathcal{D}</em>{Breg}(\theta, \theta_t)$$</p>
-=======
-<p>$$\theta_{t+1} = \mathrm{ArgMin}_{\theta} \mathcal{F}(\theta) + \mu \mathcal{D}_{Breg}(\theta, \theta_t)$$</p>
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 <p>其中，$\mu &gt; 0$，$\mathcal{D}_{Breg}$用于阻止模型的参数更新过大：</p>
 <p>$$\mathcal{D} _{Breg}(\theta, \theta_t) = \frac{1}{n}\sum _{i=1}^n \ell_s (f(x_i; \theta), f(x_i; \theta_t))$$</p>
 <p>实际使用中，可以借助Momentum Update的方式来更新参考的模型权重：</p>
@@ -253,7 +193,6 @@ MathJax.Hub.Config({
 <h2 id="代码实现">代码实现</h2>
 <p>先来看下 FreeLB 的代码实现，参考：<a href="https://github.com/zhuchen03/FreeLB">FreeLB - github</a>。在这个<a href="https://github.com/zhuchen03/FreeLB/blob/master/huggingface-transformers/launch/run_glue.sh">run_glue.sh</a> 脚本中，不同的下游任务对 $\delta$ 的初始化也不同，比如全零，或者<code>uniform()</code>等。<a href="https://github.com/mahyarnajibi/FreeAdversarialTraining">FreeAT - github</a>的实现代码其实与此类似。</p>
 <p>代码里的亮点在于：(1) 首先获取输入文本的 Embedding 表示 (2) 初始化 $\delta$ (3) 迭代求解最优的对抗样本。</p>
-<<<<<<< HEAD
 <div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
 <table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
 <pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
@@ -447,201 +386,6 @@ MathJax.Hub.Config({
 </span></span><span style="display:flex;"><span>        model<span style="color:#000;font-weight:bold">.</span>zero_grad()
 </span></span><span style="display:flex;"><span>        global_step <span style="color:#000;font-weight:bold">+=</span> <span style="color:#099">1</span>
 </span></span></code></pre></td></tr></table>
-=======
-<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
-<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
-<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">23
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">24
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">25
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">26
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">27
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">28
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">29
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">30
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">31
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">32
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">33
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">34
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">35
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">36
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">37
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">38
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">39
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">40
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">41
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">42
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">43
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">44
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">45
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">46
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">47
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">48
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">49
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">50
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">51
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">52
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">53
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">54
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">55
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">56
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">57
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">58
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">59
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">60
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">61
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">62
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">63
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">64
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">65
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">66
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">67
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">68
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">69
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">70
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">71
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">72
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">73
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">74
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">75
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">76
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">77
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">78
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">79
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">80
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">81
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">82
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">83
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">84
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">85
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">86
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">87
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">88
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">89
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">90
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">91
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">92
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">93
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">94
-</span></code></pre></td>
-<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
-<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#000;font-weight:bold">for</span> step, batch <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">enumerate</span>(dataloader):
-    <span style="color:#000;font-weight:bold">if</span> <span style="color:#0086b3">isinstance</span>(model, torch<span style="color:#000;font-weight:bold">.</span>nn<span style="color:#000;font-weight:bold">.</span>DataParallel):
-        embeds_init <span style="color:#000;font-weight:bold">=</span> model<span style="color:#000;font-weight:bold">.</span>module<span style="color:#000;font-weight:bold">.</span>encoder<span style="color:#000;font-weight:bold">.</span>embeddings<span style="color:#000;font-weight:bold">.</span>word_embeddings(batch[<span style="color:#099">0</span>])
-    <span style="color:#000;font-weight:bold">else</span>:
-        embeds_init <span style="color:#000;font-weight:bold">=</span> model<span style="color:#000;font-weight:bold">.</span>encoder<span style="color:#000;font-weight:bold">.</span>embeddings<span style="color:#000;font-weight:bold">.</span>word_embeddings(batch[<span style="color:#099">0</span>])
-    <span style="color:#000;font-weight:bold">if</span> args<span style="color:#000;font-weight:bold">.</span>adv_init_mag <span style="color:#000;font-weight:bold">&gt;</span> <span style="color:#099">0</span>:
-
-        input_mask <span style="color:#000;font-weight:bold">=</span> inputs[<span style="color:#d14">&#39;attention_mask&#39;</span>]<span style="color:#000;font-weight:bold">.</span>to(embeds_init)
-        input_lengths <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>sum(input_mask, <span style="color:#099">1</span>)
-        <span style="color:#998;font-style:italic"># check the shape of the mask here..</span>
-
-        <span style="color:#000;font-weight:bold">if</span> args<span style="color:#000;font-weight:bold">.</span>norm_type <span style="color:#000;font-weight:bold">==</span> <span style="color:#d14">&#34;l2&#34;</span>:
-            delta <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>zeros_like(embeds_init)<span style="color:#000;font-weight:bold">.</span>uniform_(<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>,<span style="color:#099">1</span>) <span style="color:#000;font-weight:bold">*</span> input_mask<span style="color:#000;font-weight:bold">.</span>unsqueeze(<span style="color:#099">2</span>)
-            dims <span style="color:#000;font-weight:bold">=</span> input_lengths <span style="color:#000;font-weight:bold">*</span> embeds_init<span style="color:#000;font-weight:bold">.</span>size(<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>)
-            mag <span style="color:#000;font-weight:bold">=</span> args<span style="color:#000;font-weight:bold">.</span>adv_init_mag <span style="color:#000;font-weight:bold">/</span> torch<span style="color:#000;font-weight:bold">.</span>sqrt(dims)
-            delta <span style="color:#000;font-weight:bold">=</span> (delta <span style="color:#000;font-weight:bold">*</span> mag<span style="color:#000;font-weight:bold">.</span>view(<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>, <span style="color:#099">1</span>, <span style="color:#099">1</span>))<span style="color:#000;font-weight:bold">.</span>detach()
-        <span style="color:#000;font-weight:bold">elif</span> args<span style="color:#000;font-weight:bold">.</span>norm_type <span style="color:#000;font-weight:bold">==</span> <span style="color:#d14">&#34;linf&#34;</span>:
-            delta <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>zeros_like(embeds_init)<span style="color:#000;font-weight:bold">.</span>uniform_(<span style="color:#000;font-weight:bold">-</span>args<span style="color:#000;font-weight:bold">.</span>adv_init_mag,
-                                                            args<span style="color:#000;font-weight:bold">.</span>adv_init_mag) <span style="color:#000;font-weight:bold">*</span> input_mask<span style="color:#000;font-weight:bold">.</span>unsqueeze(<span style="color:#099">2</span>)
-
-    <span style="color:#000;font-weight:bold">else</span>:
-        delta <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>zeros_like(embeds_init)
-
-    <span style="color:#998;font-style:italic"># the main loop</span>
-    dp_masks <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">None</span>
-    <span style="color:#000;font-weight:bold">for</span> astep <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(args<span style="color:#000;font-weight:bold">.</span>adv_steps):
-        <span style="color:#998;font-style:italic"># (0) forward</span>
-        delta<span style="color:#000;font-weight:bold">.</span>requires_grad_()
-        inputs[<span style="color:#d14">&#39;inputs_embeds&#39;</span>] <span style="color:#000;font-weight:bold">=</span> delta <span style="color:#000;font-weight:bold">+</span> embeds_init
-        inputs[<span style="color:#d14">&#39;dp_masks&#39;</span>] <span style="color:#000;font-weight:bold">=</span> dp_masks
-
-        outputs, dp_masks <span style="color:#000;font-weight:bold">=</span> model(<span style="color:#000;font-weight:bold">**</span>inputs)
-        loss <span style="color:#000;font-weight:bold">=</span> outputs[<span style="color:#099">0</span>]  <span style="color:#998;font-style:italic"># model outputs are always tuple in transformers (see doc)</span>
-        <span style="color:#998;font-style:italic"># (1) backward</span>
-        <span style="color:#000;font-weight:bold">if</span> args<span style="color:#000;font-weight:bold">.</span>n_gpu <span style="color:#000;font-weight:bold">&gt;</span> <span style="color:#099">1</span>:
-            loss <span style="color:#000;font-weight:bold">=</span> loss<span style="color:#000;font-weight:bold">.</span>mean()  <span style="color:#998;font-style:italic"># mean() to average on multi-gpu parallel training</span>
-        <span style="color:#000;font-weight:bold">if</span> args<span style="color:#000;font-weight:bold">.</span>gradient_accumulation_steps <span style="color:#000;font-weight:bold">&gt;</span> <span style="color:#099">1</span>:
-            loss <span style="color:#000;font-weight:bold">=</span> loss <span style="color:#000;font-weight:bold">/</span> args<span style="color:#000;font-weight:bold">.</span>gradient_accumulation_steps
-
-        loss <span style="color:#000;font-weight:bold">=</span> loss <span style="color:#000;font-weight:bold">/</span> args<span style="color:#000;font-weight:bold">.</span>adv_steps        <span style="color:#998;font-style:italic"># 求解梯度的平均</span>
-
-        tr_loss <span style="color:#000;font-weight:bold">+=</span> loss<span style="color:#000;font-weight:bold">.</span>item()
-
-        <span style="color:#000;font-weight:bold">if</span> args<span style="color:#000;font-weight:bold">.</span>fp16:
-            <span style="color:#000;font-weight:bold">with</span> amp<span style="color:#000;font-weight:bold">.</span>scale_loss(loss, optimizer) <span style="color:#000;font-weight:bold">as</span> scaled_loss:
-                scaled_loss<span style="color:#000;font-weight:bold">.</span>backward()
-        <span style="color:#000;font-weight:bold">else</span>:
-            loss<span style="color:#000;font-weight:bold">.</span>backward()
-
-        <span style="color:#000;font-weight:bold">if</span> astep <span style="color:#000;font-weight:bold">==</span> args<span style="color:#000;font-weight:bold">.</span>adv_steps <span style="color:#000;font-weight:bold">-</span> <span style="color:#099">1</span>:
-            <span style="color:#998;font-style:italic"># further updates on delta</span>
-            <span style="color:#000;font-weight:bold">break</span>
-
-        <span style="color:#998;font-style:italic"># (2) get gradient on delta</span>
-        delta_grad <span style="color:#000;font-weight:bold">=</span> delta<span style="color:#000;font-weight:bold">.</span>grad<span style="color:#000;font-weight:bold">.</span>clone()<span style="color:#000;font-weight:bold">.</span>detach()
-
-        <span style="color:#998;font-style:italic"># (3) update and clip</span>
-        <span style="color:#000;font-weight:bold">if</span> args<span style="color:#000;font-weight:bold">.</span>norm_type <span style="color:#000;font-weight:bold">==</span> <span style="color:#d14">&#34;l2&#34;</span>:
-            denorm <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>norm(delta_grad<span style="color:#000;font-weight:bold">.</span>view(delta_grad<span style="color:#000;font-weight:bold">.</span>size(<span style="color:#099">0</span>), <span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>), dim<span style="color:#000;font-weight:bold">=</span><span style="color:#099">1</span>)<span style="color:#000;font-weight:bold">.</span>view(<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>, <span style="color:#099">1</span>, <span style="color:#099">1</span>)
-            denorm <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>clamp(denorm, <span style="color:#0086b3">min</span><span style="color:#000;font-weight:bold">=</span><span style="color:#099">1e-8</span>)
-            delta <span style="color:#000;font-weight:bold">=</span> (delta <span style="color:#000;font-weight:bold">+</span> args<span style="color:#000;font-weight:bold">.</span>adv_lr <span style="color:#000;font-weight:bold">*</span> delta_grad <span style="color:#000;font-weight:bold">/</span> denorm)<span style="color:#000;font-weight:bold">.</span>detach()
-            <span style="color:#000;font-weight:bold">if</span> args<span style="color:#000;font-weight:bold">.</span>adv_max_norm <span style="color:#000;font-weight:bold">&gt;</span> <span style="color:#099">0</span>:   <span style="color:#998;font-style:italic"># 通常为0 或者 1e-7</span>
-                delta_norm <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>norm(delta<span style="color:#000;font-weight:bold">.</span>view(delta<span style="color:#000;font-weight:bold">.</span>size(<span style="color:#099">0</span>), <span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>)<span style="color:#000;font-weight:bold">.</span>float(), p<span style="color:#000;font-weight:bold">=</span><span style="color:#099">2</span>, dim<span style="color:#000;font-weight:bold">=</span><span style="color:#099">1</span>)<span style="color:#000;font-weight:bold">.</span>detach()
-                exceed_mask <span style="color:#000;font-weight:bold">=</span> (delta_norm <span style="color:#000;font-weight:bold">&gt;</span> args<span style="color:#000;font-weight:bold">.</span>adv_max_norm)<span style="color:#000;font-weight:bold">.</span>to(embeds_init)
-                reweights <span style="color:#000;font-weight:bold">=</span> (args<span style="color:#000;font-weight:bold">.</span>adv_max_norm <span style="color:#000;font-weight:bold">/</span> delta_norm <span style="color:#000;font-weight:bold">*</span> exceed_mask \
-                                <span style="color:#000;font-weight:bold">+</span> (<span style="color:#099">1</span><span style="color:#000;font-weight:bold">-</span>exceed_mask))<span style="color:#000;font-weight:bold">.</span>view(<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>, <span style="color:#099">1</span>, <span style="color:#099">1</span>)
-                delta <span style="color:#000;font-weight:bold">=</span> (delta <span style="color:#000;font-weight:bold">*</span> reweights)<span style="color:#000;font-weight:bold">.</span>detach()            <span style="color:#998;font-style:italic"># 进入下一次循环</span>
-        <span style="color:#000;font-weight:bold">elif</span> args<span style="color:#000;font-weight:bold">.</span>norm_type <span style="color:#000;font-weight:bold">==</span> <span style="color:#d14">&#34;linf&#34;</span>:
-            denorm <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>norm(delta_grad<span style="color:#000;font-weight:bold">.</span>view(delta_grad<span style="color:#000;font-weight:bold">.</span>size(<span style="color:#099">0</span>), <span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>), dim<span style="color:#000;font-weight:bold">=</span><span style="color:#099">1</span>, p<span style="color:#000;font-weight:bold">=</span><span style="color:#0086b3">float</span>(<span style="color:#d14">&#34;inf&#34;</span>))<span style="color:#000;font-weight:bold">.</span>view(<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>, <span style="color:#099">1</span>, <span style="color:#099">1</span>)
-            denorm <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>clamp(denorm, <span style="color:#0086b3">min</span><span style="color:#000;font-weight:bold">=</span><span style="color:#099">1e-8</span>)
-            delta <span style="color:#000;font-weight:bold">=</span> (delta <span style="color:#000;font-weight:bold">+</span> args<span style="color:#000;font-weight:bold">.</span>adv_lr <span style="color:#000;font-weight:bold">*</span> delta_grad <span style="color:#000;font-weight:bold">/</span> denorm)<span style="color:#000;font-weight:bold">.</span>detach()
-            <span style="color:#000;font-weight:bold">if</span> args<span style="color:#000;font-weight:bold">.</span>adv_max_norm <span style="color:#000;font-weight:bold">&gt;</span> <span style="color:#099">0</span>:
-                delta <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>clamp(delta, <span style="color:#000;font-weight:bold">-</span>args<span style="color:#000;font-weight:bold">.</span>adv_max_norm, args<span style="color:#000;font-weight:bold">.</span>adv_max_norm)<span style="color:#000;font-weight:bold">.</span>detach()
-        <span style="color:#000;font-weight:bold">else</span>:
-            <span style="color:#000;font-weight:bold">print</span>(<span style="color:#d14">&#34;Norm type {} not specified.&#34;</span><span style="color:#000;font-weight:bold">.</span>format(args<span style="color:#000;font-weight:bold">.</span>norm_type))
-            <span style="color:#0086b3">exit</span>()
-
-        <span style="color:#000;font-weight:bold">if</span> <span style="color:#0086b3">isinstance</span>(model, torch<span style="color:#000;font-weight:bold">.</span>nn<span style="color:#000;font-weight:bold">.</span>DataParallel):
-            embeds_init <span style="color:#000;font-weight:bold">=</span> model<span style="color:#000;font-weight:bold">.</span>module<span style="color:#000;font-weight:bold">.</span>encoder<span style="color:#000;font-weight:bold">.</span>embeddings<span style="color:#000;font-weight:bold">.</span>word_embeddings(batch[<span style="color:#099">0</span>])
-        <span style="color:#000;font-weight:bold">else</span>:
-            embeds_init <span style="color:#000;font-weight:bold">=</span> model<span style="color:#000;font-weight:bold">.</span>encoder<span style="color:#000;font-weight:bold">.</span>embeddings<span style="color:#000;font-weight:bold">.</span>word_embeddings(batch[<span style="color:#099">0</span>])
-
-    <span style="color:#998;font-style:italic"># ============================ End (2) ==================</span>
-
-    <span style="color:#000;font-weight:bold">if</span> (step <span style="color:#000;font-weight:bold">+</span> <span style="color:#099">1</span>) <span style="color:#000;font-weight:bold">%</span> args<span style="color:#000;font-weight:bold">.</span>gradient_accumulation_steps <span style="color:#000;font-weight:bold">==</span> <span style="color:#099">0</span>:
-        <span style="color:#000;font-weight:bold">if</span> args<span style="color:#000;font-weight:bold">.</span>fp16:
-            torch<span style="color:#000;font-weight:bold">.</span>nn<span style="color:#000;font-weight:bold">.</span>utils<span style="color:#000;font-weight:bold">.</span>clip_grad_norm_(amp<span style="color:#000;font-weight:bold">.</span>master_params(optimizer), args<span style="color:#000;font-weight:bold">.</span>max_grad_norm)
-        <span style="color:#000;font-weight:bold">else</span>:
-            torch<span style="color:#000;font-weight:bold">.</span>nn<span style="color:#000;font-weight:bold">.</span>utils<span style="color:#000;font-weight:bold">.</span>clip_grad_norm_(model<span style="color:#000;font-weight:bold">.</span>parameters(), args<span style="color:#000;font-weight:bold">.</span>max_grad_norm)
-
-        optimizer<span style="color:#000;font-weight:bold">.</span>step()
-        scheduler<span style="color:#000;font-weight:bold">.</span>step()  <span style="color:#998;font-style:italic"># Update learning rate schedule</span>
-        model<span style="color:#000;font-weight:bold">.</span>zero_grad()
-        global_step <span style="color:#000;font-weight:bold">+=</span> <span style="color:#099">1</span>
-</code></pre></td></tr></table>
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 </div>
 </div><p>对应的 SMART 代码在<a href="https://github.com/namisan/mt-dnn">mt-dnn</a>。</p>
 
@@ -660,11 +404,7 @@ MathJax.Hub.Config({
         		<footer>
 			
 			<span>
-<<<<<<< HEAD
-			&copy; <time datetime="2022-07-25 12:50:02.734602768 &#43;0800 CST m=&#43;0.141796831">2022</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
-=======
-			&copy; <time datetime="2022-01-26 22:10:54.733309 &#43;0800 CST m=&#43;0.078132861">2022</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
+			&copy; <time datetime="2022-07-25 13:11:53.251889824 &#43;0800 CST m=&#43;0.130981702">2022</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
 			</span>
 		</footer>
 

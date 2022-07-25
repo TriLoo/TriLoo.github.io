@@ -11,60 +11,21 @@
 		
 		<link rel="stylesheet" href="/css/style.css">
 		<link rel="stylesheet" href="/css/fonts.css">
-<<<<<<< HEAD
 		<link rel="stylesheet" href="/css/custom.css">
 		
 		<link rel="icon" href="/favicon.ico"/>
-=======
-        <link rel="stylesheet" href="/css/custom.css">
-		
-		<link rel="icon" href="favicon.ico" />
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 		<link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
 		<link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
 		<link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
 
 		
 		<link href="" rel="alternate" type="application/rss+xml" title="Triloon" />
-<<<<<<< HEAD
 
 		<script src="/js/darkmode.js"></script>
 	</head>
 
     <body>
         		<nav class="nav">
-=======
-	</head>
-
-    <body>
-        <script type="text/javascript" async
-  src="https://cdn.jsdelivr.net/npm/mathjax@2.7.4/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
-</script>
-<script type="text/x-mathjax-config">
-MathJax.Hub.Config({
-  tex2jax: {
-    inlineMath: [['$','$'], ['\\(','\\)']],
-    displayMath: [['$$','$$'], ['\[','\]']],
-    processEscapes: true,
-    processEnvironments: true,
-    skipTags: ['script', 'noscript', 'style', 'textarea', 'pre','code'],
-    TeX: { equationNumbers: { autoNumber: "AMS" },
-         extensions: ["AMSmath.js", "AMSsymbols.js"] }
-  }
-});
-</script>
-
-<style>
-    code.has-jax {
-        font: inherit;
-        font-size: 100%;
-        background: inherit;
-        border: inherit;
-        color: #515151;
-    }
-</style>
-		<nav class="nav">
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 			<div class="nav-container">
 				<a href="/">
 					
@@ -94,28 +55,17 @@ MathJax.Hub.Config({
 			</div>
 		</nav>
 
-<<<<<<< HEAD
         <div id="darkModeToggle" onclick="toggleDarkMode()">
   &#9680; 
 </div>
-=======
-        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-        <link rel="manifest" href="/site.webmanifest">
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 
         
 
 <main>
-<<<<<<< HEAD
 	
 
 
         <div class="post">
-=======
-	<div class="post">
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 		<div class="post-info">
     <span>Written by</span>
         triloon
@@ -141,11 +91,7 @@ Attacks</a>等。</p>
 <p>上面对线性模型的分析表明，输入信号中那些与权重方向更一致的数据对输出的影响会更大，这也是从一个简单的角度说明为什么模型会存在对抗样本。</p>
 <p>对于存在非线性激活函数的模型而言，上述分析也有一定的适用性。因为实际模型中，通常使用 relu, maxout, sigmoid 等激活函数，为了方便模型的训练，这些激活函数也通常具有较高的线形特征，比如 sigmoid，需要让输入在 0 范围内，否则就会饱和，而在0附近正好对应 sigmoid 最接近线性函数的区域。对于这一类（存在非线性层）模型，我们选择让损失函数变大来代替让输出变化项$\omega^T \eta$变大，对应的扰动是让损失函数变大的方向，也就是梯度的方向：</p>
 <p>$$\eta = \epsilon \textrm{sign} (\nabla_x J(\theta, x, y))$$</p>
-<<<<<<< HEAD
 <p>这一过程也就是将模型在$\theta$处线性展开，即：$f(x_0 + \eta) = f(x_0) +f(x_0)&rsquo; \eta$，所以当$\eta$的方向与$f(x_0)&rsquo;$方向一致的时候，才会使得$f(x_0 + \eta) - f(x_0)$的差别最大。这个算法就对应<code>Fast gradient sign method (FGSM)</code>。实验发现，当$\epsilon = 0.25$时，99% 的扰动输入都可以让一个浅层的 Softmax 模型预测错误。</p>
-=======
-<p>这一过程也就是将模型在$\theta$处线性展开，即：$f(x_0 + \eta) = f(x_0) +f(x_0)' \eta$，所以当$\eta$的方向与$f(x_0)'$方向一致的时候，才会使得$f(x_0 + \eta) - f(x_0)$的差别最大。这个算法就对应<code>Fast gradient sign method (FGSM)</code>。实验发现，当$\epsilon = 0.25$时，99% 的扰动输入都可以让一个浅层的 Softmax 模型预测错误。</p>
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 <p>虽然按照万能逼近定理来说，深度学习模型可以逼近任何函数，所以可以对抗adversarial样本的扰动，然而，前提是我们需要明确提供这一类的样本让模型进行学习，所以作者提出了下面的损失函数训练模型。</p>
 <p>$$\tilde{J}(\theta, x, y) = \alpha J(\theta, x, y) + (1 - \alpha) J(\theta, x + \epsilon \textrm{sign}(\nabla_x J(\theta, x, y)))$$</p>
 <p>这里作者设置$\alpha=0.5$。有一点，这里采用$\textrm{sign}$函数，这个函数是不可求导的，所以模型不会知道对抗样本对自身权重变化的反应，而下面提到的 FGM 采用的 <code>l2 norm</code> 则会知道，后者会让学习过程变得容易。</p>
@@ -161,7 +107,6 @@ Attacks</a>等。</p>
 <h3 id="fgsm-伪代码实现">FGSM 伪代码实现</h3>
 <p>参考的是: <a href="https://pytorch.org/tutorials/beginner/fgsm_tutorial.html">ADVERSARIAL EXAMPLE GENERATION</a></p>
 <p>用于训练中需要验证。</p>
-<<<<<<< HEAD
 <div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
 <table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
 <pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 0
@@ -195,41 +140,6 @@ Attacks</a>等。</p>
 </span></span><span style="display:flex;"><span>    optimizer<span style="color:#000;font-weight:bold">.</span>zero_grad()
 </span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">return</span> loss_total
 </span></span></code></pre></td></tr></table>
-=======
-<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
-<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
-<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 0
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
-</span></code></pre></td>
-<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
-<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">fgsm_attack</span>(data, model, label, loss_fn, optimizer, epsilon):
-    data<span style="color:#000;font-weight:bold">.</span>requires_grad <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">True</span>
-    output <span style="color:#000;font-weight:bold">=</span> model(data)
-    loss <span style="color:#000;font-weight:bold">=</span> loss_fn(output, label)
-    loss<span style="color:#000;font-weight:bold">.</span>backward()
-
-    data_grad <span style="color:#000;font-weight:bold">=</span> data<span style="color:#000;font-weight:bold">.</span>grad<span style="color:#000;font-weight:bold">.</span>data
-    perturbed_data <span style="color:#000;font-weight:bold">=</span> data <span style="color:#000;font-weight:bold">+</span> epsilon <span style="color:#000;font-weight:bold">*</span> data_grad<span style="color:#000;font-weight:bold">.</span>sign()
-    output_adv <span style="color:#000;font-weight:bold">=</span> model(perturbed_data)
-    loss_adv <span style="color:#000;font-weight:bold">=</span> loss_fn(output_adv, label)
-
-    loss_total <span style="color:#000;font-weight:bold">=</span> loss <span style="color:#000;font-weight:bold">+</span> loss_adv
-    optimizer<span style="color:#000;font-weight:bold">.</span>zero_grad()
-    <span style="color:#000;font-weight:bold">return</span> loss_total
-</code></pre></td></tr></table>
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 </div>
 </div><p>另外一个参考代码是：<a href="https://towardsdatascience.com/adversarial-attack-and-defense-on-neural-networks-in-pytorch-82b5bcd9171">Adversarial Attack and Defense on Neural Networks in PyTorch</a>。</p>
 <h3 id="fgm">FGM</h3>
@@ -274,19 +184,11 @@ Attacks</a>等。</p>
 <p>其中，</p>
 <p>$$r_{v-adv} = \nabla_{s+d} \mathrm{KL} [p(\cdot | s; \hat{\theta}) \parallel p(\cdot | s + r; \hat{\theta})$$</p>
 <p>这里，$d$为初始扰动，是随机初始化的，对应的Adv Loss项为：</p>
-<<<<<<< HEAD
 <p>$$L_{v-adv}(\theta) = \frac{1}{N&rsquo;} \sum_{n&rsquo;=1}^N&rsquo; \mathrm{KL}[p(\cdot | s_{n&rsquo;}; \hat{\theta}) \parallel p(\cdot | s_{n&rsquo;} + r_{v-adv, n&rsquo;}; \theta)]$$</p>
 <p>$N&rsquo;$为所有的labeled / unlabeled样本。</p>
 <h2 id="pgd">PGD</h2>
 <p>本文的一个贡献是将Adversarial Training不再看成是一个Adversarial Samples训练问题了，而是统一到一个通用的优化Loss函数里。</p>
 <p>$$\min \rho_\theta, \mathrm{Where}, \rho_\theta = \mathbb{E}<em>{(x, y) \sim \mathcal{D}} \left[ \max</em>{\delta \in \mathcal{S}} L(\theta, x + \delta, y) \right]$$</p>
-=======
-<p>$$L_{v-adv}(\theta) = \frac{1}{N'} \sum_{n'=1}^N' \mathrm{KL}[p(\cdot | s_{n'}; \hat{\theta}) \parallel p(\cdot | s_{n'} + r_{v-adv, n'}; \theta)]$$</p>
-<p>$N'$为所有的labeled / unlabeled样本。</p>
-<h2 id="pgd">PGD</h2>
-<p>本文的一个贡献是将Adversarial Training不再看成是一个Adversarial Samples训练问题了，而是统一到一个通用的优化Loss函数里。</p>
-<p>$$\min \rho_\theta, \mathrm{Where}, \rho_\theta = \mathbb{E}_{(x, y) \sim \mathcal{D}} \left[ \max_{\delta \in \mathcal{S}} L(\theta, x + \delta, y) \right]$$</p>
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 <p>其中，$\delta$为添加的扰动。</p>
 <p>可以看出模型优化过程是一个min-max的过程，里面的 max 过程可以被认为是在$\parallel \cdot \parallel_{\infty} &lt; \epsilon$ 范围内寻找Loss最大的扰动，前面提到的 FGM / FGSM 可以认为只是迭代一次寻找最大值（one-step scheme for maximizing），本文的另一个贡献是提出了多步优化寻找最大值（multi-step），被称作Projected Gradient Descent (PGD)。$x^0$为原始干净输入，$x^1$为干净输入基础上使用下式进行扰动。更新扰动的过程有两种定义。</p>
 <p>$$x^{t+1} = \prod_{x+\mathcal{S}} (x^t + \alpha \mathrm{sgn} (\nabla_{x^t} L(\theta, x^t, y))$$</p>
@@ -298,7 +200,6 @@ Attacks</a>等。</p>
 <h2 id="trades">TRADES</h2>
 <p><a href="https://arxiv.org/pdf/1901.08573.pdf">Theoretically Principled Trade-off between Robustness and Accuracy</a></p>
 <p>定义了一个新的min-max损失函数，用于平衡泛化性与鲁棒性，也就是提高模型在non-adversarial examples 以及 adversarial examples 上的性能。</p>
-<<<<<<< HEAD
 <p>$$\min_\theta \mathbb{E}<em>{(x, y) \sim \mathcal{D}} \max</em>{\parallel \eta \parallel \le \epsilon} \left( \ell (f_\theta (x), y) + \mathcal{L} (f_\theta(x), f_\theta (x + \eta) / \lambda)  \right)$$</p>
 <p>对应的 SMART 算法里使用了这种形式。</p>
 <h2 id="代码实现">代码实现</h2>
@@ -529,238 +430,6 @@ Attacks</a>等。</p>
 </span></span><span style="display:flex;"><span>        delta<span style="color:#000;font-weight:bold">.</span>zero_grad_()
 </span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">return</span> delta<span style="color:#000;font-weight:bold">.</span>detach()
 </span></span></code></pre></td></tr></table>
-=======
-<p>$$\min_\theta \mathbb{E}_{(x, y) \sim \mathcal{D}} \max_{\parallel \eta \parallel \le \epsilon} \left( \ell (f_\theta (x), y) + \mathcal{L} (f_\theta(x), f_\theta (x + \eta) / \lambda)  \right)$$</p>
-<p>对应的 SMART 算法里使用了这种形式。</p>
-<h2 id="代码实现">代码实现</h2>
-<p>主要包含FGM 的代码示例，参考博客是：<a href="https://fyubang.com/2019/10/15/adversarial-train/">功守道：NLP中的对抗训练 + PyTorch实现</a>。</p>
-<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
-<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
-<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 0
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
-</span></code></pre></td>
-<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
-<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">FGM</span>():
-    <span style="color:#000;font-weight:bold">def</span> __init__(<span style="color:#999">self</span>, model):
-        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>model <span style="color:#000;font-weight:bold">=</span> model
-        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>backup <span style="color:#000;font-weight:bold">=</span> {}
-    
-    <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">attack</span>(<span style="color:#999">self</span>, img, epsilon, emb_name):
-        <span style="color:#000;font-weight:bold">for</span> name, param <span style="color:#000;font-weight:bold">in</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>model<span style="color:#000;font-weight:bold">.</span>named_parameters():
-            <span style="color:#000;font-weight:bold">if</span> param<span style="color:#000;font-weight:bold">.</span>requires_grad <span style="color:#000;font-weight:bold">and</span> embed_name <span style="color:#000;font-weight:bold">in</span> name:
-                <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>backup[name] <span style="color:#000;font-weight:bold">=</span> param<span style="color:#000;font-weight:bold">.</span>data<span style="color:#000;font-weight:bold">.</span>clone()
-                norm <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>norm(param<span style="color:#000;font-weight:bold">.</span>grad)
-                <span style="color:#000;font-weight:bold">if</span> norm <span style="color:#000;font-weight:bold">&gt;</span> <span style="color:#099">1e-6</span>:
-                    r_adv <span style="color:#000;font-weight:bold">=</span> epsilon <span style="color:#000;font-weight:bold">*</span> param<span style="color:#000;font-weight:bold">.</span>grad <span style="color:#000;font-weight:bold">/</span> norm
-                    param<span style="color:#000;font-weight:bold">.</span>data<span style="color:#000;font-weight:bold">.</span>add_(r_adv)
-    
-    <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">restore</span>(<span style="color:#999">self</span>, embed_name<span style="color:#000;font-weight:bold">=</span><span style="color:#d14">&#39;.embed&#39;</span>):
-        <span style="color:#000;font-weight:bold">for</span> name, param <span style="color:#000;font-weight:bold">in</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>model<span style="color:#000;font-weight:bold">.</span>named_parameters():
-            <span style="color:#000;font-weight:bold">if</span> param<span style="color:#000;font-weight:bold">.</span>requires_grad <span style="color:#000;font-weight:bold">and</span> embed_name <span style="color:#000;font-weight:bold">in</span> name:
-                <span style="color:#000;font-weight:bold">assert</span> name <span style="color:#000;font-weight:bold">in</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>backup
-                param<span style="color:#000;font-weight:bold">.</span>data <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>backup[name]
-        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>backup <span style="color:#000;font-weight:bold">=</span> {}
-</code></pre></td></tr></table>
-</div>
-</div><p>使用代码如下：</p>
-<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
-<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
-<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
-</span></code></pre></td>
-<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
-<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">fgm <span style="color:#000;font-weight:bold">=</span> FGM(model)
-<span style="color:#000;font-weight:bold">for</span> batch, label <span style="color:#000;font-weight:bold">in</span> data:
-    loss <span style="color:#000;font-weight:bold">=</span> model(batch, label)
-    loss<span style="color:#000;font-weight:bold">.</span>backward()
-    fgm<span style="color:#000;font-weight:bold">.</span>attack()
-    loss_adv <span style="color:#000;font-weight:bold">=</span> model(batch, label)
-    loss_adv<span style="color:#000;font-weight:bold">.</span>backward()
-    fgm<span style="color:#000;font-weight:bold">.</span>restore()
-    optimizer<span style="color:#000;font-weight:bold">.</span>step()
-    model<span style="color:#000;font-weight:bold">.</span>zero_grad()
-</code></pre></td></tr></table>
-</div>
-</div><p>PGD的实现实际有两种，一种是对$x^t$求导用于更新adversarial，另一种是对$\delta_t$求导并更新adversarial样本为$x + \delta_{t+1}$。</p>
-<p>第一种示例代码如下，即对输入数据求导。这里的参考是上面的博客链接以及这个仓库：<a href="https://github.com/Harry24k/PGD-pytorch/blob/master/PGD.ipynb">PGD-pytorch - github</a></p>
-<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
-<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
-<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">23
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">24
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">25
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">26
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">27
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">28
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">29
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">30
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">31
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">32
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">33
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">34
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">35
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">36
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">37
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">38
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">39
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">40
-</span></code></pre></td>
-<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
-<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">PGD</span>():
-    <span style="color:#000;font-weight:bold">def</span> __init__(<span style="color:#999">self</span>, model):
-        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>model <span style="color:#000;font-weight:bold">=</span> model
-        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>embed_backup <span style="color:#000;font-weight:bold">=</span> {}
-        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>grad_backup <span style="color:#000;font-weight:bold">=</span> {}
-    
-    <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">attack</span>(<span style="color:#999">self</span>, epsilon<span style="color:#000;font-weight:bold">=</span><span style="color:#099">1.</span>, alpha<span style="color:#000;font-weight:bold">=</span><span style="color:#099">0.3</span>, emb_name<span style="color:#000;font-weight:bold">=</span><span style="color:#d14">&#39;.embed&#39;</span>, is_first_attack<span style="color:#000;font-weight:bold">=</span><span style="color:#999">False</span>):
-        <span style="color:#000;font-weight:bold">for</span> name, param <span style="color:#000;font-weight:bold">in</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>model<span style="color:#000;font-weight:bold">.</span>named_parameters():
-            <span style="color:#000;font-weight:bold">if</span> param<span style="color:#000;font-weight:bold">.</span>requires_grad <span style="color:#000;font-weight:bold">and</span> embed_name <span style="color:#000;font-weight:bold">in</span> name:
-                <span style="color:#000;font-weight:bold">if</span> is_first_attack:
-                    <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>embed_backup[name] <span style="color:#000;font-weight:bold">=</span> param<span style="color:#000;font-weight:bold">.</span>data<span style="color:#000;font-weight:bold">.</span>clone()
-                norm <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>norm(param<span style="color:#000;font-weight:bold">.</span>grad)
-                <span style="color:#000;font-weight:bold">if</span> norm <span style="color:#000;font-weight:bold">&gt;</span> <span style="color:#099">1e-6</span>:
-                    r_adv <span style="color:#000;font-weight:bold">=</span> alpha <span style="color:#000;font-weight:bold">*</span> param<span style="color:#000;font-weight:bold">.</span>grad <span style="color:#000;font-weight:bold">/</span> norm
-                    param<span style="color:#000;font-weight:bold">.</span>data<span style="color:#000;font-weight:bold">.</span>add_(r_adv)
-                    param<span style="color:#000;font-weight:bold">.</span>data <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>project(name, param<span style="color:#000;font-weight:bold">.</span>data, epsilon)
-    
-    <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">project</span>(<span style="color:#999">self</span>, name, data, epsilon):
-        r_adv <span style="color:#000;font-weight:bold">=</span> data <span style="color:#000;font-weight:bold">-</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>emb_backup[name]        <span style="color:#998;font-style:italic"># 是相对于原始数据的扰动大小</span>
-        norm <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>norm(r_adv)
-        <span style="color:#000;font-weight:bold">if</span> r_adv <span style="color:#000;font-weight:bold">&gt;</span> epsilon:
-            r_adv <span style="color:#000;font-weight:bold">=</span> epsilon <span style="color:#000;font-weight:bold">*</span> r_adv <span style="color:#000;font-weight:bold">/</span> norm
-        <span style="color:#000;font-weight:bold">return</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>embed_backup[name] <span style="color:#000;font-weight:bold">+</span> r_adv
-    
-    <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">restore</span>(<span style="color:#999">self</span>, embed_name<span style="color:#000;font-weight:bold">=</span><span style="color:#d14">&#39;.embed&#39;</span>):
-        <span style="color:#000;font-weight:bold">for</span> name, param <span style="color:#000;font-weight:bold">in</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>model<span style="color:#000;font-weight:bold">.</span>named_parameters():
-            <span style="color:#000;font-weight:bold">if</span> embed_name <span style="color:#000;font-weight:bold">in</span> name:
-                <span style="color:#000;font-weight:bold">assert</span> name <span style="color:#000;font-weight:bold">in</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>embed_backup
-                param<span style="color:#000;font-weight:bold">.</span>data <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>embed_backup[name]
-        <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>embed_backup <span style="color:#000;font-weight:bold">=</span> {}
-    
-    <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">backup_grad</span>(<span style="color:#999">self</span>):
-        <span style="color:#000;font-weight:bold">for</span> name, param <span style="color:#000;font-weight:bold">in</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>model<span style="color:#000;font-weight:bold">.</span>named_parameters():
-            <span style="color:#000;font-weight:bold">if</span> param<span style="color:#000;font-weight:bold">.</span>requires_grad:
-                <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>grad_backup[name] <span style="color:#000;font-weight:bold">=</span> param<span style="color:#000;font-weight:bold">.</span>grad<span style="color:#000;font-weight:bold">.</span>clone()
-    
-    <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">restore_grad</span>(<span style="color:#999">self</span>):
-        <span style="color:#000;font-weight:bold">for</span> name, param <span style="color:#000;font-weight:bold">in</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>model<span style="color:#000;font-weight:bold">.</span>named_parameters():
-            <span style="color:#000;font-weight:bold">if</span> param<span style="color:#000;font-weight:bold">.</span>requires_grad:
-                param<span style="color:#000;font-weight:bold">.</span>grad <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>grad_backup[name]
-</code></pre></td></tr></table>
-</div>
-</div><p>对应的使用过程也稍微麻烦一点。</p>
-<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
-<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
-<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
-</span></code></pre></td>
-<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
-<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">pgd <span style="color:#000;font-weight:bold">=</span> PGD(model)
-K <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">3</span>
-<span style="color:#000;font-weight:bold">for</span> batch, label <span style="color:#000;font-weight:bold">in</span> data:
-    loss <span style="color:#000;font-weight:bold">=</span> model(batch, label)
-    loss<span style="color:#000;font-weight:bold">.</span>backward()
-    pgd<span style="color:#000;font-weight:bold">.</span>backup_grad()
-    <span style="color:#000;font-weight:bold">for</span> idx <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(K):
-        pgd<span style="color:#000;font-weight:bold">.</span>attack(is_first_attack<span style="color:#000;font-weight:bold">=</span>(idx <span style="color:#000;font-weight:bold">==</span> <span style="color:#099">0</span>))
-        <span style="color:#000;font-weight:bold">if</span> idx <span style="color:#000;font-weight:bold">!=</span> K <span style="color:#000;font-weight:bold">-</span> <span style="color:#099">1</span>:
-            model<span style="color:#000;font-weight:bold">.</span>zero_grad()
-        <span style="color:#000;font-weight:bold">else</span>:
-            pgd<span style="color:#000;font-weight:bold">.</span>restore_grad()
-        loss_adv <span style="color:#000;font-weight:bold">=</span> model(batch, label)
-        loss_adv<span style="color:#000;font-weight:bold">.</span>backward()     <span style="color:#998;font-style:italic"># 最后一轮的对抗样本的梯度会被保留</span>
-    pgd<span style="color:#000;font-weight:bold">.</span>restore()               <span style="color:#998;font-style:italic"># 恢复 Embedding 参数</span>
-    optimizer<span style="color:#000;font-weight:bold">.</span>step()
-    model<span style="color:#000;font-weight:bold">.</span>zero_grad()
-</code></pre></td></tr></table>
-</div>
-</div><p>第二种 PGD 对应的代码稍微在保证$\parallel \delta \parallel_\infty &lt; \epsilon$时会方便一些，参考代码<a href="https://adversarial-ml-tutorial.org/adversarial_examples/">Chapter 3 - Adversarial examples, solving the inner maximization</a>。</p>
-<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
-<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
-<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">6
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">7
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">8
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">9
-</span></code></pre></td>
-<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
-<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">
-<span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">pgd</span>(model, x, y, epsilon, alpha, K):
-    delta <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>zeros_like(x, requires_grad<span style="color:#000;font-weight:bold">=</span><span style="color:#999">True</span>)
-    <span style="color:#000;font-weight:bold">for</span> idx <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(K):
-        loss <span style="color:#000;font-weight:bold">=</span> loss_fn(model(x <span style="color:#000;font-weight:bold">+</span> delta), y)
-        loss<span style="color:#000;font-weight:bold">.</span>backward()
-        delta<span style="color:#000;font-weight:bold">.</span>data <span style="color:#000;font-weight:bold">=</span> (delta <span style="color:#000;font-weight:bold">+</span> x<span style="color:#000;font-weight:bold">.</span>shape[<span style="color:#099">0</span>] <span style="color:#000;font-weight:bold">*</span> alpha <span style="color:#000;font-weight:bold">*</span> delta<span style="color:#000;font-weight:bold">.</span>grad<span style="color:#000;font-weight:bold">.</span>data)<span style="color:#000;font-weight:bold">.</span>clamp(<span style="color:#000;font-weight:bold">-</span>epsilon, epsilon)
-        delta<span style="color:#000;font-weight:bold">.</span>zero_grad_()
-    <span style="color:#000;font-weight:bold">return</span> delta<span style="color:#000;font-weight:bold">.</span>detach()
-</code></pre></td></tr></table>
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 </div>
 </div>
 
@@ -779,11 +448,7 @@ K <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">3<
         		<footer>
 			
 			<span>
-<<<<<<< HEAD
-			&copy; <time datetime="2022-07-25 12:50:02.732489689 &#43;0800 CST m=&#43;0.139683803">2022</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
-=======
-			&copy; <time datetime="2022-01-26 22:10:54.733113 &#43;0800 CST m=&#43;0.077936786">2022</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
+			&copy; <time datetime="2022-07-25 13:11:53.255406461 &#43;0800 CST m=&#43;0.134498340">2022</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
 			</span>
 		</footer>
 

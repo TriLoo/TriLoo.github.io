@@ -11,60 +11,21 @@
 		
 		<link rel="stylesheet" href="/css/style.css">
 		<link rel="stylesheet" href="/css/fonts.css">
-<<<<<<< HEAD
 		<link rel="stylesheet" href="/css/custom.css">
 		
 		<link rel="icon" href="/favicon.ico"/>
-=======
-        <link rel="stylesheet" href="/css/custom.css">
-		
-		<link rel="icon" href="favicon.ico" />
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 		<link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
 		<link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
 		<link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
 
 		
 		<link href="" rel="alternate" type="application/rss+xml" title="Triloon" />
-<<<<<<< HEAD
 
 		<script src="/js/darkmode.js"></script>
 	</head>
 
     <body>
         		<nav class="nav">
-=======
-	</head>
-
-    <body>
-        <script type="text/javascript" async
-  src="https://cdn.jsdelivr.net/npm/mathjax@2.7.4/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
-</script>
-<script type="text/x-mathjax-config">
-MathJax.Hub.Config({
-  tex2jax: {
-    inlineMath: [['$','$'], ['\\(','\\)']],
-    displayMath: [['$$','$$'], ['\[','\]']],
-    processEscapes: true,
-    processEnvironments: true,
-    skipTags: ['script', 'noscript', 'style', 'textarea', 'pre','code'],
-    TeX: { equationNumbers: { autoNumber: "AMS" },
-         extensions: ["AMSmath.js", "AMSsymbols.js"] }
-  }
-});
-</script>
-
-<style>
-    code.has-jax {
-        font: inherit;
-        font-size: 100%;
-        background: inherit;
-        border: inherit;
-        color: #515151;
-    }
-</style>
-		<nav class="nav">
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 			<div class="nav-container">
 				<a href="/">
 					
@@ -94,28 +55,17 @@ MathJax.Hub.Config({
 			</div>
 		</nav>
 
-<<<<<<< HEAD
         <div id="darkModeToggle" onclick="toggleDarkMode()">
   &#9680; 
 </div>
-=======
-        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-        <link rel="manifest" href="/site.webmanifest">
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 
         
 
 <main>
-<<<<<<< HEAD
 	
 
 
         <div class="post">
-=======
-	<div class="post">
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 		<div class="post-info">
     <span>Written by</span>
         triloon
@@ -180,7 +130,6 @@ MathJax.Hub.Config({
 <p>CAM这种Gradient Free算法的定义就是上面公示了。</p>
 <p>作者分析了为啥不使用Global Max Pooling (GMP)，而是使用GAP。简单来说，GAP会让模型学习Object边界内的所有点的信息，而GMP则可以让模型只关注Object内最有区分性的空间位置即可，有很大可能 Object 内的其它位置对结果没有影响，毕竟对Max Pooling的结果没有影响。</p>
 <p>CAM的缺点就是要求模型输出层之前需要使用 GAP，如果模型默认不是这一计算，则还需要替换成 GAP 重新进行训练。实现代码示例如下。</p>
-<<<<<<< HEAD
 <div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
 <table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
 <pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 0
@@ -208,35 +157,6 @@ MathJax.Hub.Config({
 </span></span><span style="display:flex;"><span><span style="color:#998;font-style:italic"># 归一化操作</span>
 </span></span><span style="display:flex;"><span>batch_cams <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>_normalize(batch_cams)
 </span></span></code></pre></td></tr></table>
-=======
-<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
-<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
-<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 0
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
-</span></code></pre></td>
-<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
-<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#998;font-style:italic"># 获取全连接层的权重</span>
-<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>_fc_weights <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>model<span style="color:#000;font-weight:bold">.</span>_modules<span style="color:#000;font-weight:bold">.</span>get(fc_layer)<span style="color:#000;font-weight:bold">.</span>weight<span style="color:#000;font-weight:bold">.</span>data
-<span style="color:#998;font-style:italic"># 获取目标类别的权重作为特征权重</span>
-weights<span style="color:#000;font-weight:bold">=</span><span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>_fc_weights[class_idx, :]
-<span style="color:#998;font-style:italic"># 这里self.hook_a为最后一层特征图的输出</span>
-batch_cams <span style="color:#000;font-weight:bold">=</span> (weights<span style="color:#000;font-weight:bold">.</span>unsqueeze(<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>)<span style="color:#000;font-weight:bold">.</span>unsqueeze(<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>) <span style="color:#000;font-weight:bold">*</span> 
-                <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>hook_a<span style="color:#000;font-weight:bold">.</span>squeeze(<span style="color:#099">0</span>))<span style="color:#000;font-weight:bold">.</span>sum(dim<span style="color:#000;font-weight:bold">=</span><span style="color:#099">0</span>)
-<span style="color:#998;font-style:italic"># relu操作,去除负值</span>
-batch_cams <span style="color:#000;font-weight:bold">=</span> F<span style="color:#000;font-weight:bold">.</span>relu(batch_cams, inplace<span style="color:#000;font-weight:bold">=</span><span style="color:#999">True</span>)
-<span style="color:#998;font-style:italic"># 归一化操作</span>
-batch_cams <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>_normalize(batch_cams)
-</code></pre></td></tr></table>
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 </div>
 </div><h3 id="grad-cam">Grad CAM</h3>
 <p>此算法可以克服上面CAM算法中要求模型必须包含GAP的存在才行。基本思路是用梯度来计算Channel加权的权重，而且用ReLU去除权重为负数的那些channel。Grad CAM支持对任意一层CNN的 Feature Map 进行CAM可视化。</p>
@@ -253,7 +173,6 @@ batch_cams <span style="color:#000;font-weight:bold">=</span> <span style="color
 </figure></p>
 <p>示意图可以看出，Grad CAM支持多种模型的输出层结构以及对应的任务。为了实现更高分辨率的可视化，作者提出首先将$L_{\text{Grad-CAM}}$使用双线性插值进行上采样，然后与 Guided Backpropagation 的结果进行按元素乘的结果作为可视化结果。</p>
 <p>另外一个方面，论文中提到使用Softmax之前的输入作为 $y^c$，但是某些代码中也使用了 Softmax 的输出作为 $y^c$，知乎文章里有给出为啥可能采用Softmax之前（论文中的做法）会效果更好。实现代码如下。</p>
-<<<<<<< HEAD
 <div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
 <table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
 <pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 0
@@ -295,49 +214,6 @@ batch_cams <span style="color:#000;font-weight:bold">=</span> <span style="color
 </span></span><span style="display:flex;"><span><span style="color:#998;font-style:italic"># 归一化操作</span>
 </span></span><span style="display:flex;"><span>batch_cams <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>_normalize(batch_cams)
 </span></span></code></pre></td></tr></table>
-=======
-<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
-<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
-<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 0
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
-</span></code></pre></td>
-<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
-<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#998;font-style:italic"># 利用onehot的形式锁定目标类别</span>
-one_hot <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>zeros((<span style="color:#099">1</span>, output<span style="color:#000;font-weight:bold">.</span>size()[<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>]), dtype<span style="color:#000;font-weight:bold">=</span>np<span style="color:#000;font-weight:bold">.</span>float32)
-one_hot[<span style="color:#099">0</span>][index] <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">1</span>
-one_hot <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>from_numpy(one_hot)<span style="color:#000;font-weight:bold">.</span>requires_grad_(<span style="color:#999">True</span>) 
-<span style="color:#998;font-style:italic"># 获取目标类别的输出,该值带有梯度链接关系,可进行求导操作</span>
-one_hot <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>sum(one_hot <span style="color:#000;font-weight:bold">*</span> output)
-<span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>model<span style="color:#000;font-weight:bold">.</span>zero_grad()
-one_hot<span style="color:#000;font-weight:bold">.</span>backward(retain_graph<span style="color:#000;font-weight:bold">=</span><span style="color:#999">True</span>) <span style="color:#998;font-style:italic"># backward 求导</span>
-<span style="color:#998;font-style:italic"># 获取对应特征层的梯度map</span>
-grads_val <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>extractor<span style="color:#000;font-weight:bold">.</span>get_gradients()[<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>]<span style="color:#000;font-weight:bold">.</span>cpu()<span style="color:#000;font-weight:bold">.</span>data<span style="color:#000;font-weight:bold">.</span>numpy()
-target <span style="color:#000;font-weight:bold">=</span> features[<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>]<span style="color:#000;font-weight:bold">.</span>cpu()<span style="color:#000;font-weight:bold">.</span>data<span style="color:#000;font-weight:bold">.</span>numpy()[<span style="color:#099">0</span>, :] <span style="color:#998;font-style:italic"># 获取目标特征输出</span>
-weights <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>mean(grads_val, axis<span style="color:#000;font-weight:bold">=</span>(<span style="color:#099">2</span>, <span style="color:#099">3</span>))[<span style="color:#099">0</span>, :] <span style="color:#998;font-style:italic"># 利用GAP操作, 获取特征权重</span>
-cam <span style="color:#000;font-weight:bold">=</span> weights<span style="color:#000;font-weight:bold">.</span>dot(target<span style="color:#000;font-weight:bold">.</span>reshape((nc, h <span style="color:#000;font-weight:bold">*</span> w)))
-<span style="color:#998;font-style:italic"># relu操作,去除负值, 并缩放到原图尺寸</span>
-cam <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>maximum(cam, <span style="color:#099">0</span>)
-cam <span style="color:#000;font-weight:bold">=</span> cv2<span style="color:#000;font-weight:bold">.</span>resize(cam, <span style="color:#0086b3">input</span><span style="color:#000;font-weight:bold">.</span>shape[<span style="color:#099">2</span>:])
-<span style="color:#998;font-style:italic"># 归一化操作</span>
-batch_cams <span style="color:#000;font-weight:bold">=</span> <span style="color:#999">self</span><span style="color:#000;font-weight:bold">.</span>_normalize(batch_cams)
-</code></pre></td></tr></table>
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 </div>
 </div><h3 id="grad-cam-1">Grad CAM++</h3>
 <p>Grad CAM++ 是对 Grad CAM 的进一步改进，优势在于定位更加精准，也更适用于图像中包含不止一个目标类别物体的情况。</p>
@@ -399,11 +275,7 @@ batch_cams <span style="color:#000;font-weight:bold">=</span> <span style="color
         		<footer>
 			
 			<span>
-<<<<<<< HEAD
-			&copy; <time datetime="2022-07-25 12:50:02.710625757 &#43;0800 CST m=&#43;0.117819821">2022</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
-=======
-			&copy; <time datetime="2022-01-26 22:10:54.719072 &#43;0800 CST m=&#43;0.063896616">2022</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
+			&copy; <time datetime="2022-07-25 13:11:53.236306175 &#43;0800 CST m=&#43;0.115398053">2022</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
 			</span>
 		</footer>
 

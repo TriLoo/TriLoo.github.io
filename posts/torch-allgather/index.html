@@ -11,60 +11,21 @@
 		
 		<link rel="stylesheet" href="/css/style.css">
 		<link rel="stylesheet" href="/css/fonts.css">
-<<<<<<< HEAD
 		<link rel="stylesheet" href="/css/custom.css">
 		
 		<link rel="icon" href="/favicon.ico"/>
-=======
-        <link rel="stylesheet" href="/css/custom.css">
-		
-		<link rel="icon" href="favicon.ico" />
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 		<link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
 		<link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
 		<link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
 
 		
 		<link href="" rel="alternate" type="application/rss+xml" title="Triloon" />
-<<<<<<< HEAD
 
 		<script src="/js/darkmode.js"></script>
 	</head>
 
     <body>
         		<nav class="nav">
-=======
-	</head>
-
-    <body>
-        <script type="text/javascript" async
-  src="https://cdn.jsdelivr.net/npm/mathjax@2.7.4/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
-</script>
-<script type="text/x-mathjax-config">
-MathJax.Hub.Config({
-  tex2jax: {
-    inlineMath: [['$','$'], ['\\(','\\)']],
-    displayMath: [['$$','$$'], ['\[','\]']],
-    processEscapes: true,
-    processEnvironments: true,
-    skipTags: ['script', 'noscript', 'style', 'textarea', 'pre','code'],
-    TeX: { equationNumbers: { autoNumber: "AMS" },
-         extensions: ["AMSmath.js", "AMSsymbols.js"] }
-  }
-});
-</script>
-
-<style>
-    code.has-jax {
-        font: inherit;
-        font-size: 100%;
-        background: inherit;
-        border: inherit;
-        color: #515151;
-    }
-</style>
-		<nav class="nav">
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 			<div class="nav-container">
 				<a href="/">
 					
@@ -94,28 +55,17 @@ MathJax.Hub.Config({
 			</div>
 		</nav>
 
-<<<<<<< HEAD
         <div id="darkModeToggle" onclick="toggleDarkMode()">
   &#9680; 
 </div>
-=======
-        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-        <link rel="manifest" href="/site.webmanifest">
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 
         
 
 <main>
-<<<<<<< HEAD
 	
 
 
         <div class="post">
-=======
-	<div class="post">
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 		<div class="post-info">
     <span>Written by</span>
         triloon
@@ -134,7 +84,6 @@ MathJax.Hub.Config({
 <li>
 <p>背景一：使用 all_gather 来获取其它 GPU 上的参数</p>
 <p>最早接触使用Pytorch的<code>all_gather</code>来获取其它GPU上的数据在当前进程中使用的代码应该是 MoCo 论文中的实现：</p>
-<<<<<<< HEAD
 <div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
 <table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
 <pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 0
@@ -164,37 +113,6 @@ MathJax.Hub.Config({
 </span></span><span style="display:flex;"><span>    output <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>cat(tensors_gather, dim<span style="color:#000;font-weight:bold">=</span><span style="color:#099">0</span>)
 </span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">return</span> output
 </span></span></code></pre></td></tr></table>
-=======
-<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
-<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
-<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 0
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
-</span></code></pre></td>
-<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
-<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#3c5d5d;font-weight:bold">@torch.no_grad</span>()
-<span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">concat_all_gather</span>(tensor):
-    <span style="color:#d14">&#34;&#34;&#34;
-</span><span style="color:#d14">    Performs all_gather operation on the provided tensors.
-</span><span style="color:#d14">    *** Warning ***: torch.distributed.all_gather has no gradient.
-</span><span style="color:#d14">    &#34;&#34;&#34;</span>
-    tensors_gather <span style="color:#000;font-weight:bold">=</span> [torch<span style="color:#000;font-weight:bold">.</span>ones_like(tensor)
-        <span style="color:#000;font-weight:bold">for</span> _ <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(torch<span style="color:#000;font-weight:bold">.</span>distributed<span style="color:#000;font-weight:bold">.</span>get_world_size())]
-    torch<span style="color:#000;font-weight:bold">.</span>distributed<span style="color:#000;font-weight:bold">.</span>all_gather(tensors_gather, tensor, async_op<span style="color:#000;font-weight:bold">=</span><span style="color:#999">False</span>)
-  
-    output <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>cat(tensors_gather, dim<span style="color:#000;font-weight:bold">=</span><span style="color:#099">0</span>)
-    <span style="color:#000;font-weight:bold">return</span> output
-</code></pre></td></tr></table>
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 </div>
 </div><p>一方面是，<code>concat_all_gather</code>函数使用了<code>no_grad()</code>修饰器；另一方面，即使不用 <code>no_grad</code> 修饰，这里的结果（也就是<code>output</code>）的梯度也不会传递给输入参数<code>tensor</code>。</p>
 </li>
@@ -203,7 +121,6 @@ MathJax.Hub.Config({
 <p>代码中使用了普通的 triplet loss 计算 Loss，然后进行梯度更新，triplet loss 函数的中的 anchor 来自于离线计算好的数据，因此不会进行梯度后向传播（requires_grad = False），而 pos, neg 则来自于上述<code>concat_all_gather()</code>函数的输出。最开始的时候，<code>autograd.backward(loss)</code> 的计算会报错，提示计算 loss 的几个参数都不需要计算梯度，去掉<code>torch.no_grad()</code>之后，错误仍然存在。</p>
 <p>另一个现象是，当 anchor 也来自于模型计算（可以梯度后向传播时），使用<code>concat_all_gather()</code>的结果计算 triplet loss 会比只使用当前 GPU 上输出作为 pos / neg 时速度快上一倍以上，这就非常违反直觉了，因为 <code>all_gather</code> 的通信开销应该导致速度更慢才对。</p>
 <p>因此， 考虑<code>concat_all_gather()</code>函数体中导致梯度传播中断的计算。主要是两个地方，一个是<code>ones_like()</code>这里，默认创建的 tensor 具有<code>requires_grad=False</code>参数，因此将代码替换为：</p>
-<<<<<<< HEAD
 <div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
 <table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
 <pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">0
@@ -213,17 +130,6 @@ MathJax.Hub.Config({
 <pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>    tensors_gather <span style="color:#000;font-weight:bold">=</span> [torch<span style="color:#000;font-weight:bold">.</span>ones_like(tensor, requires_grad<span style="color:#000;font-weight:bold">=</span><span style="color:#000;font-weight:bold">True</span>)
 </span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">for</span> _ <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(torch<span style="color:#000;font-weight:bold">.</span>distributed<span style="color:#000;font-weight:bold">.</span>get_world_size())]
 </span></span></code></pre></td></tr></table>
-=======
-<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
-<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
-<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">0
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
-<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">    tensors_gather <span style="color:#000;font-weight:bold">=</span> [torch<span style="color:#000;font-weight:bold">.</span>ones_like(tensor, requires_grad<span style="color:#000;font-weight:bold">=</span><span style="color:#999">True</span>)
-        <span style="color:#000;font-weight:bold">for</span> _ <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(torch<span style="color:#000;font-weight:bold">.</span>distributed<span style="color:#000;font-weight:bold">.</span>get_world_size())]
-</code></pre></td></tr></table>
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 </div>
 </div><p>然而错误、或者训练速度异常仍然存在，因此，错误也就只可能出在 <code>all_gather()</code> 计算上了。</p>
 </li>
@@ -232,7 +138,6 @@ MathJax.Hub.Config({
 <p><a href="https://discuss.pytorch.org/t/will-dist-all-gather-break-the-auto-gradient-graph/47350">Will “dist.all_gather” break the auto gradient graph?</a></p>
 <h2 id="让all_gather支持梯度传播">让all_gather支持梯度传播</h2>
 <p>上面的问题总结出来就是，torch.dist 中自带的 <code>all_gather</code> 函数会阻断梯度的后向传播。针对这个问题，帖子中也给出了一个新的实现代码，并且配合新的<code>concat_all_gather</code>的实现代码如下：</p>
-<<<<<<< HEAD
 <div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
 <table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
 <pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 0
@@ -318,93 +223,6 @@ MathJax.Hub.Config({
 </span></span><span style="display:flex;"><span>    output <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>cat(tensors_gather, dim<span style="color:#000;font-weight:bold">=</span><span style="color:#099">0</span>)
 </span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">return</span> output
 </span></span></code></pre></td></tr></table>
-=======
-<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
-<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
-<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 0
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">23
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">24
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">25
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">26
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">27
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">28
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">29
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">30
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">31
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">32
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">33
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">34
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">35
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">36
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">37
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">38
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">39
-</span></code></pre></td>
-<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
-<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#000;font-weight:bold">import</span> <span style="color:#555">torch</span>
-<span style="color:#000;font-weight:bold">import</span> <span style="color:#555">torch.distributed</span> <span style="color:#000;font-weight:bold">as</span> <span style="color:#555">dist</span>
-
-<span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">AllGather</span>(torch<span style="color:#000;font-weight:bold">.</span>autograd<span style="color:#000;font-weight:bold">.</span>Function):
-    <span style="color:#d14">&#34;&#34;&#34; 
-</span><span style="color:#d14">    all_gather with gradient back-propagation
-</span><span style="color:#d14">    &#34;&#34;&#34;</span>
-    <span style="color:#3c5d5d;font-weight:bold">@staticmethod</span>
-    <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">forward</span>(ctx, tensor_list, tensor):
-        dist<span style="color:#000;font-weight:bold">.</span>all_gather(tensor_list, tensor)
-        <span style="color:#000;font-weight:bold">return</span> <span style="color:#0086b3">tuple</span>(tensor_list)
-
-    <span style="color:#3c5d5d;font-weight:bold">@staticmethod</span>
-    <span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">backward</span>(ctx, <span style="color:#000;font-weight:bold">*</span>grad_list):
-        grad_list <span style="color:#000;font-weight:bold">=</span> <span style="color:#0086b3">list</span>(grad_list)
-        rank <span style="color:#000;font-weight:bold">=</span> dist<span style="color:#000;font-weight:bold">.</span>get_rank()
-
-        dist_ops <span style="color:#000;font-weight:bold">=</span> [
-            dist<span style="color:#000;font-weight:bold">.</span>reduce(grad_list[i], i, async_op<span style="color:#000;font-weight:bold">=</span><span style="color:#999">True</span>) <span style="color:#000;font-weight:bold">for</span> i <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(dist<span style="color:#000;font-weight:bold">.</span>get_world_size())
-        ]
-
-        <span style="color:#000;font-weight:bold">for</span> op <span style="color:#000;font-weight:bold">in</span> dist_ops:
-            op<span style="color:#000;font-weight:bold">.</span>wait()
-
-        <span style="color:#000;font-weight:bold">return</span> <span style="color:#999">None</span>, grad_list[rank] 
-
-
-all_gather <span style="color:#000;font-weight:bold">=</span> AllGather<span style="color:#000;font-weight:bold">.</span>apply
-
-<span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">concat_all_gather</span>(tensor):
-    <span style="color:#d14">&#34;&#34;&#34;
-</span><span style="color:#d14">    Performs all_gather operation on the provided tensors.
-</span><span style="color:#d14">    *** Warning ***: torch.distributed.all_gather has no gradient.
-</span><span style="color:#d14">    &#34;&#34;&#34;</span>
-    tensors_gather <span style="color:#000;font-weight:bold">=</span> [torch<span style="color:#000;font-weight:bold">.</span>ones_like(tensor)
-        <span style="color:#000;font-weight:bold">for</span> _ <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(torch<span style="color:#000;font-weight:bold">.</span>distributed<span style="color:#000;font-weight:bold">.</span>get_world_size())]
-    all_gather(tensors_gather, tensor)
-
-    output <span style="color:#000;font-weight:bold">=</span> torch<span style="color:#000;font-weight:bold">.</span>cat(tensors_gather, dim<span style="color:#000;font-weight:bold">=</span><span style="color:#099">0</span>)
-    <span style="color:#000;font-weight:bold">return</span> output
-</code></pre></td></tr></table>
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 </div>
 </div><p>后记，看MoCo代码中<code>concat_all_gather</code>的注释，原来答案就在纸面上，擦。</p>
 
@@ -423,11 +241,7 @@ all_gather <span style="color:#000;font-weight:bold">=</span> AllGather<span sty
         		<footer>
 			
 			<span>
-<<<<<<< HEAD
-			&copy; <time datetime="2022-07-25 12:50:02.708909114 &#43;0800 CST m=&#43;0.116103178">2022</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
-=======
-			&copy; <time datetime="2022-01-26 22:10:54.730234 &#43;0800 CST m=&#43;0.075058133">2022</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
+			&copy; <time datetime="2022-07-25 13:11:53.237099867 &#43;0800 CST m=&#43;0.116191747">2022</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
 			</span>
 		</footer>
 

@@ -11,35 +11,21 @@
 		
 		<link rel="stylesheet" href="/css/style.css">
 		<link rel="stylesheet" href="/css/fonts.css">
-<<<<<<< HEAD
 		<link rel="stylesheet" href="/css/custom.css">
 		
 		<link rel="icon" href="/favicon.ico"/>
-=======
-        <link rel="stylesheet" href="/css/custom.css">
-		
-		<link rel="icon" href="favicon.ico" />
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 		<link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
 		<link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
 		<link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
 
 		
 		<link href="" rel="alternate" type="application/rss+xml" title="Triloon" />
-<<<<<<< HEAD
 
 		<script src="/js/darkmode.js"></script>
 	</head>
 
     <body>
         		<nav class="nav">
-=======
-	</head>
-
-    <body>
-        
-		<nav class="nav">
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 			<div class="nav-container">
 				<a href="/">
 					
@@ -69,28 +55,17 @@
 			</div>
 		</nav>
 
-<<<<<<< HEAD
         <div id="darkModeToggle" onclick="toggleDarkMode()">
   &#9680; 
 </div>
-=======
-        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-        <link rel="manifest" href="/site.webmanifest">
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 
         
 
 <main>
-<<<<<<< HEAD
 	
 
 
         <div class="post">
-=======
-	<div class="post">
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 		<div class="post-info">
     <span>Written by</span>
         triloon
@@ -106,7 +81,6 @@
 		<p>一些hugo blog搭建过程中的记录。</p>
 <ul>
 <li>
-<<<<<<< HEAD
 <p>基础命令</p>
 <ul>
 <li>
@@ -135,8 +109,6 @@
 </ul>
 </li>
 <li>
-=======
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 <p>添加 table of contents</p>
 <p>参考博客：<a href="https://codingreflections.com/hugo-table-of-contents/">How to Add Table Of Contents to a Hugo Blog</a>。目前用到的是第一种方式。
 包含两个步骤：</p>
@@ -162,7 +134,6 @@
 <p>具体使用：将下载的图片保存到 static 目录，比如按照 post tilte 命名的目录下面（例如，<code>/User/apple/myblogs/static/imgs/binary-search-tree/img00.png</code>，<code>/User/apple/myblogs</code>为项目根目录，即运行<code>hugo server</code>等命令的目录，<code>/User/apple/myblogs/public</code>为编译后的结果），然后在.md正文里指定图片地址（例如，<code>![image caption](/imgs/binary-search-tree/img00.png)</code>，注意下直接从<code>/imgs</code>开始）。</p>
 <p>第二个博客里给出了另外一种加载图片的方式，即使用shortcodes（Markdown语言的补充，方便建立网页。），而且也给出了其他多媒体信息的加载方式，比如vimeo, youtube, gist, tweet, instagram等信息。</p>
 <p>显示图片 Caption 过程，可以参考<a href="https://sebastiandedeyne.com/captioned-images-with-markdown-render-hooks-in-hugo/">Caption images with markdown render hooks in Hugo</a>，也就是在<code>myblogs/layouts/_default/_makeup</code>目录下面创建一个<code>render-image.html</code>文件，然后填上如下内容：</p>
-<<<<<<< HEAD
 <div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
 <table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
 <pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">0
@@ -180,25 +151,6 @@
 </span></span><span style="display:flex;"><span>  &lt;/<span style="color:#000080">center</span>&gt;
 </span></span><span style="display:flex;"><span>&lt;/<span style="color:#000080">figure</span>&gt;
 </span></span></code></pre></td></tr></table>
-=======
-<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
-<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
-<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">0
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
-</span></code></pre></td>
-<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
-<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-html" data-lang="html">&lt;<span style="color:#000080">figure</span>&gt;
-  &lt;<span style="color:#000080">center</span>&gt;
-  &lt;<span style="color:#000080">img</span> <span style="color:#008080">src</span><span style="color:#000;font-weight:bold">=</span><span style="color:#d14">&#34;{{ .Destination | safeURL }}&#34;</span> <span style="color:#008080">alt</span><span style="color:#000;font-weight:bold">=</span><span style="color:#d14">&#34;{{ .Text }}&#34;</span>&gt;
-  &lt;<span style="color:#000080">figcaption</span>&gt;{{ .Text }}&lt;/<span style="color:#000080">figcaption</span>&gt;
-  &lt;/<span style="color:#000080">center</span>&gt;
-&lt;/<span style="color:#000080">figure</span>&gt;
-</code></pre></td></tr></table>
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
 </div>
 </div><p>或者用 <code>.Title</code> 代替代码块第三行的 <code>.Text</code> 来使用 Title 作为 Caption。然后在Markdone里加载图片没有变化，注意 Title 的位置：<code>![alt text](path &quot;title&quot;)</code>，title可以是空。</p>
 </li>
@@ -223,11 +175,7 @@
         		<footer>
 			
 			<span>
-<<<<<<< HEAD
-			&copy; <time datetime="2022-07-25 12:50:02.687258969 &#43;0800 CST m=&#43;0.094453033">2022</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
-=======
-			&copy; <time datetime="2022-01-26 22:10:54.70943 &#43;0800 CST m=&#43;0.054255295">2022</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
->>>>>>> a0896ef22a3180c5942ee647fccc0995a85c53ad
+			&copy; <time datetime="2022-07-25 13:11:53.211020976 &#43;0800 CST m=&#43;0.090112933">2022</time> triloon. Made with <a href='https://gohugo.io'>Hugo</a> using the <a href='https://github.com/EmielH/tale-hugo/'>Tale</a> theme.
 			</span>
 		</footer>
 
